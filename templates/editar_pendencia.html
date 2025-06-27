@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Pendência - Sistema de Pendências{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title mb-0">Editar Pendência</h2>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="empresa" class="form-label">Empresa</label>
+                        <select class="form-select" id="empresa" name="empresa" required>
+                            {% for emp in empresas %}
+                                <option value="{{ emp }}" {% if emp == pendencia.empresa %}selected{% endif %}>{{ emp }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="tipo_pendencia" class="form-label">Tipo de Pendência</label>
+                        <select class="form-select" id="tipo_pendencia" name="tipo_pendencia" required>
+                            {% for tipo in tipos_pendencia %}
+                            <option value="{{ tipo }}" {% if tipo == pendencia.tipo_pendencia %}selected{% endif %}>{{ tipo }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="banco" class="form-label">Banco</label>
+                        <input type="text" class="form-control" id="banco" name="banco" value="{{ pendencia.banco }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="data" class="form-label">Data</label>
+                        <input type="date" class="form-control" id="data" name="data" value="{{ pendencia.data.strftime('%Y-%m-%d') }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="fornecedor_cliente" class="form-label">Fornecedor/Cliente</label>
+                        <input type="text" class="form-control" id="fornecedor_cliente" name="fornecedor_cliente" value="{{ pendencia.fornecedor_cliente }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="valor" class="form-label">Valor (R$)</label>
+                        <input type="number" step="0.01" class="form-control" id="valor" name="valor" value="{{ pendencia.valor }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="observacao" class="form-label">Observação</label>
+                        <input type="text" class="form-control" id="observacao" name="observacao" value="{{ pendencia.observacao }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="email_cliente" class="form-label">E-mail do Cliente (opcional)</label>
+                        <input type="email" class="form-control" id="email_cliente" name="email_cliente" value="{{ pendencia.email_cliente }}">
+                    </div>
+                    <div class="mb-3" id="nota_fiscal_upload" style="display:none;">
+                        <label for="nota_fiscal_arquivo" class="form-label">Anexar Nota Fiscal (PDF, JPG, PNG)</label>
+                        <input type="file" class="form-control" id="nota_fiscal_arquivo" name="nota_fiscal_arquivo" accept=".pdf,.jpg,.jpeg,.png">
+                        {% if pendencia.nota_fiscal_arquivo %}
+                            <a href="{{ url_for('static', filename='notas_fiscais/' ~ pendencia.nota_fiscal_arquivo) }}" target="_blank">Ver Nota Fiscal Anexada</a>
+                        {% endif %}
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Salvar Alterações
+                        </button>
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+document.getElementById('tipo_pendencia').addEventListener('change', function() {
+    var uploadDiv = document.getElementById('nota_fiscal_upload');
+    if (this.value === 'Nota Fiscal Não Anexada') {
+        uploadDiv.style.display = 'block';
+    } else {
+        uploadDiv.style.display = 'none';
+    }
+});
+</script>
+{% endblock %} 

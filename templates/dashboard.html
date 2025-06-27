@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}Painel Principal - UP380{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{{ url_for('pre_dashboard') }}">Empresas</a></li>
+    <li class="breadcrumb-item active" aria-current="page">{{ empresa_filtro }}</li>
+    <li class="breadcrumb-item active" aria-current="page">Painel de Pendências</li>
+  </ol>
+</nav>
+
+<div class="row mb-4">
+    {% for tipo in tipos_pendencia %}
+    <div class="col-lg-3 col-md-4 mb-3">
+        <div class="card-resumo">
+            <span class="icon"><i class="bi bi-tag"></i></span>
+            <div>
+                <div class="value">{{ pendencias_empresa | selectattr('tipo_pendencia', 'equalto', tipo) | list | length }}</div>
+                <div class="label">{{ tipo }}</div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<style>
+.filtro-sticky {
+  position: sticky;
+  top: 80px;
+  z-index: 100;
+  background: #f5f6fa;
+  padding-top: 1rem;
+  padding-bottom: 0.5rem;
+}
+</style>
+<div class="filtro-sticky">
+    <form method="get" class="row g-2 align-items-end mb-4">
+        <input type="hidden" name="empresa" value="{{ empresa_filtro }}">
+        <div class="col-auto">
+            <label for="tipo_pendencia" class="form-label mb-0">Tipo de Pendência:</label>
+            <select class="form-select" id="tipo_pendencia" name="tipo_pendencia" onchange="this.form.submit()">
+                {% for tipo in tipos_pendencia %}
+                <option value="{{ tipo }}" {% if tipo == tipo_filtro %}selected{% endif %}>{{ tipo }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-auto">
+            <a href="{{ url_for('dashboard', empresa=empresa_filtro) }}" class="btn btn-secondary">Limpar</a>
+        </div>
+    </form>
+</div>
+
+<div class="mb-3">
+    <form method="get" class="row g-2 align-items-end">
+        <input type="hidden" name="empresa" value="{{ empresa_filtro }}">
+        <input type="hidden" name="tipo_pendencia" value="{{ tipo_filtro }}">
+        <div class="col-md-3">
+            <input type="text" class="form-control" name="busca" placeholder="Buscar por fornecedor, valor, etc." value="{{ request.args.get('busca', '') }}">
+        </div>
+        <div class="col-md-1">
+            <button type="submit" class="btn btn-primary">Pesquisar</button>
+        </div>
+    </form>
+</div>
+
+<!-- Tabelas de pendências em aberto -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Painel de Pendências</h1>
+    {% if session['usuario_tipo'] == 'adm' %}
+    <a href="{{ url_for('nova_pendencia') }}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Nova Pendência
+    </a>
+    <a href="{{ url_for('importar_planilha') }}" class="btn btn-secondary">
+        <i class="bi bi-upload"></i> Importar Planilha
+    </a>
+    {% endif %}
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Tipo</th>
+                        <th>Banco</th>
+                        <th>Data de Competência</th>
+                        <th>Fornecedor/Cliente</th>
+                        <th>Valor</th>
+                        <th>Observação</th>
+                        <th>Status</th>
+                        <th>Modificado por</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pendencia in pendencias %}
+                    <tr>
+                        <td>{{ pendencia.tipo_pendencia }}</td>
+                        <td>{{ pendencia.banco }}</td>
+                        <td>{{ pendencia.data.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ pendencia.fornecedor_cliente }}</td>
+                        <td>R$ {{ "%.2f"|format(pendencia.valor) }}</td>
+                        <td>{{ pendencia.observacao }}</td>
+                        <td>
+                            {% if pendencia.status.startswith('Pendente') %}
+                                <span class="badge bg-warning">
+                                    <b>{{ pendencia.status.split(' ')[0] }}</b> {{ pendencia.status.split(' ')[1] if pendencia.status.split(' ')|length > 1 else '' }}
+                                </span>
+                            {% elif pendencia.status == 'Respondida' %}
+                                <span class="badge bg-info">Respondida</span>
+                            {% else %}
+                                <span class="badge bg-success">Resolvida</span>
+                            {% endif %}
+                        </td>
+                        <td>{% if pendencia.modificado_por == 'USUARIO' %}USUARIO{% endif %}</td>
+                        <td class="d-flex gap-1">
+                            {% if session['usuario_tipo'] == 'adm' %}
+                                <a href="{{ url_for('editar_pendencia', id=pendencia.id) }}" class="btn btn-sm btn-warning">
+                                    <i class="bi bi-pencil-square"></i> Editar
+                                </a>
+                                {% if pendencia.status != 'Resolvida' %}
+                                <a href="{{ url_for('resolver_pendencia', id=pendencia.id) }}" 
+                                   class="btn btn-sm btn-success"
+                                   onclick="return confirm('Deseja marcar esta pendência como resolvida?')">
+                                    <i class="bi bi-check-circle"></i> Resolver
+                                </a>
+                                {% endif %}
+                            {% elif session['usuario_tipo'] == 'cliente' %}
+                                <a href="{{ url_for('editar_observacao', id=pendencia.id) }}" class="btn btn-sm btn-info">
+                                    <i class="bi bi-chat-dots"></i> Informar do que se trata
+                                </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="9" class="text-center">Nenhuma pendência encontrada.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<li class="nav-item">
+    <a class="nav-link" href="{{ url_for('dashboard_resolvidas') }}">Pendências Resolvidas</a>
+</li>
+{% endblock %} 

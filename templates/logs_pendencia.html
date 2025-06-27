@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}Logs da Pendência #{{ pendencia.id }}{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Logs da Pendência #{{ pendencia.id }}</h2>
+    <div class="mb-3 d-flex justify-content-between align-items-center">
+        <a href="{{ url_for('ver_pendencia', token=pendencia.token_acesso) }}" class="btn btn-secondary">Voltar para Pendência</a>
+        <a href="{{ url_for('exportar_logs', pendencia_id=pendencia.id) }}" class="btn btn-outline-success">
+            <i class="bi bi-download"></i> Exportar Logs (CSV)
+        </a>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-striped table-bordered">
+            <thead>
+                <tr>
+                    <th>Data/Hora</th>
+                    <th>Usuário</th>
+                    <th>Tipo</th>
+                    <th>Ação</th>
+                    <th>Campo Alterado</th>
+                    <th>Valor Anterior</th>
+                    <th>Valor Novo</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr {% if log.tipo_usuario == 'cliente' or log.campo_alterado == 'status' %}style="background:#fff0f3;font-weight:bold;"{% endif %}>
+                    <td>{{ log.data_hora.strftime('%d/%m/%Y %H:%M:%S') }}</td>
+                    <td>{{ log.usuario }}</td>
+                    <td>{{ log.tipo_usuario }}</td>
+                    <td>{{ log.acao }}</td>
+                    <td>{{ log.campo_alterado or '-' }}</td>
+                    <td>{{ log.valor_anterior or '-' }}</td>
+                    <td>{{ log.valor_novo or '-' }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center">Nenhum log encontrado para esta pendência.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %} 

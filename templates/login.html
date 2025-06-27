@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}Login - UP380{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center align-items-center" style="min-height: 70vh;">
+    <div class="col-md-5 col-lg-4">
+        <div class="card shadow-lg p-3">
+            <div class="card-header text-center bg-white border-0 mb-2">
+                <img src="https://up380.com.br/wp-content/uploads/2023/10/cropped-favicon-32x32.png" alt="UP380" width="48" height="48">
+                <h2 class="card-title mb-0 mt-2" style="color:var(--up380-azul)">UP380</h2>
+                <div class="mb-2" style="color:#7a869a; font-size:1.1rem;">Gestão de Pendências</div>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="email" class="form-label">E-mail</label>
+                        <input type="email" class="form-control" id="email" name="email" required autofocus>
+                    </div>
+                    <div class="mb-3">
+                        <label for="senha" class="form-label">Senha</label>
+                        <input type="password" class="form-control" id="senha" name="senha" required>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-box-arrow-in-right"></i> Entrar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

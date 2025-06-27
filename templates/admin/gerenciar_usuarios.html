@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Gerenciar Usuários{% endblock %}
+{% block content %}
+<h2>Gerenciar Usuários</h2>
+<a href="{{ url_for('novo_usuario') }}" class="btn btn-primary mb-3">Novo Usuário</a>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Email</th>
+            <th>Tipo</th>
+            <th>Empresas Permitidas</th>
+            <th>Status</th>
+            <th>Ações</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for usuario in usuarios %}
+        <tr>
+            <td>{{ usuario.email }}</td>
+            <td>{{ usuario.tipo }}</td>
+            <td>
+                {% if usuario.tipo == 'adm' %}
+                    <span class="badge bg-success">Todas as empresas</span>
+                {% elif usuario.empresas %}
+                    {% for empresa in usuario.empresas %}
+                        <span class="badge bg-primary me-1">{{ empresa.nome }}</span>
+                    {% endfor %}
+                {% else %}
+                    <span class="badge bg-warning">Nenhuma empresa</span>
+                {% endif %}
+            </td>
+            <td>{{ 'Ativo' if usuario.ativo else 'Inativo' }}</td>
+            <td>
+                <a href="{{ url_for('editar_usuario', id=usuario.id) }}" class="btn btn-sm btn-outline-primary">Editar</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %} 

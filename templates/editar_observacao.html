@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Informar do que se trata - Sistema de Pendências{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title mb-0">Informar do que se trata</h2>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="observacao" class="form-label">Explique do que se trata esta pendência</label>
+                        <textarea class="form-control" id="observacao" name="observacao" rows="4" required>{{ pendencia.observacao }}</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="documento_cliente" class="form-label">Anexar Documento (PDF, JPG, PNG)</label>
+                        <input type="file" class="form-control" id="documento_cliente" name="documento_cliente" accept=".pdf,.jpg,.jpeg,.png">
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-send"></i> Enviar
+                        </button>
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

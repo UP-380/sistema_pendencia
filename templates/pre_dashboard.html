@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}Empresas - UP380{% endblock %}
+
+{% block content %}
+<h1 class="mb-4 d-flex justify-content-between align-items-center">Empresas - Pendências em Aberto
+    <span>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-primary me-2">
+            <i class="bi bi-clock-history"></i> Ver Últimas Pendências
+        </a>
+        <a href="/logs_recentes" class="btn btn-outline-secondary">
+            <i class="bi bi-list-check"></i> Ver Logs Recentes
+        </a>
+    </span>
+</h1>
+<div class="row mb-4">
+    <div class="col-md-6 mb-4">
+        <div class="card card-resumo h-100 p-3">
+            <h5 class="mb-3">Proporção por Tipo de Pendência</h5>
+            <canvas id="graficoTipoPendencia" style="max-width:100%;max-height:220px;"></canvas>
+        </div>
+    </div>
+    <div class="col-md-6 mb-4">
+        <div class="card card-resumo h-100 p-3">
+            <h5 class="mb-3">Proporção por Status</h5>
+            <canvas id="graficoStatusPendencia" style="max-width:100%;max-height:220px;"></canvas>
+        </div>
+    </div>
+</div>
+<div class="row">
+    {% for empresa in empresas_info %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card card-resumo h-100 justify-content-between">
+            <div class="d-flex align-items-center gap-3">
+                <span class="icon" style="font-size:2.2rem;"><i class="bi bi-building"></i></span>
+                <div>
+                    <div class="value" style="font-size:1.5rem;">{{ empresa.nome }}</div>
+                    <div class="label">Pendências em aberto: {% if empresa.abertas > 0 %}<b class="destaque-aberto{% if empresa.abertas > 5 %} badge-alerta{% endif %}">{{ empresa.abertas }}</b>{% else %}<b>{{ empresa.abertas }}</b>{% endif %}</div>
+                </div>
+            </div>
+            <div class="mt-3 text-end w-100">
+                <a href="{{ url_for('dashboard', empresa=empresa.nome) }}" class="btn btn-primary btn-sm">
+                    <i class="bi bi-arrow-right-circle"></i> Ver Pendências
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Dados para os gráficos (renderizados pelo backend via Jinja)
+const tipos = {{ tipos_pendencia|tojson }};
+const tipoCounts = {{ tipo_counts|tojson }};
+const statusLabels = {{ status_labels|tojson }};
+const statusCounts = {{ status_counts|tojson }};
+
+// Gráfico de Pizza - Tipo de Pendência
+new Chart(document.getElementById('graficoTipoPendencia'), {
+    type: 'pie',
+    data: {
+        labels: tipos,
+        datasets: [{
+            data: tipoCounts,
+            backgroundColor: ['#0076D7', '#FF3D71', '#00C48C'],
+        }]
+    },
+    options: {
+        plugins: { legend: { position: 'bottom' } }
+    }
+});
+// Gráfico de Barras - Status
+new Chart(document.getElementById('graficoStatusPendencia'), {
+    type: 'bar',
+    data: {
+        labels: statusLabels,
+        datasets: [{
+            label: 'Qtd',
+            data: statusCounts,
+            backgroundColor: ['#0076D7', '#FF3D71', '#00C48C'],
+        }]
+    },
+    options: {
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true } }
+    }
+});
+</script>
+{% endblock %} 

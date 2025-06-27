@@ -1,0 +1,19 @@
+[Planilha Excel]
+
+Aba 1: Contas Pagas
+Colunas:
+EMPRESA | BANCO | PAGAMENTO | FORNECEDOR/CLIENTE | VALOR | OBSERVAÇÃO | TIPO
+
+Aba 2: Recebimentos
+Colunas:
+EMPRESA | BANCO | RECEBIMENTO | FORNECEDOR/CLIENTE | VALOR | OBSERVAÇÃO | TIPO
+
+Exemplo de preenchimento:
+
+Aba Contas Pagas:
+ALIANZE | SICREDI | 24/03/2025 | E A R PEREIRA COMBUSTIVEIS LTDA | 150,00 | DO QUE SE TRATA? | Contas Pagas
+ALIANZE | SICREDI | 29/04/2025 | Client Co Serviços de Rede Nordeste S.A | 125,49 | DO QUE SE TRATA? | Contas Pagas
+
+Aba Recebimentos:
+ALIANZE | SICREDI | 07/02/2025 | Ubirajara | 664,00 | DO QUE SE TRATA? | Recebimentos
+ALIANZE | SICREDI | 28/04/2025 | BANCO SICREDI | 256,07 | DO QUE SE TRATA? | Recebimentos 
