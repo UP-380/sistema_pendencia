@@ -66,4 +66,12 @@ logs/
 
 # Temporary files
 *.tmp
-*.temp 
+*.temp
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# Backup files
+*.bak
+*.backup 

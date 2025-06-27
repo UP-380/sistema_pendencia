@@ -718,9 +718,9 @@ def editar_empresa(id):
     return render_template('admin/form_empresa.html', empresa=empresa, title='Editar Empresa')
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 8000))
+    port = int(os.environ.get('PORT', 5000))
     with app.app_context():
         db.create_all()
         criar_usuarios_iniciais()
         migrar_empresas_existentes()
-    app.run(host='0.0.0.0', port=port, debug=True) 
+    app.run(host='0.0.0.0', port=port, debug=False) 
