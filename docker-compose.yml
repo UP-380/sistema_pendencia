@@ -12,14 +12,6 @@ services:
       - ./instance:/app/instance
       - ./logs:/app/logs
       - ./static:/app/static
-    depends_on:
-      - db
-    restart: unless-stopped
-
-  db:
-    image: sqlite:latest
-    volumes:
-      - ./instance:/var/lib/sqlite
     restart: unless-stopped
 
   nginx:
