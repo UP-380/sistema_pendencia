@@ -10,6 +10,31 @@
                 <h2 class="card-title mb-0">Informar do que se trata</h2>
             </div>
             <div class="card-body">
+                <!-- Informações da Pendência -->
+                <div class="mb-4">
+                    <h5>Informações da Pendência</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Empresa:</strong> {{ pendencia.empresa }}</p>
+                            <p><strong>Fornecedor/Cliente:</strong> {{ pendencia.fornecedor_cliente }}</p>
+                            <p><strong>Valor:</strong> R$ {{ "%.2f"|format(pendencia.valor) }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Status:</strong> {{ pendencia.status }}</p>
+                            <p><strong>Tipo:</strong> {{ pendencia.tipo_pendencia }}</p>
+                            {% if pendencia.nota_fiscal_arquivo %}
+                                <p><strong>Anexo:</strong> 
+                                    <a href="{{ url_for('baixar_anexo', pendencia_id=pendencia.id) }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-download"></i> Baixar Anexo
+                                    </a>
+                                </p>
+                            {% else %}
+                                <p><strong>Anexo:</strong> <span class="text-muted">Nenhum anexo</span></p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
                 <form method="POST" enctype="multipart/form-data">
                     <div class="mb-3">
                         <label for="observacao" class="form-label">Explique do que se trata esta pendência</label>

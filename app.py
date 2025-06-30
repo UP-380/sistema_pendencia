@@ -235,7 +235,7 @@ def nova_pendencia():
                 valor=valor,
                 observacao=observacao,
                 email_cliente=email_cliente,
-                status='Pendente USUARIO',
+                status='Pendente Cliente',
                 nota_fiscal_arquivo=nota_fiscal_arquivo
             )
             db.session.add(nova_p)
@@ -747,6 +747,21 @@ def deletar_pendencia(id):
 @app.route('/acesso_negado')
 def acesso_negado():
     return render_template('acesso_negado.html'), 403
+
+@app.route('/baixar_anexo/<int:pendencia_id>')
+@permissao_requerida('supervisor', 'adm', 'operador')
+def baixar_anexo(pendencia_id):
+    pendencia = Pendencia.query.get_or_404(pendencia_id)
+    if not pendencia.nota_fiscal_arquivo:
+        flash('Nenhum anexo encontrado para esta pendência.', 'warning')
+        return redirect(url_for('dashboard'))
+    
+    arquivo_path = os.path.join('static/notas_fiscais', pendencia.nota_fiscal_arquivo)
+    if not os.path.exists(arquivo_path):
+        flash('Arquivo não encontrado no servidor.', 'error')
+        return redirect(url_for('dashboard'))
+    
+    return send_file(arquivo_path, as_attachment=True, download_name=pendencia.nota_fiscal_arquivo)
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))

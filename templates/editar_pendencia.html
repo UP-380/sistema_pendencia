@@ -55,7 +55,14 @@
                         <label for="nota_fiscal_arquivo" class="form-label">Anexar Nota Fiscal (PDF, JPG, PNG)</label>
                         <input type="file" class="form-control" id="nota_fiscal_arquivo" name="nota_fiscal_arquivo" accept=".pdf,.jpg,.jpeg,.png">
                         {% if pendencia.nota_fiscal_arquivo %}
-                            <a href="{{ url_for('static', filename='notas_fiscais/' ~ pendencia.nota_fiscal_arquivo) }}" target="_blank">Ver Nota Fiscal Anexada</a>
+                            <div class="mt-2">
+                                <strong>Anexo atual:</strong> 
+                                <a href="{{ url_for('baixar_anexo', pendencia_id=pendencia.id) }}" 
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-download"></i> Baixar Anexo Atual
+                                </a>
+                                <small class="text-muted d-block">Selecione um novo arquivo para substituir o anexo atual.</small>
+                            </div>
                         {% endif %}
                     </div>
                     <div class="d-grid gap-2">

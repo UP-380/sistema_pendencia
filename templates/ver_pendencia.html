@@ -13,27 +13,42 @@
                 <div class="mb-4">
                     <h4>Detalhes da Pendência</h4>
                     <dl class="row">
-                        <dt class="col-sm-3">Valor:</dt>
-                        <dd class="col-sm-9">R$ {{ "%.2f"|format(pendencia.valor) }}</dd>
+                        <dt class="col-sm-3">Empresa:</dt>
+                        <dd class="col-sm-9">{{ pendencia.empresa }}</dd>
+                        
+                        <dt class="col-sm-3">Tipo:</dt>
+                        <dd class="col-sm-9">{{ pendencia.tipo_pendencia }}</dd>
+                        
+                        <dt class="col-sm-3">Banco:</dt>
+                        <dd class="col-sm-9">{{ pendencia.banco }}</dd>
                         
                         <dt class="col-sm-3">Data:</dt>
-                        <dd class="col-sm-9">{{ pendencia.data.strftime('%d/%m/%Y %H:%M') }}</dd>
+                        <dd class="col-sm-9">{{ pendencia.data.strftime('%d/%m/%Y') }}</dd>
+                        
+                        <dt class="col-sm-3">Fornecedor/Cliente:</dt>
+                        <dd class="col-sm-9">{{ pendencia.fornecedor_cliente }}</dd>
+                        
+                        <dt class="col-sm-3">Valor:</dt>
+                        <dd class="col-sm-9">R$ {{ "%.2f"|format(pendencia.valor) }}</dd>
                         
                         <dt class="col-sm-3">Status:</dt>
                         <dd class="col-sm-9">
                             <span class="badge {% if pendencia.status == 'Pendente Cliente' %}bg-warning
-                                             {% elif pendencia.status == 'Respondida' %}bg-info
+                                             {% elif pendencia.status == 'Pendente UP' %}bg-info
                                              {% else %}bg-success{% endif %}">
                                 {{ pendencia.status }}
                             </span>
                         </dd>
                         
-                        <dt class="col-sm-3">Descrição:</dt>
-                        <dd class="col-sm-9">{{ pendencia.descricao_operador }}</dd>
+                        <dt class="col-sm-3">Observação:</dt>
+                        <dd class="col-sm-9">{{ pendencia.observacao }}</dd>
+                        
                         {% if pendencia.nota_fiscal_arquivo %}
-                        <dt class="col-sm-3">Nota Fiscal:</dt>
+                        <dt class="col-sm-3">Anexo:</dt>
                         <dd class="col-sm-9">
-                            <a href="{{ url_for('static', filename='notas_fiscais/' ~ pendencia.nota_fiscal_arquivo) }}" target="_blank">Baixar Nota Fiscal</a>
+                            <a href="{{ url_for('baixar_anexo', pendencia_id=pendencia.id) }}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-download"></i> Baixar Anexo
+                            </a>
                         </dd>
                         {% endif %}
                     </dl>
@@ -62,12 +77,10 @@
                             <textarea class="form-control" id="resposta" name="resposta" rows="4" required></textarea>
                             <div class="form-text">Por favor, explique do que se trata esta pendência.</div>
                         </div>
-                        {% if pendencia.tipo_pendencia == 'Nota Fiscal Não Anexada' %}
                         <div class="mb-3">
-                            <label for="nota_fiscal_arquivo" class="form-label">Anexar Nota Fiscal (PDF, JPG, PNG)</label>
+                            <label for="nota_fiscal_arquivo" class="form-label">Anexar Documento (PDF, JPG, PNG)</label>
                             <input type="file" class="form-control" id="nota_fiscal_arquivo" name="nota_fiscal_arquivo" accept=".pdf,.jpg,.jpeg,.png">
                         </div>
-                        {% endif %}
                         <button type="submit" class="btn btn-primary">
                             <i class="bi bi-send"></i> Enviar Resposta
                         </button>
