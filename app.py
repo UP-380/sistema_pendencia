@@ -476,6 +476,13 @@ def editar_observacao(id):
         pendencia.observacao = novo_valor
         pendencia.modificado_por = 'USUARIO'
         pendencia.status = 'Pendente UP'
+        # Upload de anexo pelo cliente
+        if 'documento_cliente' in request.files:
+            file = request.files['documento_cliente']
+            if file and file.filename:
+                filename = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{file.filename}"
+                file.save(os.path.join('static/notas_fiscais', filename))
+                pendencia.nota_fiscal_arquivo = filename
         db.session.commit()
         # Log da alteração
         log = LogAlteracao(
