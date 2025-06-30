@@ -180,13 +180,13 @@ def permissao_requerida(*tipos):
                 return redirect(url_for('login'))
             if session.get('usuario_tipo') not in tipos:
                 flash('Acesso não autorizado.', 'danger')
-                return redirect(url_for('dashboard'))
+                return redirect(url_for('acesso_negado'))
             return f(*args, **kwargs)
         return decorated_function
     return decorator
 
 @app.route('/dashboard', methods=['GET'])
-@permissao_requerida('adm', 'master', 'supervisor', 'operador')
+@permissao_requerida('supervisor', 'adm', 'operador', 'cliente')
 def dashboard():
     empresa_filtro = request.args.get('empresa', EMPRESAS[0])
     tipo_filtro = request.args.get('tipo_pendencia', TIPOS_PENDENCIA[0])
@@ -207,7 +207,7 @@ def dashboard():
     return render_template('dashboard.html', pendencias=pendencias, pendencias_empresa=pendencias_empresa, empresas=EMPRESAS, empresa_filtro=empresa_filtro, tipos_pendencia=TIPOS_PENDENCIA, tipo_filtro=tipo_filtro, busca=busca)
 
 @app.route('/nova', methods=['GET', 'POST'])
-@permissao_requerida('adm', 'master', 'supervisor', 'operador')
+@permissao_requerida('supervisor', 'adm', 'operador')
 def nova_pendencia():
     if request.method == 'POST':
         try:
@@ -249,7 +249,6 @@ def nova_pendencia():
     return render_template('nova_pendencia.html', empresas=EMPRESAS, tipos_pendencia=TIPOS_PENDENCIA)
 
 @app.route('/pendencia/<token>', methods=['GET', 'POST'])
-@permissao_requerida('adm', 'master', 'supervisor', 'operador')
 def ver_pendencia(token):
     pendencia = Pendencia.query.filter_by(token_acesso=token).first_or_404()
     if request.method == 'POST':
@@ -269,7 +268,7 @@ def ver_pendencia(token):
     return render_template('ver_pendencia.html', pendencia=pendencia)
 
 @app.route('/resolver/<int:id>')
-@permissao_requerida('adm', 'master', 'supervisor')
+@permissao_requerida('supervisor', 'adm')
 def resolver_pendencia(id):
     pendencia = Pendencia.query.get_or_404(id)
     valor_anterior = pendencia.status
@@ -293,7 +292,7 @@ def resolver_pendencia(id):
     return redirect(url_for('dashboard'))
 
 @app.route('/baixar_modelo')
-@permissao_requerida('adm', 'master')
+@permissao_requerida('supervisor', 'adm')
 def baixar_modelo():
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -307,7 +306,7 @@ def baixar_modelo():
     return send_file(output, as_attachment=True, download_name=filename, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
 @app.route('/importar', methods=['GET', 'POST'])
-@permissao_requerida('adm', 'master')
+@permissao_requerida('supervisor', 'adm')
 def importar_planilha():
     preview = None
     erros = []
@@ -379,15 +378,18 @@ def importar_planilha():
     return render_template('importar_planilha.html', empresas=EMPRESAS, preview=preview, erros=erros)
 
 @app.route('/historico_importacoes')
-@permissao_requerida('adm', 'master')
+@permissao_requerida('supervisor', 'adm')
 def historico_importacoes():
     historico = Importacao.query.order_by(Importacao.data_hora.desc()).limit(20).all()
     return render_template('historico_importacoes.html', historico=historico)
 
 @app.route('/editar/<int:id>', methods=['GET', 'POST'])
-@permissao_requerida('adm', 'master', 'supervisor')
+@permissao_requerida('supervisor', 'adm')
 def editar_pendencia(id):
     pendencia = Pendencia.query.get_or_404(id)
+    if pendencia.resposta_cliente:
+        flash('Não é possível editar uma pendência já respondida pelo cliente.', 'danger')
+        return redirect(url_for('dashboard'))
     if request.method == 'POST':
         campos = ['empresa', 'tipo_pendencia', 'banco', 'data', 'fornecedor_cliente', 'valor', 'observacao', 'email_cliente']
         valores_anteriores = {campo: getattr(pendencia, campo) for campo in campos}
@@ -465,7 +467,7 @@ def notificar_teams(pendencia):
         print(f"Erro ao notificar Teams: {e}")
 
 @app.route('/editar_observacao/<int:id>', methods=['GET', 'POST'])
-@permissao_requerida('adm', 'master', 'supervisor', 'cliente')
+@permissao_requerida('supervisor', 'adm', 'cliente')
 def editar_observacao(id):
     pendencia = Pendencia.query.get_or_404(id)
     if request.method == 'POST':
@@ -494,7 +496,7 @@ def editar_observacao(id):
     return render_template('editar_observacao.html', pendencia=pendencia)
 
 @app.route('/empresas')
-@permissao_requerida('adm', 'master', 'supervisor', 'operador')
+@permissao_requerida('supervisor', 'adm', 'operador', 'cliente')
 def pre_dashboard():
     if session.get('usuario_tipo') == 'adm':
         empresas = Empresa.query.all()
@@ -529,7 +531,7 @@ def pre_dashboard():
     )
 
 @app.route('/resolvidas', methods=['GET'])
-@permissao_requerida('adm', 'master', 'supervisor', 'operador')
+@permissao_requerida('supervisor', 'adm')
 def dashboard_resolvidas():
     empresa_filtro = request.args.get('empresa', EMPRESAS[0])
     tipo_filtro = request.args.get('tipo_pendencia', TIPOS_PENDENCIA[0])
@@ -558,14 +560,14 @@ def dashboard_resolvidas():
     )
 
 @app.route('/logs/<int:pendencia_id>')
-@permissao_requerida('adm', 'master')
+@permissao_requerida('supervisor', 'adm')
 def ver_logs_pendencia(pendencia_id):
     logs = LogAlteracao.query.filter_by(pendencia_id=pendencia_id).order_by(LogAlteracao.data_hora.desc()).all()
     pendencia = Pendencia.query.get_or_404(pendencia_id)
     return render_template('logs_pendencia.html', logs=logs, pendencia=pendencia)
 
 @app.route('/exportar_logs/<int:pendencia_id>')
-@permissao_requerida('adm', 'master')
+@permissao_requerida('supervisor', 'adm')
 def exportar_logs(pendencia_id):
     logs = LogAlteracao.query.filter_by(pendencia_id=pendencia_id).order_by(LogAlteracao.data_hora.desc()).all()
     def generate():
@@ -594,13 +596,13 @@ def exportar_logs(pendencia_id):
     return Response(generate(), mimetype='text/csv', headers=headers)
 
 @app.route('/logs_recentes')
-@permissao_requerida('adm', 'master')
+@permissao_requerida('supervisor', 'adm')
 def logs_recentes():
     logs = LogAlteracao.query.order_by(LogAlteracao.data_hora.desc()).limit(50).all()
     return render_template('logs_recentes.html', logs=logs)
 
 @app.route('/exportar_logs_csv')
-@permissao_requerida('adm', 'master')
+@permissao_requerida('supervisor', 'adm')
 def exportar_logs_csv():
     logs = LogAlteracao.query.order_by(LogAlteracao.data_hora.desc()).limit(50).all()
     def generate():
@@ -629,18 +631,18 @@ def exportar_logs_csv():
     return Response(generate(), mimetype='text/csv', headers=headers)
 
 @app.route('/')
-@permissao_requerida('adm', 'master', 'supervisor', 'operador')
+@permissao_requerida('supervisor', 'adm')
 def index():
     return redirect(url_for('dashboard'))
 
 @app.route('/gerenciar_usuarios')
-@permissao_requerida('adm', 'master')
+@permissao_requerida('supervisor', 'adm')
 def gerenciar_usuarios():
     usuarios = Usuario.query.all()
     return render_template('admin/gerenciar_usuarios.html', usuarios=usuarios)
 
 @app.route('/novo_usuario', methods=['GET', 'POST'])
-@permissao_requerida('adm', 'master')
+@permissao_requerida('supervisor', 'adm')
 def novo_usuario():
     empresas = Empresa.query.all()
     if request.method == 'POST':
@@ -662,7 +664,7 @@ def novo_usuario():
     return render_template('admin/novo_usuario.html', empresas=empresas)
 
 @app.route('/editar_usuario/<int:id>', methods=['GET', 'POST'])
-@permissao_requerida('adm', 'master')
+@permissao_requerida('supervisor', 'adm')
 def editar_usuario(id):
     usuario = Usuario.query.get_or_404(id)
     empresas = Empresa.query.all()
@@ -684,13 +686,13 @@ def editar_usuario(id):
     return render_template('admin/editar_usuario.html', usuario=usuario, empresas=empresas, empresas_permitidas=empresas_permitidas)
 
 @app.route('/gerenciar_empresas')
-@permissao_requerida('adm', 'master')
+@permissao_requerida('supervisor', 'adm')
 def gerenciar_empresas():
     empresas = Empresa.query.all()
     return render_template('admin/gerenciar_empresas.html', empresas=empresas)
 
 @app.route('/nova_empresa', methods=['GET', 'POST'])
-@permissao_requerida('adm', 'master')
+@permissao_requerida('supervisor', 'adm')
 def nova_empresa():
     if request.method == 'POST':
         nome = request.form['nome']
@@ -705,7 +707,7 @@ def nova_empresa():
     return render_template('admin/form_empresa.html', title='Nova Empresa')
 
 @app.route('/editar_empresa/<int:id>', methods=['GET', 'POST'])
-@permissao_requerida('adm', 'master')
+@permissao_requerida('supervisor', 'adm')
 def editar_empresa(id):
     empresa = Empresa.query.get_or_404(id)
     if request.method == 'POST':
@@ -714,6 +716,37 @@ def editar_empresa(id):
         flash('Empresa atualizada com sucesso!', 'success')
         return redirect(url_for('gerenciar_empresas'))
     return render_template('admin/form_empresa.html', empresa=empresa, title='Editar Empresa')
+
+@app.route('/deletar_usuario/<int:id>', methods=['POST'])
+@permissao_requerida('supervisor', 'adm')
+def deletar_usuario(id):
+    usuario = Usuario.query.get_or_404(id)
+    db.session.delete(usuario)
+    db.session.commit()
+    flash('Usuário removido com sucesso!', 'success')
+    return redirect(url_for('gerenciar_usuarios'))
+
+@app.route('/deletar_empresa/<int:id>', methods=['POST'])
+@permissao_requerida('supervisor', 'adm')
+def deletar_empresa(id):
+    empresa = Empresa.query.get_or_404(id)
+    db.session.delete(empresa)
+    db.session.commit()
+    flash('Empresa removida com sucesso!', 'success')
+    return redirect(url_for('gerenciar_empresas'))
+
+@app.route('/deletar_pendencia/<int:id>', methods=['POST'])
+@permissao_requerida('supervisor', 'adm')
+def deletar_pendencia(id):
+    pendencia = Pendencia.query.get_or_404(id)
+    db.session.delete(pendencia)
+    db.session.commit()
+    flash('Pendência removida com sucesso!', 'success')
+    return redirect(url_for('dashboard'))
+
+@app.route('/acesso_negado')
+def acesso_negado():
+    return render_template('acesso_negado.html'), 403
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))

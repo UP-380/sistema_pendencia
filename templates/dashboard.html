@@ -68,10 +68,12 @@
 <!-- Tabelas de pendências em aberto -->
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1>Painel de Pendências</h1>
-    {% if session['usuario_tipo'] == 'adm' %}
+    {% if session['usuario_tipo'] in ['master', 'supervisor', 'operador', 'adm'] %}
     <a href="{{ url_for('nova_pendencia') }}" class="btn btn-primary">
         <i class="bi bi-plus-circle"></i> Nova Pendência
     </a>
+    {% endif %}
+    {% if session['usuario_tipo'] == 'master' %}
     <a href="{{ url_for('importar_planilha') }}" class="btn btn-secondary">
         <i class="bi bi-upload"></i> Importar Planilha
     </a>
@@ -117,22 +119,21 @@
                         </td>
                         <td>{% if pendencia.modificado_por == 'USUARIO' %}USUARIO{% endif %}</td>
                         <td class="d-flex gap-1">
-                            {% if session['usuario_tipo'] == 'adm' %}
+                            {% if session['usuario_tipo'] in ['adm', 'master', 'supervisor', 'operador'] and not pendencia.resposta_cliente and pendencia.status != 'Pendente UP' %}
                                 <a href="{{ url_for('editar_pendencia', id=pendencia.id) }}" class="btn btn-sm btn-warning">
                                     <i class="bi bi-pencil-square"></i> Editar
                                 </a>
-                                {% if pendencia.status != 'Resolvida' %}
+                            {% endif %}
+                            {% if session['usuario_tipo'] in ['adm', 'master', 'supervisor'] and pendencia.status != 'Resolvida' %}
                                 <a href="{{ url_for('resolver_pendencia', id=pendencia.id) }}" 
                                    class="btn btn-sm btn-success"
                                    onclick="return confirm('Deseja marcar esta pendência como resolvida?')">
                                     <i class="bi bi-check-circle"></i> Resolver
                                 </a>
-                                {% endif %}
-                            {% elif session['usuario_tipo'] == 'cliente' %}
-                                <a href="{{ url_for('editar_observacao', id=pendencia.id) }}" class="btn btn-sm btn-info">
-                                    <i class="bi bi-chat-dots"></i> Informar do que se trata
-                                </a>
                             {% endif %}
+                            <form action="{{ url_for('deletar_pendencia', id=pendencia.id) }}" method="post" style="display:inline;" onsubmit="return confirm('Tem certeza que deseja excluir esta pendência?');">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Excluir</button>
+                            </form>
                         </td>
                     </tr>
                     {% else %}

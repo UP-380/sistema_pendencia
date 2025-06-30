@@ -37,13 +37,15 @@
                         <a class="nav-link" href="{{ url_for('importar_planilha') }}">Importar Planilha</a>
                     </li>
                     {% endif %}
-                    {% if session.get('usuario_tipo') == 'adm' %}
+                    {% if session.get('usuario_tipo') in ['adm', 'supervisor'] %}
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownAdmin" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             Gerenciar
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="navbarDropdownAdmin">
+                            {% if session.get('usuario_tipo') == 'adm' %}
                             <li><a class="dropdown-item" href="{{ url_for('gerenciar_usuarios') }}">Usuários</a></li>
+                            {% endif %}
                             <li><a class="dropdown-item" href="{{ url_for('gerenciar_empresas') }}">Empresas</a></li>
                         </ul>
                     </li>

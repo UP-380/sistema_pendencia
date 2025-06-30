@@ -12,15 +12,16 @@
         <input type="password" name="nova_senha" class="form-control" placeholder="Deixe em branco para não alterar">
     </div>
     <div class="mb-3">
-        <label>Tipo</label>
+        <label for="tipo">Tipo de Usuário:</label>
         <select name="tipo" class="form-control" id="tipo" onchange="toggleEmpresas()" required>
-            <option value="adm" {% if usuario.tipo == 'adm' %}selected{% endif %}>Administrador</option>
+            <option value="master" {% if usuario.tipo == 'master' %}selected{% endif %}>Master (ADM)</option>
+            <option value="supervisor" {% if usuario.tipo == 'supervisor' %}selected{% endif %}>Supervisor</option>
             <option value="operador" {% if usuario.tipo == 'operador' %}selected{% endif %}>Operador</option>
             <option value="cliente" {% if usuario.tipo == 'cliente' %}selected{% endif %}>Cliente</option>
         </select>
     </div>
-    <div class="mb-3" id="empresas_div" style="display: {% if usuario.tipo == 'operador' or usuario.tipo == 'cliente' %}block{% else %}none{% endif %};">
-        <label class="form-label">Empresas Permitidas (Operador/Cliente)</label>
+    <div class="mb-3" id="empresas_div" style="display: {% if usuario.tipo != 'master' %}block{% else %}none{% endif %};">
+        <label class="form-label">Empresas Permitidas (Supervisor/Operador/Cliente)</label>
         {% for empresa in empresas %}
         <div class="form-check">
             <input class="form-check-input" type="checkbox" name="empresas_permitidas" value="{{ empresa.id }}" id="empresa_{{ loop.index }}"
@@ -39,10 +40,10 @@
 function toggleEmpresas() {
     var tipo = document.getElementById('tipo').value;
     var empresasDiv = document.getElementById('empresas_div');
-    if (tipo === 'operador' || tipo === 'cliente') {
-        empresasDiv.style.display = 'block';
-    } else {
+    if (tipo === 'master') {
         empresasDiv.style.display = 'none';
+    } else {
+        empresasDiv.style.display = 'block';
     }
 }
 document.addEventListener('DOMContentLoaded', toggleEmpresas);
