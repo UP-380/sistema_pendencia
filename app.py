@@ -13,6 +13,7 @@ import openpyxl
 import csv
 import pytz
 from functools import wraps
+from urllib.parse import quote
 
 # Carrega variáveis de ambiente
 load_dotenv()
@@ -185,23 +186,54 @@ def permissao_requerida(*tipos):
         return decorated_function
     return decorator
 
+@app.route('/empresas')
+@permissao_requerida('supervisor', 'adm', 'operador', 'cliente')
+def pre_dashboard():
+    if session.get('usuario_tipo') == 'adm':
+        empresas = Empresa.query.all()
+    else:
+        usuario = Usuario.query.get(session['usuario_id'])
+        empresas = usuario.empresas
+    empresas_info = []
+    tipo_counts = {tipo: 0 for tipo in TIPOS_PENDENCIA}
+    status_labels = ['Em Aberto', 'Resolvida']
+    status_counts = [0, 0]
+    for empresa in empresas:
+        pendencias = Pendencia.query.filter(Pendencia.empresa == empresa.nome).all()
+        pendencias_abertas = [p for p in pendencias if p.status != 'Resolvida']
+        empresas_info.append({
+            'nome': empresa.nome,
+            'abertas': len(pendencias_abertas)
+        })
+        for p in pendencias:
+            if p.tipo_pendencia in tipo_counts:
+                tipo_counts[p.tipo_pendencia] += 1
+            if p.status == 'Resolvida':
+                status_counts[1] += 1
+            else:
+                status_counts[0] += 1
+    return render_template(
+        'pre_dashboard.html',
+        empresas_info=empresas_info,
+        tipos_pendencia=TIPOS_PENDENCIA,
+        tipo_counts=[tipo_counts[t] for t in TIPOS_PENDENCIA],
+        status_labels=status_labels,
+        status_counts=status_counts
+    )
+
 @app.route('/dashboard', methods=['GET'])
 @permissao_requerida('supervisor', 'adm', 'operador', 'cliente')
 def dashboard():
     empresa_filtro = request.args.get('empresa', EMPRESAS[0])
     tipo_filtro = request.args.get('tipo_pendencia', TIPOS_PENDENCIA[0])
     busca = request.args.get('busca', '')
-    # Lista completa para os cards de resumo (exceto resolvidas)
     pendencias_empresa = Pendencia.query.filter_by(empresa=empresa_filtro).filter(Pendencia.status != 'Resolvida').all()
-    # Lista filtrada para a tabela (exceto resolvidas)
     query = Pendencia.query.filter_by(empresa=empresa_filtro, tipo_pendencia=tipo_filtro).filter(Pendencia.status != 'Resolvida')
     if busca:
         query = query.filter(
-            db.or_(
-                Pendencia.fornecedor_cliente.ilike(f'%{busca}%'),
-                Pendencia.banco.ilike(f'%{busca}%'),
-                Pendencia.observacao.ilike(f'%{busca}%')
-            )
+            db.or_(Pendencia.fornecedor_cliente.ilike(f'%{busca}%'),
+                    Pendencia.banco.ilike(f'%{busca}%'),
+                    Pendencia.observacao.ilike(f'%{busca}%'))
         )
     pendencias = query.order_by(Pendencia.data.desc()).all()
     return render_template('dashboard.html', pendencias=pendencias, pendencias_empresa=pendencias_empresa, empresas=EMPRESAS, empresa_filtro=empresa_filtro, tipos_pendencia=TIPOS_PENDENCIA, tipo_filtro=tipo_filtro, busca=busca)
@@ -264,7 +296,7 @@ def ver_pendencia(token):
         pendencia.data_resposta = now_brazil()
         db.session.commit()
         flash('Resposta enviada com sucesso!', 'success')
-        return redirect(url_for('ver_pendencia', token=token))
+        return redirect(url_for('pre_dashboard'))
     return render_template('ver_pendencia.html', pendencia=pendencia)
 
 @app.route('/resolver/<int:id>')
@@ -292,17 +324,18 @@ def resolver_pendencia(id):
     return redirect(url_for('dashboard'))
 
 @app.route('/baixar_modelo')
-@permissao_requerida('supervisor', 'adm')
 def baixar_modelo():
+    tipo = request.args.get('tipo', 'Cartão de Crédito Não Identificado')
+    empresa = request.args.get('empresa', 'ALIANZE')
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = 'Pendências'
     ws.append(['EMPRESA', 'TIPO DE PENDÊNCIA', 'BANCO', 'DATA DE COMPETÊNCIA', 'FORNECEDOR/CLIENTE', 'VALOR', 'OBSERVAÇÃO'])
-    ws.append(['ALIANZE', 'Cartão de Crédito Não Identificado', 'SICREDI', '24/03/2025', 'E A R PEREIRA COMBUSTIVEIS LTDA', '150,00', 'DO QUE SE TRATA?'])
+    ws.append([empresa, tipo, 'SICREDI', '24/03/2025', 'E A R PEREIRA COMBUSTIVEIS LTDA', '150,00', 'DO QUE SE TRATA?'])
     output = io.BytesIO()
     wb.save(output)
     output.seek(0)
-    filename = f"modelo_pendencias_up380.xlsx"
+    filename = f"modelo_{tipo.replace(' ', '_')}_{empresa.replace(' ', '_')}.xlsx"
     return send_file(output, as_attachment=True, download_name=filename, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
 @app.route('/importar', methods=['GET', 'POST'])
@@ -501,41 +534,6 @@ def editar_observacao(id):
         flash('Observação atualizada com sucesso!', 'success')
         return redirect(url_for('dashboard'))
     return render_template('editar_observacao.html', pendencia=pendencia)
-
-@app.route('/empresas')
-@permissao_requerida('supervisor', 'adm', 'operador', 'cliente')
-def pre_dashboard():
-    if session.get('usuario_tipo') == 'adm':
-        empresas = Empresa.query.all()
-    else:
-        usuario = Usuario.query.get(session['usuario_id'])
-        empresas = usuario.empresas
-    empresas_info = []
-    tipo_counts = {tipo: 0 for tipo in TIPOS_PENDENCIA}
-    status_labels = ['Em Aberto', 'Resolvida']
-    status_counts = [0, 0]
-    for empresa in empresas:
-        pendencias = Pendencia.query.filter(Pendencia.empresa == empresa.nome).all()
-        pendencias_abertas = [p for p in pendencias if p.status != 'Resolvida']
-        empresas_info.append({
-            'nome': empresa.nome,
-            'abertas': len(pendencias_abertas)
-        })
-        for p in pendencias:
-            if p.tipo_pendencia in tipo_counts:
-                tipo_counts[p.tipo_pendencia] += 1
-            if p.status == 'Resolvida':
-                status_counts[1] += 1
-            else:
-                status_counts[0] += 1
-    return render_template(
-        'pre_dashboard.html',
-        empresas_info=empresas_info,
-        tipos_pendencia=TIPOS_PENDENCIA,
-        tipo_counts=[tipo_counts[t] for t in TIPOS_PENDENCIA],
-        status_labels=status_labels,
-        status_counts=status_counts
-    )
 
 @app.route('/resolvidas', methods=['GET'])
 @permissao_requerida('supervisor', 'adm')

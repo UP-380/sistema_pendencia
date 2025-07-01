@@ -9,12 +9,14 @@
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h2 class="card-title mb-0">Importar Pendências da Planilha</h2>
                 <div class="dropdown">
-                    <button class="btn btn-success dropdown-toggle" type="button" id="dropdownModelo" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="bi bi-download"></i> BAIXAR PLANILHA MODELO
+                    <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                        Baixar Planilha Modelo
                     </button>
-                    <ul class="dropdown-menu" aria-labelledby="dropdownModelo">
-                        <li><a class="dropdown-item" href="{{ url_for('baixar_modelo', tipo='contas_pagas') }}">Modelo Contas a Pagar</a></li>
-                        <li><a class="dropdown-item" href="{{ url_for('baixar_modelo', tipo='recebimentos') }}">Modelo Recebimentos</a></li>
+                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                        <li><a class="dropdown-item" href="{{ url_for('baixar_modelo', tipo='Cartão de Crédito Não Identificado') }}">Cartão de Crédito Não Identificado</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('baixar_modelo', tipo='Pagamento Não Identificado') }}">Pagamento Não Identificado</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('baixar_modelo', tipo='Recebimento Não Identificado') }}">Recebimento Não Identificado</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('baixar_modelo', tipo='Nota Fiscal Não Anexada') }}">Nota Fiscal Não Anexada</a></li>
                     </ul>
                 </div>
             </div>
@@ -26,13 +28,6 @@
                             {% for emp in empresas %}
                                 <option value="{{ emp }}">{{ emp }}</option>
                             {% endfor %}
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label for="tipo_importacao" class="form-label">Tipo de Importação</label>
-                        <select class="form-select" id="tipo_importacao" name="tipo_importacao" onchange="window.location='?tipo='+this.value" required>
-                            <option value="contas_pagas" {% if tipo_importacao == 'contas_pagas' %}selected{% endif %}>Contas a Pagar</option>
-                            <option value="recebimentos" {% if tipo_importacao == 'recebimentos' %}selected{% endif %}>Recebimentos</option>
                         </select>
                     </div>
                     <div class="mb-3">
