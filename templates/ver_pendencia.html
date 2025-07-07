@@ -43,6 +43,11 @@
                         <dt class="col-sm-3">Observação:</dt>
                         <dd class="col-sm-9">{{ pendencia.observacao }}</dd>
                         
+                        {% if pendencia.natureza_operacao %}
+                        <dt class="col-sm-3">Natureza de Operação:</dt>
+                        <dd class="col-sm-9">{{ pendencia.natureza_operacao }}</dd>
+                        {% endif %}
+                        
                         {% if pendencia.nota_fiscal_arquivo %}
                         <dt class="col-sm-3">Anexo:</dt>
                         <dd class="col-sm-9">
@@ -72,6 +77,9 @@
                 <div class="mb-4">
                     <h4>Responder Pendência</h4>
                     <form method="POST" action="{{ url_for('ver_pendencia', token=pendencia.token_acesso) }}" enctype="multipart/form-data">
+                        <input type="hidden" name="empresa" value="{{ request.args.get('empresa', pendencia.empresa) }}">
+                        <input type="hidden" name="tipo_pendencia" value="{{ request.args.get('tipo_pendencia', pendencia.tipo_pendencia) }}">
+                        <input type="hidden" name="busca" value="{{ request.args.get('busca', '') }}">
                         <div class="mb-3">
                             <label for="resposta" class="form-label">Sua Resposta</label>
                             <textarea class="form-control" id="resposta" name="resposta" rows="4" required></textarea>

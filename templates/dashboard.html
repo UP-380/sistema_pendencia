@@ -14,13 +14,15 @@
 <div class="row mb-4">
     {% for tipo in tipos_pendencia %}
     <div class="col-lg-3 col-md-4 mb-3">
-        <div class="card-resumo">
+        <a href="{{ url_for('dashboard', empresa=empresa_filtro, tipo_pendencia=tipo) }}" style="text-decoration:none; color:inherit;">
+        <div class="card-resumo card-hover">
             <span class="icon"><i class="bi bi-tag"></i></span>
             <div>
                 <div class="value">{{ pendencias_empresa | selectattr('tipo_pendencia', 'equalto', tipo) | list | length }}</div>
                 <div class="label">{{ tipo }}</div>
             </div>
         </div>
+        </a>
     </div>
     {% endfor %}
 </div>
@@ -108,14 +110,24 @@
                         <td>R$ {{ "%.2f"|format(pendencia.valor) }}</td>
                         <td>{{ pendencia.observacao }}</td>
                         <td>
-                            {% if pendencia.status.startswith('Pendente') %}
+                            {% if pendencia.status == 'Pendente Cliente' %}
                                 <span class="badge bg-warning">
-                                    <b>{{ pendencia.status.split(' ')[0] }}</b> {{ pendencia.status.split(' ')[1] if pendencia.status.split(' ')|length > 1 else '' }}
+                                    <i class="bi bi-clock"></i> Pendente Cliente
                                 </span>
-                            {% elif pendencia.status == 'Respondida' %}
-                                <span class="badge bg-info">Respondida</span>
+                            {% elif pendencia.status == 'PENDENTE OPERADOR UP' %}
+                                <span class="badge bg-info">
+                                    <i class="bi bi-person-gear"></i> Operador UP
+                                </span>
+                            {% elif pendencia.status == 'PENDENTE SUPERVISOR' %}
+                                <span class="badge bg-danger">
+                                    <i class="bi bi-person-check"></i> Supervisor
+                                </span>
+                            {% elif pendencia.status == 'Resolvida' %}
+                                <span class="badge bg-success">
+                                    <i class="bi bi-check-circle"></i> Resolvida
+                                </span>
                             {% else %}
-                                <span class="badge bg-success">Resolvida</span>
+                                <span class="badge bg-secondary">{{ pendencia.status }}</span>
                             {% endif %}
                         </td>
                         <td>{% if pendencia.modificado_por == 'USUARIO' %}USUARIO{% endif %}</td>
@@ -131,27 +143,49 @@
                             {% endif %}
                         </td>
                         <td class="d-flex gap-1">
-                            {% if session['usuario_tipo'] in ['adm', 'master', 'supervisor', 'operador'] and not pendencia.resposta_cliente and pendencia.status != 'Pendente UP' %}
+                            {# OPERADOR: Botão Responder Pendência #}
+                            {% if session['usuario_tipo'] in ['adm', 'operador'] and pendencia.status == 'PENDENTE OPERADOR UP' %}
+                                <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalResponder{{ pendencia.id }}">
+                                    <i class="bi bi-pencil-square"></i> Responder Pendência
+                                </button>
+                            {% endif %}
+                            
+                            {# SUPERVISOR: Botão Resolver #}
+                            {% if session['usuario_tipo'] in ['adm', 'supervisor'] and pendencia.status == 'PENDENTE SUPERVISOR' %}
+                                <form method="POST" action="{{ url_for('supervisor_resolver_pendencia', id=pendencia.id) }}" style="display:inline;">
+                                    <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Deseja resolver esta pendência?')">
+                                        <i class="bi bi-check-circle"></i> Resolver
+                                    </button>
+                                </form>
+                            {% endif %}
+                            
+                            {# ADMIN: Fluxo antigo #}
+                            {% if session['usuario_tipo'] in ['adm'] and pendencia.status not in ['PENDENTE OPERADOR UP', 'PENDENTE SUPERVISOR', 'Resolvida'] %}
                                 <a href="{{ url_for('editar_pendencia', id=pendencia.id) }}" class="btn btn-sm btn-warning">
                                     <i class="bi bi-pencil-square"></i> Editar
                                 </a>
-                            {% endif %}
-                            {% if session['usuario_tipo'] in ['adm', 'master', 'supervisor'] and pendencia.status != 'Resolvida' %}
                                 <a href="{{ url_for('resolver_pendencia', id=pendencia.id) }}" 
                                    class="btn btn-sm btn-success"
                                    onclick="return confirm('Deseja marcar esta pendência como resolvida?')">
                                     <i class="bi bi-check-circle"></i> Resolver
                                 </a>
                             {% endif %}
-                            {% if session['usuario_tipo'] in ['adm', 'master', 'supervisor', 'operador'] %}
+                            
+                            {# CLIENTE: Responder Pendência #}
+                            {% if session['usuario_tipo'] == 'cliente' and pendencia.status == 'PENDENTE CLIENTE' %}
+                                <a href="{{ url_for('editar_observacao', id=pendencia.id) }}" class="btn btn-sm btn-primary">
+                                    <i class="bi bi-chat-dots"></i> Responder Pendência
+                                </a>
+                            {% endif %}
+                            
+                            {# Excluir (apenas admin) #}
+                            {% if session['usuario_tipo'] in ['adm'] %}
                             <form action="{{ url_for('deletar_pendencia', id=pendencia.id) }}" method="post" style="display:inline;" onsubmit="return confirm('Tem certeza que deseja excluir esta pendência?');">
+                                <input type="hidden" name="empresa" value="{{ empresa_filtro }}">
+                                <input type="hidden" name="tipo_pendencia" value="{{ tipo_filtro }}">
+                                <input type="hidden" name="busca" value="{{ request.args.get('busca', '') }}">
                                 <button type="submit" class="btn btn-sm btn-outline-danger">Excluir</button>
                             </form>
-                            {% endif %}
-                            {% if session['usuario_tipo'] == 'cliente' and pendencia.status == 'Pendente Cliente' %}
-                                <a href="{{ url_for('editar_observacao', id=pendencia.id) }}" class="btn btn-sm btn-primary">
-                                    <i class="bi bi-chat-dots"></i> Informar do que se trata
-                                </a>
                             {% endif %}
                         </td>
                     </tr>
@@ -166,7 +200,40 @@
     </div>
 </div>
 
-<li class="nav-item">
-    <a class="nav-link" href="{{ url_for('dashboard_resolvidas') }}">Pendências Resolvidas</a>
-</li>
+<div class="mt-3">
+    <a href="{{ url_for('dashboard_resolvidas') }}" class="btn btn-outline-success">
+        <i class="bi bi-check-circle"></i> Pendências Resolvidas
+    </a>
+</div>
 {% endblock %} 
+
+{# MODAIS PARA OPERADOR RESPONDER PENDÊNCIA #}
+{% for pendencia in pendencias %}
+    {% if session['usuario_tipo'] in ['adm', 'operador'] and pendencia.status == 'PENDENTE OPERADOR UP' %}
+    <div class="modal fade" id="modalResponder{{ pendencia.id }}" tabindex="-1" aria-labelledby="modalResponderLabel{{ pendencia.id }}" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="POST" action="{{ url_for('operador_natureza_operacao', id=pendencia.id) }}">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalResponderLabel{{ pendencia.id }}">Responder Pendência #{{ pendencia.id }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="natureza_operacao_{{ pendencia.id }}" class="form-label">Natureza de Operação</label>
+                            <textarea class="form-control" id="natureza_operacao_{{ pendencia.id }}" name="natureza_operacao" rows="4" required></textarea>
+                            <div class="form-text">Descreva qual operação o cliente informou no sistema Kamino ou a natureza da transação.</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-arrow-up-circle"></i> ENVIAR AO SUPERVISOR
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+{% endfor %} 

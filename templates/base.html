@@ -26,6 +26,16 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item">
+                        <a class="nav-link" href="#filtroEmpresas" onclick="rolarParaFiltroEmpresas(); return false;">
+                            <i class="bi bi-building"></i>
+                            {% if empresas_selecionadas %}
+                                {{ empresas_selecionadas|join(', ') }}
+                            {% else %}
+                                Todas as Empresas
+                            {% endif %}
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link active" aria-current="page" href="{{ url_for('pre_dashboard') }}">Empresas</a>
                     </li>
                     {% if session.get('usuario_tipo') in ['adm', 'operador'] %}
@@ -36,6 +46,24 @@
                         <a class="nav-link" href="{{ url_for('importar_planilha') }}">Importar Planilha</a>
                     </li>
                     {% endif %}
+                    
+                    <!-- Novos links para o fluxo de aprovação -->
+                    {% if session.get('usuario_tipo') in ['adm', 'operador'] %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('operador_pendencias') }}">
+                            <i class="bi bi-person-gear"></i> Operador
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% if session.get('usuario_tipo') in ['adm', 'supervisor'] %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('supervisor_pendencias') }}">
+                            <i class="bi bi-person-check"></i> Supervisor
+                        </a>
+                    </li>
+                    {% endif %}
+                    
                     {% if session.get('usuario_tipo') in ['adm', 'supervisor'] %}
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownAdmin" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -115,6 +143,14 @@
             });
         }
     });
+
+    function rolarParaFiltroEmpresas() {
+        var filtro = document.getElementById('filtroEmpresas');
+        if (filtro) {
+            filtro.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            filtro.focus();
+        }
+    }
     </script>
 </body>
 </html> 

@@ -1,0 +1,662 @@
+{% extends 'base.html' %}
+{% block title %}Supervisor - Pendências PENDENTE SUPERVISOR{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header com indicadores -->
+    <div class="row mb-4 justify-content-center">
+        <div class="col-12 col-lg-10">
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+                <h2 class="mb-0"><i class="bi bi-person-check-fill text-primary"></i> Painel do Supervisor</h2>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#modalAjuda">
+                        <i class="bi bi-question-circle"></i> Ajuda
+                    </button>
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary btn-sm">
+                        <i class="bi bi-arrow-left"></i> Voltar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cards de Resumo -->
+    <div class="row mb-4 justify-content-center">
+        <div class="col-6 col-md-3 mb-3">
+            <div class="card bg-primary text-white h-100 cursor-pointer text-center" onclick="filtrarPorStatus('PENDENTE SUPERVISOR UP')">
+                <div class="card-body">
+                    <i class="bi bi-clock-history fs-1"></i>
+                    <h4 class="mt-2">{{ pendencias|length }}</h4>
+                    <p class="mb-0">Aguardando Aprovação</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3 mb-3">
+            <div class="card bg-warning text-white h-100 cursor-pointer text-center" onclick="filtrarPorValor('alto')">
+                <div class="card-body">
+                    <i class="bi bi-exclamation-triangle fs-1"></i>
+                    <h4 class="mt-2">{{ pendencias|selectattr('valor', '>=', 5000)|list|length }}</h4>
+                    <p class="mb-0">Valor Alto (&gt;R$ 5k)</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3 mb-3">
+            <div class="card bg-danger text-white h-100 cursor-pointer text-center" onclick="filtrarPorPrazo('atrasadas')">
+                <div class="card-body">
+                    <i class="bi bi-calendar-x fs-1"></i>
+                    <h4 class="mt-2">{{ pendencias|selectattr('data', '<', now - timedelta(days=7))|list|length }}</h4>
+                    <p class="mb-0">Atrasadas (&gt;7 dias)</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3 mb-3">
+            <div class="card bg-success text-white h-100 text-center">
+                <div class="card-body">
+                    <i class="bi bi-check-circle fs-1"></i>
+                    <h4 class="mt-2">{{ pendencias|length }}</h4>
+                    <p class="mb-0">Total Pendências</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros Avançados -->
+    <div class="card mb-4 shadow-sm border-0">
+        <div class="card-header bg-light">
+            <h5 class="mb-0"><i class="bi bi-funnel"></i> Filtros Avançados</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" id="filtroForm">
+                <div class="row g-3 align-items-end justify-content-center">
+                    <!-- Empresas (múltipla seleção) -->
+                    <div class="col-12 col-md-3">
+                        <label class="form-label">Empresas</label>
+                        <div class="dropdown w-100">
+                            <button class="btn btn-light border dropdown-toggle w-100 py-2 fs-5 text-start rounded-3" type="button" id="dropdownEmpresas" data-bs-toggle="dropdown" aria-expanded="false" style="background:#fff;">
+                                {% if empresas_selecionadas %}
+                                    {{ empresas_selecionadas|join(', ') }}
+                                {% else %}
+                                    Selecione uma empresa
+                                {% endif %}
+                            </button>
+                            <ul class="dropdown-menu w-100 p-0 rounded-3" aria-labelledby="dropdownEmpresas" style="max-height: 340px; overflow-y: auto; min-width: 320px; border:1px solid #eee; box-shadow:none;">
+                                {% for empresa in empresas %}
+                                    {% set qtd = pendencias_sem_resposta_por_empresa[empresa] %}
+                                    {% set status = 'inativo' %}
+                                    {% set icon = '' %}
+                                    {% set icon_color = '' %}
+                                    {% if qtd >= 10 %}
+                                        {% set status = 'urgente' %}
+                                        {% set icon = '●' %}
+                                        {% set icon_color = '#e74c3c' %}
+                                    {% elif qtd >= 5 %}
+                                        {% set status = 'atencao' %}
+                                        {% set icon = '▲' %}
+                                        {% set icon_color = '#f39c12' %}
+                                    {% elif qtd >= 1 %}
+                                        {% set status = 'pendente' %}
+                                        {% set icon = '●' %}
+                                        {% set icon_color = '#2980ef' %}
+                                    {% elif qtd == 0 %}
+                                        {% set status = 'ok' %}
+                                        {% set icon = '✔' %}
+                                        {% set icon_color = '#27ae60' %}
+                                    {% else %}
+                                        {% set status = 'inativo' %}
+                                        {% set icon = '●' %}
+                                        {% set icon_color = '#bdc3c7' %}
+                                    {% endif %}
+                                    <li>
+                                        <a class="dropdown-item d-flex justify-content-between align-items-center px-3 py-2 fs-6 minimal-item" style="background:transparent; border-radius:8px;" href="{{ url_for('supervisor_pendencias', empresas=empresa) }}" title="{{ qtd }} pendência(s) aguardando ação">
+                                            <span class="d-flex align-items-center gap-2">
+                                                <span style="font-size:1.2em; color:{{ icon_color }}; width:18px; display:inline-block; text-align:center;">{{ icon }}</span>
+                                                <span style="font-weight:400; color:#222;">{{ empresa }}</span>
+                                            </span>
+                                            <span>
+                                                {% if status in ['urgente','atencao','pendente'] %}
+                                                    <span class="badge badge-minimal">{{ qtd }}</span>
+                                                {% elif status == 'ok' %}
+                                                    <span style="font-size:1.1em; color:#27ae60;">✔</span>
+                                                {% endif %}
+                                            </span>
+                                        </a>
+                                    </li>
+                                {% endfor %}
+                                <li><hr class="dropdown-divider my-1"></li>
+                                <li class="px-3 pb-2 pt-1">
+                                    <div class="d-flex align-items-center gap-2 mb-1"><span style="font-size:1.1em; color:#e74c3c;">●</span> <span class="small">Ações urgentes</span></div>
+                                    <div class="d-flex align-items-center gap-2 mb-1"><span style="font-size:1.1em; color:#f39c12;">▲</span> <span class="small">Atenção necessária</span></div>
+                                    <div class="d-flex align-items-center gap-2 mb-1"><span style="font-size:1.1em; color:#2980ef;">●</span> <span class="small">Pendências</span></div>
+                                    <div class="d-flex align-items-center gap-2 mb-1"><span style="font-size:1.1em; color:#27ae60;">✔</span> <span class="small">Tudo certo</span></div>
+                                    <div class="d-flex align-items-center gap-2"><span style="font-size:1.1em; color:#bdc3c7;">●</span> <span class="small">Inativo</span></div>
+                                </li>
+                            </ul>
+                        </div>
+                        <small class="text-muted">Clique em uma empresa para filtrar. Legenda ao final do menu.</small>
+                    </div>
+
+                    <!-- Tipo de Pendência -->
+                    <div class="col-6 col-md-2">
+                        <label class="form-label">Tipo</label>
+                        <select class="form-select" name="tipo_pendencia">
+                            <option value="">Todos</option>
+                            {% for tipo in tipos_pendencia %}
+                            <option value="{{ tipo }}" {% if tipo == tipo_filtro %}selected{% endif %}>{{ tipo }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Status -->
+                    <div class="col-6 col-md-2">
+                        <label class="form-label">Status</label>
+                        <select class="form-select" name="filtro_status">
+                            <option value="">Todos</option>
+                            <option value="PENDENTE SUPERVISOR UP" {% if filtro_status == 'PENDENTE SUPERVISOR UP' %}selected{% endif %}>Aguardando Supervisor</option>
+                        </select>
+                    </div>
+
+                    <!-- Prazo -->
+                    <div class="col-6 col-md-2">
+                        <label class="form-label">Prazo</label>
+                        <select class="form-select" name="filtro_prazo">
+                            <option value="">Todos</option>
+                            <option value="atrasadas" {% if filtro_prazo == 'atrasadas' %}selected{% endif %}>Atrasadas</option>
+                            <option value="recentes" {% if filtro_prazo == 'recentes' %}selected{% endif %}>Recentes</option>
+                        </select>
+                    </div>
+
+                    <!-- Valor -->
+                    <div class="col-6 col-md-2">
+                        <label class="form-label">Valor</label>
+                        <select class="form-select" name="filtro_valor">
+                            <option value="">Todos</option>
+                            <option value="alto" {% if filtro_valor == 'alto' %}selected{% endif %}>Alto (&gt;R$ 5k)</option>
+                            <option value="baixo" {% if filtro_valor == 'baixo' %}selected{% endif %}>Baixo (&lt;R$ 5k)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row g-3 mt-2 align-items-end justify-content-center">
+                    <!-- Busca -->
+                    <div class="col-12 col-md-8">
+                        <label class="form-label">Busca Avançada</label>
+                        <input type="text" class="form-control" name="busca" value="{{ busca }}" 
+                               placeholder="Fornecedor, banco, natureza de operação, valor, data...">
+                    </div>
+
+                    <!-- Botões -->
+                    <div class="col-12 col-md-4 d-flex gap-2 align-items-end justify-content-end">
+                        <button type="submit" class="btn btn-primary flex-fill">
+                            <i class="bi bi-search"></i> Filtrar
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="limparFiltros()">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Ações em Lote -->
+    <div class="card mb-4" id="acoesLote" style="display: none;">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="text-muted">
+                    <span id="contadorSelecionadas">0</span> pendência(s) selecionada(s)
+                </span>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-success btn-sm" onclick="resolverEmLote()">
+                        <i class="bi bi-check-circle"></i> Resolver Selecionadas
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm" onclick="limparSelecao()">
+                        <i class="bi bi-x-circle"></i> Limpar Seleção
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Pendências -->
+    <div class="card">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="bi bi-list-ul"></i> Pendências Aguardando Aprovação
+                <span class="badge bg-primary ms-2">{{ pendencias|length }}</span>
+            </h5>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-primary btn-sm" onclick="ordenarPor('data')">
+                    <i class="bi bi-calendar"></i> Data
+                </button>
+                <button class="btn btn-outline-primary btn-sm" onclick="ordenarPor('valor')">
+                    <i class="bi bi-currency-dollar"></i> Valor
+                </button>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0" id="tabelaPendencias">
+                    <thead class="table-light">
+                        <tr>
+                            <th width="50">
+                                <input type="checkbox" class="form-check-input" id="selecionarTodos" onchange="toggleSelecaoTodos()">
+                            </th>
+                            <th>ID</th>
+                            <th>Empresa</th>
+                            <th>Tipo</th>
+                            <th>Data</th>
+                            <th>Fornecedor/Cliente</th>
+                            <th>Valor</th>
+                            <th>Natureza de Operação</th>
+                            <th>Status</th>
+                            <th width="200">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pendencia in pendencias %}
+                        <tr class="{% if pendencia.valor >= 5000 %}table-warning{% endif %} {% if (now - pendencia.data).days > 7 %}table-danger{% endif %}">
+                            <td>
+                                <input type="checkbox" class="form-check-input selecao-pendencia" 
+                                       value="{{ pendencia.id }}" onchange="atualizarContador()">
+                            </td>
+                            <td>
+                                <strong>#{{ pendencia.id }}</strong>
+                                {% if pendencia.valor >= 5000 %}
+                                    <i class="bi bi-exclamation-triangle text-warning" title="Valor alto"></i>
+                                {% endif %}
+                                {% if (now - pendencia.data).days > 7 %}
+                                    <i class="bi bi-calendar-x text-danger" title="Atrasada"></i>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">{{ pendencia.empresa }}</span>
+                            </td>
+                            <td>{{ pendencia.tipo_pendencia }}</td>
+                            <td>
+                                {{ pendencia.data.strftime('%d/%m/%Y') }}
+                                {% if (now - pendencia.data).days > 7 %}
+                                    <br><small class="text-danger">+{{ (now - pendencia.data).days }} dias</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="text-truncate" style="max-width: 200px;" title="{{ pendencia.fornecedor_cliente }}">
+                                    {{ pendencia.fornecedor_cliente }}
+                                </div>
+                            </td>
+                            <td>
+                                <strong class="text-primary">R$ {{ "%.2f"|format(pendencia.valor) }}</strong>
+                                {% if pendencia.valor >= 5000 %}
+                                    <br><small class="text-warning">Valor alto</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if pendencia.natureza_operacao %}
+                                    <div class="text-truncate" style="max-width: 200px;" title="{{ pendencia.natureza_operacao }}">
+                                        {{ pendencia.natureza_operacao }}
+                                    </div>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-warning">Aguardando Supervisor</span>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <button type="button" class="btn btn-outline-primary" 
+                                            data-bs-toggle="modal" data-bs-target="#modalPendencia{{ pendencia.id }}"
+                                            title="Ver detalhes">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-info" 
+                                            onclick="verHistorico({{ pendencia.id }})"
+                                            title="Ver histórico">
+                                        <i class="bi bi-clock-history"></i>
+                                    </button>
+                                    <form method="POST" action="{{ url_for('supervisor_resolver_pendencia', id=pendencia.id) }}" 
+                                          style="display: inline;" onsubmit="return confirm('Deseja resolver esta pendência?')">
+                                        <button type="submit" class="btn btn-outline-success" title="Resolver pendência">
+                                            <i class="bi bi-check-circle"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="10" class="text-center text-muted py-5">
+                                <i class="bi bi-check-circle fs-1"></i>
+                                <p class="mt-3">Nenhuma pendência aguardando aprovação do supervisor.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Ajuda -->
+<div class="modal fade" id="modalAjuda" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-question-circle"></i> Ajuda - Painel do Supervisor</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-lightbulb"></i> Dicas Rápidas</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="bi bi-check text-success"></i> Use os filtros para encontrar pendências específicas</li>
+                            <li><i class="bi bi-check text-success"></i> Pendências com valor alto aparecem destacadas</li>
+                            <li><i class="bi bi-check text-success"></i> Pendências atrasadas são marcadas em vermelho</li>
+                            <li><i class="bi bi-check text-success"></i> Clique nos cards para filtrar rapidamente</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-gear"></i> Funcionalidades</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="bi bi-eye"></i> <strong>Ver Detalhes:</strong> Visualizar informações completas</li>
+                            <li><i class="bi bi-clock-history"></i> <strong>Histórico:</strong> Ver logs de alterações</li>
+                            <li><i class="bi bi-check-circle"></i> <strong>Resolver:</strong> Marcar como resolvida</li>
+                            <li><i class="bi bi-check-circle"></i> <strong>Lote:</strong> Resolver múltiplas pendências</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modais para cada pendência -->
+{% for pendencia in pendencias %}
+<div class="modal fade" id="modalPendencia{{ pendencia.id }}" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-file-earmark-text"></i> Pendência #{{ pendencia.id }} - {{ pendencia.empresa }}
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <!-- Informações da Pendência -->
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="bi bi-info-circle"></i> Informações da Pendência</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-2">
+                                    <div class="col-4"><strong>Empresa:</strong></div>
+                                    <div class="col-8">{{ pendencia.empresa }}</div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-4"><strong>Tipo:</strong></div>
+                                    <div class="col-8">{{ pendencia.tipo_pendencia }}</div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-4"><strong>Banco:</strong></div>
+                                    <div class="col-8">{{ pendencia.banco }}</div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-4"><strong>Data:</strong></div>
+                                    <div class="col-8">{{ pendencia.data.strftime('%d/%m/%Y') }}</div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-4"><strong>Fornecedor:</strong></div>
+                                    <div class="col-8">{{ pendencia.fornecedor_cliente }}</div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-4"><strong>Valor:</strong></div>
+                                    <div class="col-8">
+                                        <span class="text-primary fw-bold fs-5">R$ {{ "%.2f"|format(pendencia.valor) }}</span>
+                                    </div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-4"><strong>Observação:</strong></div>
+                                    <div class="col-8">{{ pendencia.observacao }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Resposta do Cliente e Natureza -->
+                    <div class="col-md-6">
+                        <!-- Resposta do Cliente -->
+                        <div class="card mb-3">
+                            <div class="card-header bg-success text-white">
+                                <h6 class="mb-0"><i class="bi bi-chat-dots"></i> Resposta do Cliente</h6>
+                            </div>
+                            <div class="card-body">
+                                {% if pendencia.resposta_cliente %}
+                                    <p class="mb-2">{{ pendencia.resposta_cliente }}</p>
+                                    <small class="text-muted">
+                                        <i class="bi bi-clock"></i> Respondido em: {{ pendencia.data_resposta.strftime('%d/%m/%Y %H:%M') if pendencia.data_resposta else 'N/A' }}
+                                    </small>
+                                {% else %}
+                                    <p class="text-muted mb-0">Nenhuma resposta do cliente.</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Natureza de Operação -->
+                        <div class="card">
+                            <div class="card-header bg-info text-white">
+                                <h6 class="mb-0"><i class="bi bi-gear"></i> Natureza de Operação</h6>
+                            </div>
+                            <div class="card-body">
+                                {% if pendencia.natureza_operacao %}
+                                    <p class="mb-0">{{ pendencia.natureza_operacao }}</p>
+                                {% else %}
+                                    <p class="text-muted mb-0">Natureza de operação não informada.</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> Fechar
+                </button>
+                <button type="button" class="btn btn-info" onclick="verHistorico({{ pendencia.id }})">
+                    <i class="bi bi-clock-history"></i> Ver Histórico
+                </button>
+                <form method="POST" action="{{ url_for('supervisor_resolver_pendencia', id=pendencia.id) }}" style="display: inline;">
+                    <button type="submit" class="btn btn-success" onclick="return confirm('Deseja resolver esta pendência?')">
+                        <i class="bi bi-check-circle"></i> Resolver Pendência
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<!-- Modal de Histórico -->
+<div class="modal fade" id="modalHistorico" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-clock-history"></i> Histórico da Pendência</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="historicoContent">
+                <!-- Conteúdo será carregado via AJAX -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.cursor-pointer { cursor: pointer; }
+.cursor-pointer:hover { transform: translateY(-2px); transition: transform 0.2s; }
+.table-hover tbody tr:hover { background-color: rgba(0,123,255,0.1); }
+.badge { font-size: 0.8em; }
+.btn-group-sm .btn { padding: 0.25rem 0.5rem; }
+
+.card { border-radius: 1rem; }
+.card-header { border-radius: 1rem 1rem 0 0; }
+.card-body { border-radius: 0 0 1rem 1rem; }
+
+@media (max-width: 991px) {
+  .row.mb-4 .col-md-3, .row.mb-4 .col-6 { flex: 0 0 50%; max-width: 50%; }
+  .row.mb-4 .col-md-3 { margin-bottom: 1rem; }
+}
+@media (max-width: 767px) {
+  .row.mb-4 .col-md-3, .row.mb-4 .col-6 { flex: 0 0 100%; max-width: 100%; }
+  .row.mb-4 .col-md-3 { margin-bottom: 1rem; }
+  .row.g-3 .col-md-2, .row.g-3 .col-md-3, .row.g-3 .col-md-4, .row.g-3 .col-md-8 { flex: 0 0 100%; max-width: 100%; }
+}
+.badge-minimal {
+    background: #f4f4f4;
+    color: #222;
+    border-radius: 12px;
+    font-size: 1em;
+    min-width: 28px;
+    padding: 2px 8px;
+    font-weight: 500;
+    box-shadow: none;
+}
+.minimal-item:active, .minimal-item.active, .minimal-item:focus {
+    background: #f5f6fa !important;
+    color: #222 !important;
+}
+.dropdown-menu { border:1px solid #eee; box-shadow:none; }
+</style>
+
+<script>
+// Funções JavaScript
+function filtrarPorStatus(status) {
+    document.querySelector('select[name="filtro_status"]').value = status;
+    document.getElementById('filtroForm').submit();
+}
+
+function filtrarPorValor(tipo) {
+    document.querySelector('select[name="filtro_valor"]').value = tipo;
+    document.getElementById('filtroForm').submit();
+}
+
+function filtrarPorPrazo(tipo) {
+    document.querySelector('select[name="filtro_prazo"]').value = tipo;
+    document.getElementById('filtroForm').submit();
+}
+
+function limparFiltros() {
+    document.getElementById('filtroForm').reset();
+    document.getElementById('filtroForm').submit();
+}
+
+function toggleSelecaoTodos() {
+    const checkboxes = document.querySelectorAll('.selecao-pendencia');
+    const selecionarTodos = document.getElementById('selecionarTodos');
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = selecionarTodos.checked;
+    });
+    
+    atualizarContador();
+}
+
+function atualizarContador() {
+    const selecionadas = document.querySelectorAll('.selecao-pendencia:checked');
+    const contador = document.getElementById('contadorSelecionadas');
+    const acoesLote = document.getElementById('acoesLote');
+    
+    contador.textContent = selecionadas.length;
+    
+    if (selecionadas.length > 0) {
+        acoesLote.style.display = 'block';
+    } else {
+        acoesLote.style.display = 'none';
+    }
+}
+
+function limparSelecao() {
+    document.querySelectorAll('.selecao-pendencia').forEach(checkbox => {
+        checkbox.checked = false;
+    });
+    document.getElementById('selecionarTodos').checked = false;
+    atualizarContador();
+}
+
+function resolverEmLote() {
+    const selecionadas = document.querySelectorAll('.selecao-pendencia:checked');
+    const ids = Array.from(selecionadas).map(cb => cb.value);
+    
+    if (ids.length === 0) {
+        alert('Nenhuma pendência selecionada.');
+        return;
+    }
+    
+    if (confirm(`Deseja resolver ${ids.length} pendência(s)?`)) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '{{ url_for("supervisor_lote_resolver_pendencias") }}';
+        
+        ids.forEach(id => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'ids';
+            input.value = id;
+            form.appendChild(input);
+        });
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+function ordenarPor(criterio) {
+    const tabela = document.getElementById('tabelaPendencias');
+    const tbody = tabela.querySelector('tbody');
+    const linhas = Array.from(tbody.querySelectorAll('tr')).filter(tr => tr.cells.length > 1);
+    
+    linhas.sort((a, b) => {
+        if (criterio === 'data') {
+            const dataA = new Date(a.cells[4].textContent.split('/').reverse().join('-'));
+            const dataB = new Date(b.cells[4].textContent.split('/').reverse().join('-'));
+            return dataA - dataB;
+        } else if (criterio === 'valor') {
+            const valorA = parseFloat(a.cells[6].textContent.replace('R$ ', '').replace(',', '.'));
+            const valorB = parseFloat(b.cells[6].textContent.replace('R$ ', '').replace(',', '.'));
+            return valorB - valorA; // Maior valor primeiro
+        }
+        return 0;
+    });
+    
+    linhas.forEach(linha => tbody.appendChild(linha));
+}
+
+function verHistorico(pendenciaId) {
+    // Carregar histórico via AJAX
+    fetch(`/logs/${pendenciaId}`)
+        .then(response => response.text())
+        .then(html => {
+            document.getElementById('historicoContent').innerHTML = html;
+            new bootstrap.Modal(document.getElementById('modalHistorico')).show();
+        })
+        .catch(error => {
+            console.error('Erro ao carregar histórico:', error);
+            alert('Erro ao carregar histórico.');
+        });
+}
+
+// Inicialização
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-submit nos filtros
+    document.querySelectorAll('select[name="empresas"], select[name="tipo_pendencia"], select[name="filtro_status"], select[name="filtro_prazo"], select[name="filtro_valor"]').forEach(select => {
+        select.addEventListener('change', function() {
+            if (this.name !== 'empresas' || this.selectedOptions.length > 0) {
+                document.getElementById('filtroForm').submit();
+            }
+        });
+    });
+});
+</script>
+{% endblock %} 

@@ -73,11 +73,12 @@ class Pendencia(db.Model):
     observacao = db.Column(db.String(300), default='DO QUE SE TRATA?')
     resposta_cliente = db.Column(db.String(300))
     email_cliente = db.Column(db.String(120), nullable=True)
-    status = db.Column(db.String(50), default='Pendente Cliente')
+    status = db.Column(db.String(50), default='PENDENTE CLIENTE')
     token_acesso = db.Column(db.String(100), unique=True, default=lambda: secrets.token_urlsafe(16))
     data_resposta = db.Column(db.DateTime)
     modificado_por = db.Column(db.String(50))
     nota_fiscal_arquivo = db.Column(db.String(300))  # Caminho do arquivo da nota fiscal
+    natureza_operacao = db.Column(db.String(500))  # Campo para Natureza de Operação
 
 class Usuario(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -196,11 +197,14 @@ def pre_dashboard():
         empresas = usuario.empresas
     empresas_info = []
     tipo_counts = {tipo: 0 for tipo in TIPOS_PENDENCIA}
-    status_labels = ['Em Aberto', 'Resolvida']
-    status_counts = [0, 0]
+    
+    # Novos status para o dashboard
+    status_labels = ['PENDENTE CLIENTE', 'PENDENTE OPERADOR UP', 'PENDENTE SUPERVISOR UP', 'RESOLVIDA']
+    status_counts = [0, 0, 0, 0]
+    
     for empresa in empresas:
         pendencias = Pendencia.query.filter(Pendencia.empresa == empresa.nome).all()
-        pendencias_abertas = [p for p in pendencias if p.status != 'Resolvida']
+        pendencias_abertas = [p for p in pendencias if p.status != 'RESOLVIDA']
         empresas_info.append({
             'nome': empresa.nome,
             'abertas': len(pendencias_abertas)
@@ -208,10 +212,20 @@ def pre_dashboard():
         for p in pendencias:
             if p.tipo_pendencia in tipo_counts:
                 tipo_counts[p.tipo_pendencia] += 1
-            if p.status == 'Resolvida':
-                status_counts[1] += 1
-            else:
+            
+            # Contagem por status
+            if p.status == 'PENDENTE CLIENTE':
                 status_counts[0] += 1
+            elif p.status == 'PENDENTE OPERADOR UP':
+                status_counts[1] += 1
+            elif p.status == 'PENDENTE SUPERVISOR UP':
+                status_counts[2] += 1
+            elif p.status == 'RESOLVIDA':
+                status_counts[3] += 1
+            else:
+                # Status antigos (Pendente UP, etc.)
+                status_counts[0] += 1
+    
     return render_template(
         'pre_dashboard.html',
         empresas_info=empresas_info,
@@ -227,16 +241,37 @@ def dashboard():
     empresa_filtro = request.args.get('empresa', EMPRESAS[0])
     tipo_filtro = request.args.get('tipo_pendencia', TIPOS_PENDENCIA[0])
     busca = request.args.get('busca', '')
-    pendencias_empresa = Pendencia.query.filter_by(empresa=empresa_filtro).filter(Pendencia.status != 'Resolvida').all()
-    query = Pendencia.query.filter_by(empresa=empresa_filtro, tipo_pendencia=tipo_filtro).filter(Pendencia.status != 'Resolvida')
+    
+    # Filtra pendências não resolvidas (incluindo os novos status)
+    pendencias_empresa = Pendencia.query.filter_by(empresa=empresa_filtro).filter(
+        Pendencia.status.notin_(['RESOLVIDA'])
+    ).all()
+    
+    query = Pendencia.query.filter_by(empresa=empresa_filtro, tipo_pendencia=tipo_filtro).filter(
+        Pendencia.status.notin_(['RESOLVIDA'])
+    )
+    
     if busca:
         query = query.filter(
             db.or_(Pendencia.fornecedor_cliente.ilike(f'%{busca}%'),
                     Pendencia.banco.ilike(f'%{busca}%'),
-                    Pendencia.observacao.ilike(f'%{busca}%'))
+                    Pendencia.observacao.ilike(f'%{busca}%'),
+                    Pendencia.resposta_cliente.ilike(f'%{busca}%'),
+                    Pendencia.natureza_operacao.ilike(f'%{busca}%'))
         )
+    
     pendencias = query.order_by(Pendencia.data.desc()).all()
-    return render_template('dashboard.html', pendencias=pendencias, pendencias_empresa=pendencias_empresa, empresas=EMPRESAS, empresa_filtro=empresa_filtro, tipos_pendencia=TIPOS_PENDENCIA, tipo_filtro=tipo_filtro, busca=busca)
+    
+    return render_template(
+        'dashboard.html', 
+        pendencias=pendencias, 
+        pendencias_empresa=pendencias_empresa, 
+        empresas=EMPRESAS, 
+        empresa_filtro=empresa_filtro, 
+        tipos_pendencia=TIPOS_PENDENCIA, 
+        tipo_filtro=tipo_filtro, 
+        busca=busca
+    )
 
 @app.route('/nova', methods=['GET', 'POST'])
 @permissao_requerida('supervisor', 'adm', 'operador')
@@ -267,7 +302,7 @@ def nova_pendencia():
                 valor=valor,
                 observacao=observacao,
                 email_cliente=email_cliente,
-                status='Pendente Cliente',
+                status='PENDENTE CLIENTE',
                 nota_fiscal_arquivo=nota_fiscal_arquivo
             )
             db.session.add(nova_p)
@@ -292,11 +327,33 @@ def ver_pendencia(token):
                 filename = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{file.filename}"
                 file.save(os.path.join('static/notas_fiscais', filename))
                 pendencia.nota_fiscal_arquivo = filename
-        pendencia.status = 'Pendente UP'
+        # Quando o cliente responde:
+        pendencia.status = 'PENDENTE OPERADOR UP'
         pendencia.data_resposta = now_brazil()
         db.session.commit()
+        
+        # Log da alteração
+        log = LogAlteracao(
+            pendencia_id=pendencia.id,
+            usuario='Cliente',
+            tipo_usuario='cliente',
+            data_hora=now_brazil(),
+            acao='Resposta do Cliente',
+            campo_alterado='status',
+            valor_anterior='Pendente Cliente',
+            valor_novo='PENDENTE OPERADOR UP'
+        )
+        db.session.add(log)
+        db.session.commit()
+        
+        # Notificação Teams
+        notificar_teams_pendente_operador(pendencia)
+        
         flash('Resposta enviada com sucesso!', 'success')
-        return redirect(url_for('pre_dashboard'))
+        empresa = request.form.get('empresa', pendencia.empresa)
+        tipo_pendencia = request.form.get('tipo_pendencia', pendencia.tipo_pendencia)
+        busca = request.form.get('busca', '')
+        return redirect(url_for('dashboard', empresa=empresa, tipo_pendencia=tipo_pendencia, busca=busca))
     return render_template('ver_pendencia.html', pendencia=pendencia)
 
 @app.route('/resolver/<int:id>')
@@ -304,7 +361,7 @@ def ver_pendencia(token):
 def resolver_pendencia(id):
     pendencia = Pendencia.query.get_or_404(id)
     valor_anterior = pendencia.status
-    pendencia.status = 'Resolvida'
+    pendencia.status = 'RESOLVIDA'
     pendencia.modificado_por = 'ADIMIN UP380'
     db.session.commit()
     # Log da resolução
@@ -499,6 +556,388 @@ def notificar_teams(pendencia):
     except Exception as e:
         print(f"Erro ao notificar Teams: {e}")
 
+def notificar_teams_pendente_operador(pendencia):
+    """Notifica quando pendência fica PENDENTE OPERADOR UP"""
+    webhook_url = TEAMS_WEBHOOK_URL
+    if not webhook_url:
+        return
+    mensagem = {
+        "title": "🔄 Pendência PENDENTE OPERADOR UP",
+        "text": (
+            f"<b>Nova pendência aguardando operador!</b><br><br>"
+            f"<b>ID:</b> {pendencia.id}<br>"
+            f"<b>Empresa:</b> {pendencia.empresa}<br>"
+            f"<b>Fornecedor/Cliente:</b> {pendencia.fornecedor_cliente}<br>"
+            f"<b>Valor:</b> R$ {pendencia.valor:.2f}<br>"
+            f"<b>Resposta do Cliente:</b> {pendencia.resposta_cliente}<br><br>"
+            f"<b>@Operadores UP380</b> - Pendência aguardando Natureza de Operação!"
+        )
+    }
+    try:
+        requests.post(webhook_url, json={
+            "@type": "MessageCard",
+            "@context": "http://schema.org/extensions",
+            "summary": mensagem["title"],
+            "themeColor": "FFA500",
+            "title": mensagem["title"],
+            "text": mensagem["text"]
+        }, timeout=5)
+    except Exception as e:
+        print(f"Erro ao notificar Teams: {e}")
+
+def notificar_teams_pendente_supervisor(pendencia):
+    """Notifica quando pendência fica PENDENTE SUPERVISOR UP"""
+    webhook_url = TEAMS_WEBHOOK_URL
+    if not webhook_url:
+        return
+    mensagem = {
+        "title": "👨‍💼 Pendência PENDENTE SUPERVISOR UP",
+        "text": (
+            f"<b>Pendência aguardando aprovação do supervisor!</b><br><br>"
+            f"<b>ID:</b> {pendencia.id}<br>"
+            f"<b>Empresa:</b> {pendencia.empresa}<br>"
+            f"<b>Fornecedor/Cliente:</b> {pendencia.fornecedor_cliente}<br>"
+            f"<b>Valor:</b> R$ {pendencia.valor:.2f}<br>"
+            f"<b>Natureza de Operação:</b> {pendencia.natureza_operacao}<br><br>"
+            f"<b>@Supervisores UP380</b> - Pendência aguardando resolução!"
+        )
+    }
+    try:
+        requests.post(webhook_url, json={
+            "@type": "MessageCard",
+            "@context": "http://schema.org/extensions",
+            "summary": mensagem["title"],
+            "themeColor": "FF0000",
+            "title": mensagem["title"],
+            "text": mensagem["text"]
+        }, timeout=5)
+    except Exception as e:
+        print(f"Erro ao notificar Teams: {e}")
+
+@app.route('/operador/pendencias')
+@permissao_requerida('operador', 'adm')
+def operador_pendencias():
+    """Dashboard do operador - mostra pendências PENDENTE OPERADOR UP"""
+    empresa_filtro = request.args.get('empresa', EMPRESAS[0])
+    tipo_filtro = request.args.get('tipo_pendencia', TIPOS_PENDENCIA[0])
+    busca = request.args.get('busca', '')
+    empresas_selecionadas = request.args.getlist('empresas')
+    filtro_status = request.args.get('filtro_status', '')
+    filtro_prazo = request.args.get('filtro_prazo', '')
+    filtro_valor = request.args.get('filtro_valor', '')
+    
+    # Filtro de empresas (múltipla seleção)
+    if empresas_selecionadas:
+        query = Pendencia.query.filter(Pendencia.empresa.in_(empresas_selecionadas))
+    else:
+        query = Pendencia.query.filter_by(empresa=empresa_filtro)
+    
+    # Filtro de status
+    if filtro_status:
+        query = query.filter(Pendencia.status == filtro_status)
+    else:
+        query = query.filter(Pendencia.status == 'PENDENTE OPERADOR UP')
+    
+    if busca:
+        query = query.filter(
+            db.or_(
+                Pendencia.fornecedor_cliente.ilike(f'%{busca}%'),
+                Pendencia.banco.ilike(f'%{busca}%'),
+                Pendencia.observacao.ilike(f'%{busca}%'),
+                Pendencia.resposta_cliente.ilike(f'%{busca}%'),
+                Pendencia.natureza_operacao.ilike(f'%{busca}%'),
+                db.cast(Pendencia.valor, db.String).ilike(f'%{busca}%'),
+                db.cast(Pendencia.data, db.String).ilike(f'%{busca}%'),
+                Pendencia.status.ilike(f'%{busca}%')
+            )
+        )
+    # Filtros rápidos adicionais
+    from datetime import datetime, timedelta
+    if filtro_prazo == 'atrasadas':
+        limite = datetime.now().date() - timedelta(days=7)
+        query = query.filter(Pendencia.data < limite)
+    elif filtro_prazo == 'recentes':
+        limite = datetime.now().date() - timedelta(days=7)
+        query = query.filter(Pendencia.data >= limite)
+    if filtro_valor == 'alto':
+        query = query.filter(Pendencia.valor >= 5000)
+    elif filtro_valor == 'baixo':
+        query = query.filter(Pendencia.valor < 5000)
+    
+    pendencias = query.order_by(Pendencia.data.desc()).all()
+    # Adicionar logs para cada pendência
+    for p in pendencias:
+        p.logs = LogAlteracao.query.filter_by(pendencia_id=p.id).order_by(LogAlteracao.data_hora.desc()).all()
+    
+    # Calcular pendências sem resposta por empresa
+    pendencias_sem_resposta_por_empresa = {}
+    for empresa in EMPRESAS:
+        count = Pendencia.query.filter(
+            Pendencia.empresa == empresa,
+            Pendencia.status == 'PENDENTE OPERADOR UP',
+            (Pendencia.resposta_cliente == None) | (Pendencia.resposta_cliente == '')
+        ).count()
+        pendencias_sem_resposta_por_empresa[empresa] = count
+    
+    return render_template(
+        'operador_pendencias.html', 
+        pendencias=pendencias, 
+        empresas=EMPRESAS, 
+        empresas_selecionadas=empresas_selecionadas,
+        empresa_filtro=empresa_filtro, 
+        tipos_pendencia=TIPOS_PENDENCIA, 
+        tipo_filtro=tipo_filtro, 
+        busca=busca,
+        now=datetime.now().date(),  # Adicionado para uso no template
+        timedelta=timedelta,  # Adicionado para uso no template
+        pendencias_sem_resposta_por_empresa=pendencias_sem_resposta_por_empresa
+    )
+
+@app.route('/operador/natureza_operacao/<int:id>', methods=['GET', 'POST'])
+@permissao_requerida('operador', 'adm')
+def operador_natureza_operacao(id):
+    """Operador informa a Natureza de Operação"""
+    pendencia = Pendencia.query.get_or_404(id)
+    
+    if pendencia.status != 'PENDENTE OPERADOR UP':
+        flash('Esta pendência não está disponível para operador.', 'warning')
+        return redirect(url_for('operador_pendencias'))
+    
+    if request.method == 'POST':
+        natureza_operacao = request.form.get('natureza_operacao', '').strip()
+        if not natureza_operacao:
+            flash('Natureza de Operação é obrigatória.', 'danger')
+            return redirect(url_for('operador_natureza_operacao', id=id))
+        
+        # Atualiza pendência
+        pendencia.natureza_operacao = natureza_operacao
+        pendencia.status = 'PENDENTE SUPERVISOR UP'
+        pendencia.modificado_por = session.get('usuario_email', 'Operador UP380')
+        
+        db.session.commit()
+        
+        # Log da alteração
+        log = LogAlteracao(
+            pendencia_id=pendencia.id,
+            usuario=session.get('usuario_email', 'Operador UP380'),
+            tipo_usuario='operador',
+            data_hora=now_brazil(),
+            acao='Informação de Natureza de Operação',
+            campo_alterado='status',
+            valor_anterior='PENDENTE OPERADOR UP',
+            valor_novo='PENDENTE SUPERVISOR UP'
+        )
+        db.session.add(log)
+        
+        # Log da natureza de operação
+        log_natureza = LogAlteracao(
+            pendencia_id=pendencia.id,
+            usuario=session.get('usuario_email', 'Operador UP380'),
+            tipo_usuario='operador',
+            data_hora=now_brazil(),
+            acao='Informação de Natureza de Operação',
+            campo_alterado='natureza_operacao',
+            valor_anterior='',
+            valor_novo=natureza_operacao
+        )
+        db.session.add(log_natureza)
+        db.session.commit()
+        
+        # Notificação Teams
+        notificar_teams_pendente_supervisor(pendencia)
+        
+        flash('Natureza de Operação informada com sucesso! Pendência enviada para supervisor.', 'success')
+        return redirect(url_for('operador_pendencias'))
+    
+    return render_template('operador_natureza_operacao.html', pendencia=pendencia)
+
+@app.route('/operador/lote_enviar_supervisor', methods=['POST'])
+@permissao_requerida('operador', 'adm')
+def operador_lote_enviar_supervisor():
+    ids = request.form.getlist('ids')
+    if not ids:
+        flash('Nenhuma pendência selecionada.', 'warning')
+        return redirect(url_for('operador_pendencias'))
+    count = 0
+    for pid in ids:
+        pendencia = Pendencia.query.get(pid)
+        if pendencia and pendencia.status == 'PENDENTE OPERADOR UP':
+            pendencia.status = 'PENDENTE SUPERVISOR UP'
+            pendencia.modificado_por = session.get('usuario_email', 'Operador UP380')
+            # Log da alteração
+            log = LogAlteracao(
+                pendencia_id=pendencia.id,
+                usuario=session.get('usuario_email', 'Operador UP380'),
+                tipo_usuario='operador',
+                data_hora=now_brazil(),
+                acao='Envio em lote para supervisor',
+                campo_alterado='status',
+                valor_anterior='PENDENTE OPERADOR UP',
+                valor_novo='PENDENTE SUPERVISOR UP'
+            )
+            db.session.add(log)
+            count += 1
+    db.session.commit()
+    flash(f'{count} pendência(s) enviadas ao supervisor!', 'success')
+    return redirect(url_for('operador_pendencias'))
+
+@app.route('/supervisor/pendencias')
+@permissao_requerida('supervisor', 'adm')
+def supervisor_pendencias():
+    """Dashboard do supervisor - mostra pendências PENDENTE SUPERVISOR UP"""
+    empresa_filtro = request.args.get('empresa', EMPRESAS[0])
+    tipo_filtro = request.args.get('tipo_pendencia', TIPOS_PENDENCIA[0])
+    busca = request.args.get('busca', '')
+    empresas_selecionadas = request.args.getlist('empresas')
+    filtro_status = request.args.get('filtro_status', '')
+    filtro_prazo = request.args.get('filtro_prazo', '')
+    filtro_valor = request.args.get('filtro_valor', '')
+    
+    # Filtro de empresas (múltipla seleção)
+    if empresas_selecionadas:
+        query = Pendencia.query.filter(Pendencia.empresa.in_(empresas_selecionadas))
+    else:
+        query = Pendencia.query.filter_by(empresa=empresa_filtro)
+    
+    # Filtro de status
+    if filtro_status:
+        query = query.filter(Pendencia.status == filtro_status)
+    else:
+        query = query.filter(Pendencia.status == 'PENDENTE SUPERVISOR UP')
+    
+    # Filtro de tipo de pendência
+    if tipo_filtro:
+        query = query.filter(Pendencia.tipo_pendencia == tipo_filtro)
+    
+    if busca:
+        query = query.filter(
+            db.or_(
+                Pendencia.fornecedor_cliente.ilike(f'%{busca}%'),
+                Pendencia.banco.ilike(f'%{busca}%'),
+                Pendencia.observacao.ilike(f'%{busca}%'),
+                Pendencia.resposta_cliente.ilike(f'%{busca}%'),
+                Pendencia.natureza_operacao.ilike(f'%{busca}%'),
+                db.cast(Pendencia.valor, db.String).ilike(f'%{busca}%'),
+                db.cast(Pendencia.data, db.String).ilike(f'%{busca}%'),
+                Pendencia.status.ilike(f'%{busca}%')
+            )
+        )
+    
+    # Filtros rápidos adicionais
+    from datetime import datetime, timedelta
+    if filtro_prazo == 'atrasadas':
+        limite = datetime.now().date() - timedelta(days=7)
+        query = query.filter(Pendencia.data < limite)
+    elif filtro_prazo == 'recentes':
+        limite = datetime.now().date() - timedelta(days=7)
+        query = query.filter(Pendencia.data >= limite)
+    
+    if filtro_valor == 'alto':
+        query = query.filter(Pendencia.valor >= 5000)
+    elif filtro_valor == 'baixo':
+        query = query.filter(Pendencia.valor < 5000)
+    
+    pendencias = query.order_by(Pendencia.data.desc()).all()
+    
+    # Adicionar logs para cada pendência
+    for p in pendencias:
+        p.logs = LogAlteracao.query.filter_by(pendencia_id=p.id).order_by(LogAlteracao.data_hora.desc()).all()
+    
+    # Calcular pendências sem resposta por empresa
+    pendencias_sem_resposta_por_empresa = {}
+    for empresa in EMPRESAS:
+        count = Pendencia.query.filter(
+            Pendencia.empresa == empresa,
+            Pendencia.status == 'PENDENTE SUPERVISOR UP',
+            (Pendencia.resposta_cliente == None) | (Pendencia.resposta_cliente == '')
+        ).count()
+        pendencias_sem_resposta_por_empresa[empresa] = count
+    
+    return render_template(
+        'supervisor_pendencias.html', 
+        pendencias=pendencias, 
+        empresas=EMPRESAS, 
+        empresas_selecionadas=empresas_selecionadas,
+        empresa_filtro=empresa_filtro, 
+        tipos_pendencia=TIPOS_PENDENCIA, 
+        tipo_filtro=tipo_filtro, 
+        busca=busca,
+        filtro_status=filtro_status,
+        filtro_prazo=filtro_prazo,
+        filtro_valor=filtro_valor,
+        now=datetime.now().date(),  # Adicionado para uso no template
+        timedelta=timedelta,  # Adicionado para uso no template
+        pendencias_sem_resposta_por_empresa=pendencias_sem_resposta_por_empresa
+    )
+
+@app.route('/supervisor/resolver_pendencia/<int:id>', methods=['POST'])
+@permissao_requerida('supervisor', 'adm')
+def supervisor_resolver_pendencia(id):
+    """Supervisor resolve a pendência"""
+    pendencia = Pendencia.query.get_or_404(id)
+    
+    if pendencia.status != 'PENDENTE SUPERVISOR UP':
+        flash('Esta pendência não está disponível para resolução.', 'warning')
+        return redirect(url_for('supervisor_pendencias'))
+    
+    valor_anterior = pendencia.status
+    pendencia.status = 'RESOLVIDA'
+    pendencia.modificado_por = session.get('usuario_email', 'Supervisor UP380')
+    
+    db.session.commit()
+    
+    # Log da resolução
+    log = LogAlteracao(
+        pendencia_id=pendencia.id,
+        usuario=session.get('usuario_email', 'Supervisor UP380'),
+        tipo_usuario='supervisor',
+        data_hora=now_brazil(),
+        acao='Resolução de Pendência pelo Supervisor',
+        campo_alterado='status',
+        valor_anterior=valor_anterior,
+        valor_novo='Resolvida'
+    )
+    db.session.add(log)
+    db.session.commit()
+    
+    flash('Pendência resolvida com sucesso!', 'success')
+    return redirect(url_for('supervisor_pendencias'))
+
+@app.route('/supervisor/lote_resolver_pendencias', methods=['POST'])
+@permissao_requerida('supervisor', 'adm')
+def supervisor_lote_resolver_pendencias():
+    """Supervisor resolve múltiplas pendências em lote"""
+    ids = request.form.getlist('ids')
+    if not ids:
+        flash('Nenhuma pendência selecionada.', 'warning')
+        return redirect(url_for('supervisor_pendencias'))
+    
+    count = 0
+    for pid in ids:
+        pendencia = Pendencia.query.get(pid)
+        if pendencia and pendencia.status == 'PENDENTE SUPERVISOR UP':
+            valor_anterior = pendencia.status
+            pendencia.status = 'RESOLVIDA'
+            pendencia.modificado_por = session.get('usuario_email', 'Supervisor UP380')
+            
+            # Log da resolução
+            log = LogAlteracao(
+                pendencia_id=pendencia.id,
+                usuario=session.get('usuario_email', 'Supervisor UP380'),
+                tipo_usuario='supervisor',
+                data_hora=now_brazil(),
+                acao='Resolução em lote pelo Supervisor',
+                campo_alterado='status',
+                valor_anterior=valor_anterior,
+                valor_novo='Resolvida'
+            )
+            db.session.add(log)
+            count += 1
+    
+    db.session.commit()
+    flash(f'{count} pendência(s) resolvidas com sucesso!', 'success')
+    return redirect(url_for('supervisor_pendencias'))
+
 @app.route('/editar_observacao/<int:id>', methods=['GET', 'POST'])
 @permissao_requerida('supervisor', 'adm', 'cliente')
 def editar_observacao(id):
@@ -508,7 +947,7 @@ def editar_observacao(id):
         novo_valor = request.form.get('observacao') or 'DO QUE SE TRATA?'
         pendencia.observacao = novo_valor
         pendencia.modificado_por = 'USUARIO'
-        pendencia.status = 'Pendente UP'
+        pendencia.status = 'PENDENTE OPERADOR UP'  # Corrigido para novo fluxo
         # Upload de anexo pelo cliente
         if 'documento_cliente' in request.files:
             file = request.files['documento_cliente']
@@ -530,7 +969,8 @@ def editar_observacao(id):
         )
         db.session.add(log)
         db.session.commit()
-        notificar_teams(pendencia)
+        # Notificação para operadores
+        notificar_teams_pendente_operador(pendencia)
         flash('Observação atualizada com sucesso!', 'success')
         return redirect(url_for('dashboard'))
     return render_template('editar_observacao.html', pendencia=pendencia)
@@ -548,7 +988,7 @@ def dashboard_resolvidas():
         if data_fim:
             query = query.filter(Pendencia.data <= datetime.strptime(data_fim, '%Y-%m-%d').date())
         return query
-    resolvidas = filtro_data(Pendencia.query.filter_by(empresa=empresa_filtro, tipo_pendencia=tipo_filtro, status='Resolvida')).order_by(Pendencia.data.desc()).all()
+    resolvidas = filtro_data(Pendencia.query.filter_by(empresa=empresa_filtro, tipo_pendencia=tipo_filtro, status='RESOLVIDA')).order_by(Pendencia.data.desc()).all()
     logs_por_pendencia = {}
     for pend in resolvidas:
         logs_por_pendencia[pend.id] = LogAlteracao.query.filter_by(pendencia_id=pend.id).order_by(LogAlteracao.data_hora.desc()).all()
@@ -634,6 +1074,36 @@ def exportar_logs_csv():
         'Content-Disposition': 'attachment; filename=logs_recentes.csv'
     }
     return Response(generate(), mimetype='text/csv', headers=headers)
+
+@app.route('/relatorio_operadores')
+@permissao_requerida('adm', 'supervisor')
+def relatorio_operadores():
+    from sqlalchemy.sql import func
+    # Buscar todos os operadores
+    operadores = Usuario.query.filter_by(tipo='operador').all()
+    dados = []
+    for operador in operadores:
+        # Pendências em que o operador informou a natureza (ação: 'Informação de Natureza de Operação')
+        logs_natureza = LogAlteracao.query.filter_by(usuario=operador.email, acao='Informação de Natureza de Operação').all()
+        pendencias_ids = list(set([log.pendencia_id for log in logs_natureza]))
+        qtd = len(pendencias_ids)
+        # Calcular tempo médio de resposta (PENDENTE OPERADOR UP -> PENDENTE SUPERVISOR UP)
+        tempos = []
+        for pid in pendencias_ids:
+            log_inicio = LogAlteracao.query.filter_by(pendencia_id=pid, valor_novo='PENDENTE OPERADOR UP').order_by(LogAlteracao.data_hora).first()
+            log_fim = LogAlteracao.query.filter_by(pendencia_id=pid, valor_novo='PENDENTE SUPERVISOR UP').order_by(LogAlteracao.data_hora).first()
+            if log_inicio and log_fim:
+                delta = (log_fim.data_hora - log_inicio.data_hora).total_seconds() / 60  # minutos
+                tempos.append(delta)
+        tempo_medio = sum(tempos)/len(tempos) if tempos else 0
+        dados.append({
+            'operador': operador.email,
+            'qtd': qtd,
+            'tempo_medio': tempo_medio
+        })
+    # Ranking
+    dados = sorted(dados, key=lambda x: (-x['qtd'], x['tempo_medio']))
+    return render_template('relatorio_operadores.html', dados=dados)
 
 @app.route('/')
 @permissao_requerida('supervisor', 'adm')
@@ -747,7 +1217,11 @@ def deletar_pendencia(id):
     db.session.delete(pendencia)
     db.session.commit()
     flash('Pendência removida com sucesso!', 'success')
-    return redirect(url_for('dashboard'))
+    # Recupera filtros do formulário
+    empresa = request.form.get('empresa')
+    tipo_pendencia = request.form.get('tipo_pendencia')
+    busca = request.form.get('busca')
+    return redirect(url_for('dashboard', empresa=empresa, tipo_pendencia=tipo_pendencia, busca=busca))
 
 @app.route('/acesso_negado')
 def acesso_negado():
