@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}Gerenciar Permissões{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4"><i class="bi bi-shield-lock"></i> Gestão de Permissões por Tipo de Usuário</h2>
+    <form method="post">
+        <div class="table-responsive">
+            <table class="table table-bordered align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Funcionalidade</th>
+                        {% for tipo in tipos_usuario %}
+                        <th class="text-center text-capitalize">{{ tipo }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for func, label in funcionalidades %}
+                    <tr>
+                        <td>{{ label }}</td>
+                        {% for tipo in tipos_usuario %}
+                        <td class="text-center">
+                            <input type="checkbox" name="{{ tipo }}_{{ func }}" id="{{ tipo }}_{{ func }}" {% if permissoes[tipo][func] %}checked{% endif %}>
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="text-end mt-3">
+            <button type="submit" class="btn btn-success">
+                <i class="bi bi-save"></i> Salvar Permissões
+            </button>
+        </div>
+    </form>
+    <div class="alert alert-info mt-4">
+        <i class="bi bi-info-circle"></i> Ao desmarcar uma permissão, o usuário do respectivo tipo não verá nem conseguirá acessar a funcionalidade.
+    </div>
+</div>
+{% endblock %} 

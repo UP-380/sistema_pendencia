@@ -79,6 +79,7 @@ class Pendencia(db.Model):
     modificado_por = db.Column(db.String(50))
     nota_fiscal_arquivo = db.Column(db.String(300))  # Caminho do arquivo da nota fiscal
     natureza_operacao = db.Column(db.String(500))  # Campo para Natureza de Operação
+    motivo_recusa = db.Column(db.String(500))  # Campo para motivo da recusa pelo operador
 
 class Usuario(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -105,6 +106,18 @@ class Importacao(db.Model):
     data_hora = db.Column(db.DateTime, nullable=False)
     status = db.Column(db.String(30), nullable=False)
     mensagem_erro = db.Column(db.String(500))
+
+class PermissaoUsuarioTipo(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    tipo_usuario = db.Column(db.String(20), nullable=False)
+    funcionalidade = db.Column(db.String(50), nullable=False)
+    permitido = db.Column(db.Boolean, default=True)
+
+class PermissaoUsuarioPersonalizada(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuario.id'), nullable=False)
+    funcionalidade = db.Column(db.String(50), nullable=False)
+    permitido = db.Column(db.Boolean, default=True)
 
 def criar_usuarios_iniciais():
     if not Usuario.query.filter_by(email='adm.pendencia@up380.com.br').first():
@@ -199,8 +212,8 @@ def pre_dashboard():
     tipo_counts = {tipo: 0 for tipo in TIPOS_PENDENCIA}
     
     # Novos status para o dashboard
-    status_labels = ['PENDENTE CLIENTE', 'PENDENTE OPERADOR UP', 'PENDENTE SUPERVISOR UP', 'RESOLVIDA']
-    status_counts = [0, 0, 0, 0]
+    status_labels = ['PENDENTE CLIENTE', 'PENDENTE OPERADOR UP', 'PENDENTE SUPERVISOR UP', 'PENDENTE COMPLEMENTO CLIENTE', 'RESOLVIDA']
+    status_counts = [0, 0, 0, 0, 0]
     
     for empresa in empresas:
         pendencias = Pendencia.query.filter(Pendencia.empresa == empresa.nome).all()
@@ -220,8 +233,10 @@ def pre_dashboard():
                 status_counts[1] += 1
             elif p.status == 'PENDENTE SUPERVISOR UP':
                 status_counts[2] += 1
-            elif p.status == 'RESOLVIDA':
+            elif p.status == 'PENDENTE COMPLEMENTO CLIENTE':
                 status_counts[3] += 1
+            elif p.status == 'RESOLVIDA':
+                status_counts[4] += 1
             else:
                 # Status antigos (Pendente UP, etc.)
                 status_counts[0] += 1
@@ -309,7 +324,11 @@ def nova_pendencia():
             db.session.commit()
             enviar_email_cliente(nova_p)
             flash('Pendência criada com sucesso!', 'success')
-            return redirect(url_for('dashboard'))
+            # Redireciona para o painel correto já filtrado pela empresa
+            if session.get('usuario_tipo') == 'supervisor':
+                return redirect(url_for('supervisor_pendencias', empresa=empresa))
+            else:
+                return redirect(url_for('operador_pendencias', empresa=empresa))
         except Exception as e:
             flash(f'Erro ao criar pendência: {str(e)}', 'error')
             return redirect(url_for('nova_pendencia'))
@@ -319,15 +338,32 @@ def nova_pendencia():
 def ver_pendencia(token):
     pendencia = Pendencia.query.filter_by(token_acesso=token).first_or_404()
     if request.method == 'POST':
-        pendencia.resposta_cliente = request.form['resposta']
-        # Upload de nota fiscal pelo cliente
-        if pendencia.tipo_pendencia == 'Nota Fiscal Não Anexada' and 'nota_fiscal_arquivo' in request.files:
+        # Verifica se é complemento de resposta ou resposta inicial
+        if pendencia.status == 'PENDENTE COMPLEMENTO CLIENTE':
+            # Complemento de resposta
+            resposta_atual = pendencia.resposta_cliente or ''
+            complemento = request.form['resposta']
+            pendencia.resposta_cliente = f"{resposta_atual}\n\n--- COMPLEMENTO ---\n{complemento}"
+            pendencia.motivo_recusa = None  # Limpa o motivo da recusa
+            acao_log = 'Complemento de Resposta do Cliente'
+            valor_anterior = 'PENDENTE COMPLEMENTO CLIENTE'
+            valor_novo = 'PENDENTE OPERADOR UP'
+        else:
+            # Resposta inicial
+            pendencia.resposta_cliente = request.form['resposta']
+            acao_log = 'Resposta do Cliente'
+            valor_anterior = 'Pendente Cliente'
+            valor_novo = 'PENDENTE OPERADOR UP'
+        
+        # Upload de anexo pelo cliente (permitido para qualquer tipo de pendência)
+        if 'nota_fiscal_arquivo' in request.files:
             file = request.files['nota_fiscal_arquivo']
             if file and file.filename:
                 filename = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{file.filename}"
                 file.save(os.path.join('static/notas_fiscais', filename))
                 pendencia.nota_fiscal_arquivo = filename
-        # Quando o cliente responde:
+        
+        # Atualiza status
         pendencia.status = 'PENDENTE OPERADOR UP'
         pendencia.data_resposta = now_brazil()
         db.session.commit()
@@ -338,10 +374,10 @@ def ver_pendencia(token):
             usuario='Cliente',
             tipo_usuario='cliente',
             data_hora=now_brazil(),
-            acao='Resposta do Cliente',
+            acao=acao_log,
             campo_alterado='status',
-            valor_anterior='Pendente Cliente',
-            valor_novo='PENDENTE OPERADOR UP'
+            valor_anterior=valor_anterior,
+            valor_novo=valor_novo
         )
         db.session.add(log)
         db.session.commit()
@@ -349,7 +385,11 @@ def ver_pendencia(token):
         # Notificação Teams
         notificar_teams_pendente_operador(pendencia)
         
-        flash('Resposta enviada com sucesso!', 'success')
+        if pendencia.status == 'PENDENTE COMPLEMENTO CLIENTE':
+            flash('Complemento enviado com sucesso!', 'success')
+        else:
+            flash('Resposta enviada com sucesso!', 'success')
+        
         empresa = request.form.get('empresa', pendencia.empresa)
         tipo_pendencia = request.form.get('tipo_pendencia', pendencia.tipo_pendencia)
         busca = request.form.get('busca', '')
@@ -614,6 +654,35 @@ def notificar_teams_pendente_supervisor(pendencia):
     except Exception as e:
         print(f"Erro ao notificar Teams: {e}")
 
+def notificar_teams_recusa_cliente(pendencia):
+    """Notifica quando operador recusa resposta do cliente"""
+    webhook_url = TEAMS_WEBHOOK_URL
+    if not webhook_url:
+        return
+    mensagem = {
+        "title": "❌ Resposta Recusada - Complemento Necessário",
+        "text": (
+            f"<b>Operador recusou a resposta do cliente!</b><br><br>"
+            f"<b>ID:</b> {pendencia.id}<br>"
+            f"<b>Empresa:</b> {pendencia.empresa}<br>"
+            f"<b>Fornecedor/Cliente:</b> {pendencia.fornecedor_cliente}<br>"
+            f"<b>Valor:</b> R$ {pendencia.valor:.2f}<br>"
+            f"<b>Motivo da Recusa:</b> {pendencia.motivo_recusa}<br><br>"
+            f"<b>@Cliente</b> - Pendência aguardando complemento de informações!"
+        )
+    }
+    try:
+        requests.post(webhook_url, json={
+            "@type": "MessageCard",
+            "@context": "http://schema.org/extensions",
+            "summary": mensagem["title"],
+            "themeColor": "FF6B35",
+            "title": mensagem["title"],
+            "text": mensagem["text"]
+        }, timeout=5)
+    except Exception as e:
+        print(f"Erro ao notificar Teams: {e}")
+
 @app.route('/operador/pendencias')
 @permissao_requerida('operador', 'adm')
 def operador_pendencias():
@@ -626,6 +695,28 @@ def operador_pendencias():
     filtro_prazo = request.args.get('filtro_prazo', '')
     filtro_valor = request.args.get('filtro_valor', '')
     
+    # Definir status de pendências em aberto para o operador
+    status_abertos_operador = ['PENDENTE OPERADOR UP', 'PENDENTE COMPLEMENTO CLIENTE']
+    
+    # Obter empresas permitidas para o usuário
+    usuario = Usuario.query.get(session['usuario_id'])
+    if session.get('usuario_tipo') == 'adm':
+        empresas_permitidas = EMPRESAS
+    else:
+        empresas_permitidas = [e.nome for e in usuario.empresas]
+    
+    # Consulta agrupada de pendências em aberto por empresa
+    from sqlalchemy import func
+    pendencias_abertas_por_empresa = (
+        db.session.query(Pendencia.empresa, func.count(Pendencia.id).label('quantidade'))
+        .filter(Pendencia.status.in_(status_abertos_operador))
+        .filter(Pendencia.empresa.in_(empresas_permitidas))
+        .group_by(Pendencia.empresa)
+        .having(func.count(Pendencia.id) > 0)  # Só empresas com pendências em aberto
+        .order_by(func.count(Pendencia.id).desc())  # Ordenar por quantidade (mais críticas primeiro)
+        .all()
+    )
+    
     # Filtro de empresas (múltipla seleção)
     if empresas_selecionadas:
         query = Pendencia.query.filter(Pendencia.empresa.in_(empresas_selecionadas))
@@ -636,7 +727,8 @@ def operador_pendencias():
     if filtro_status:
         query = query.filter(Pendencia.status == filtro_status)
     else:
-        query = query.filter(Pendencia.status == 'PENDENTE OPERADOR UP')
+        # Mostra pendências que precisam de ação do operador
+        query = query.filter(Pendencia.status.in_(status_abertos_operador))
     
     if busca:
         query = query.filter(
@@ -669,12 +761,12 @@ def operador_pendencias():
     for p in pendencias:
         p.logs = LogAlteracao.query.filter_by(pendencia_id=p.id).order_by(LogAlteracao.data_hora.desc()).all()
     
-    # Calcular pendências sem resposta por empresa
+    # Calcular pendências sem resposta por empresa (mantido para compatibilidade)
     pendencias_sem_resposta_por_empresa = {}
     for empresa in EMPRESAS:
         count = Pendencia.query.filter(
             Pendencia.empresa == empresa,
-            Pendencia.status == 'PENDENTE OPERADOR UP',
+            Pendencia.status.in_(status_abertos_operador),
             (Pendencia.resposta_cliente == None) | (Pendencia.resposta_cliente == '')
         ).count()
         pendencias_sem_resposta_por_empresa[empresa] = count
@@ -690,7 +782,8 @@ def operador_pendencias():
         busca=busca,
         now=datetime.now().date(),  # Adicionado para uso no template
         timedelta=timedelta,  # Adicionado para uso no template
-        pendencias_sem_resposta_por_empresa=pendencias_sem_resposta_por_empresa
+        pendencias_sem_resposta_por_empresa=pendencias_sem_resposta_por_empresa,
+        pendencias_abertas_por_empresa=pendencias_abertas_por_empresa  # Nova variável para o indicador
     )
 
 @app.route('/operador/natureza_operacao/<int:id>', methods=['GET', 'POST'])
@@ -751,6 +844,61 @@ def operador_natureza_operacao(id):
     
     return render_template('operador_natureza_operacao.html', pendencia=pendencia)
 
+@app.route('/operador/recusar_resposta/<int:id>', methods=['POST'])
+@permissao_requerida('operador', 'adm')
+def operador_recusar_resposta(id):
+    """Operador recusa a resposta do cliente e solicita complemento"""
+    pendencia = Pendencia.query.get_or_404(id)
+    
+    if pendencia.status != 'PENDENTE OPERADOR UP':
+        flash('Esta pendência não está disponível para recusa.', 'warning')
+        return redirect(url_for('operador_pendencias'))
+    
+    motivo_recusa = request.form.get('motivo_recusa', '').strip()
+    if not motivo_recusa:
+        flash('Motivo da recusa é obrigatório.', 'danger')
+        return redirect(url_for('operador_pendencias'))
+    
+    # Atualiza pendência
+    pendencia.motivo_recusa = motivo_recusa
+    pendencia.status = 'PENDENTE COMPLEMENTO CLIENTE'
+    pendencia.modificado_por = session.get('usuario_email', 'Operador UP380')
+    
+    db.session.commit()
+    
+    # Log da recusa
+    log = LogAlteracao(
+        pendencia_id=pendencia.id,
+        usuario=session.get('usuario_email', 'Operador UP380'),
+        tipo_usuario='operador',
+        data_hora=now_brazil(),
+        acao='Recusa de Resposta do Cliente',
+        campo_alterado='status',
+        valor_anterior='PENDENTE OPERADOR UP',
+        valor_novo='PENDENTE COMPLEMENTO CLIENTE'
+    )
+    db.session.add(log)
+    
+    # Log do motivo da recusa
+    log_motivo = LogAlteracao(
+        pendencia_id=pendencia.id,
+        usuario=session.get('usuario_email', 'Operador UP380'),
+        tipo_usuario='operador',
+        data_hora=now_brazil(),
+        acao='Recusa de Resposta do Cliente',
+        campo_alterado='motivo_recusa',
+        valor_anterior='',
+        valor_novo=motivo_recusa
+    )
+    db.session.add(log_motivo)
+    db.session.commit()
+    
+    # Notificação Teams para cliente
+    notificar_teams_recusa_cliente(pendencia)
+    
+    flash('Resposta recusada. Cliente foi notificado para complementar.', 'success')
+    return redirect(url_for('operador_pendencias'))
+
 @app.route('/operador/lote_enviar_supervisor', methods=['POST'])
 @permissao_requerida('operador', 'adm')
 def operador_lote_enviar_supervisor():
@@ -786,12 +934,34 @@ def operador_lote_enviar_supervisor():
 def supervisor_pendencias():
     """Dashboard do supervisor - mostra pendências PENDENTE SUPERVISOR UP"""
     empresa_filtro = request.args.get('empresa', EMPRESAS[0])
-    tipo_filtro = request.args.get('tipo_pendencia', TIPOS_PENDENCIA[0])
+    tipo_filtro = request.args.get('tipo_pendencia', '')
     busca = request.args.get('busca', '')
     empresas_selecionadas = request.args.getlist('empresas')
     filtro_status = request.args.get('filtro_status', '')
     filtro_prazo = request.args.get('filtro_prazo', '')
     filtro_valor = request.args.get('filtro_valor', '')
+    
+    # Definir status de pendências em aberto para o supervisor
+    status_abertos_supervisor = ['PENDENTE SUPERVISOR UP']
+    
+    # Obter empresas permitidas para o usuário
+    usuario = Usuario.query.get(session['usuario_id'])
+    if session.get('usuario_tipo') == 'adm':
+        empresas_permitidas = EMPRESAS
+    else:
+        empresas_permitidas = [e.nome for e in usuario.empresas]
+    
+    # Consulta agrupada de pendências em aberto por empresa
+    from sqlalchemy import func
+    pendencias_abertas_por_empresa = (
+        db.session.query(Pendencia.empresa, func.count(Pendencia.id).label('quantidade'))
+        .filter(Pendencia.status.in_(status_abertos_supervisor))
+        .filter(Pendencia.empresa.in_(empresas_permitidas))
+        .group_by(Pendencia.empresa)
+        .having(func.count(Pendencia.id) > 0)  # Só empresas com pendências em aberto
+        .order_by(func.count(Pendencia.id).desc())  # Ordenar por quantidade (mais críticas primeiro)
+        .all()
+    )
     
     # Filtro de empresas (múltipla seleção)
     if empresas_selecionadas:
@@ -803,7 +973,7 @@ def supervisor_pendencias():
     if filtro_status:
         query = query.filter(Pendencia.status == filtro_status)
     else:
-        query = query.filter(Pendencia.status == 'PENDENTE SUPERVISOR UP')
+        query = query.filter(Pendencia.status.in_(status_abertos_supervisor))
     
     # Filtro de tipo de pendência
     if tipo_filtro:
@@ -843,12 +1013,12 @@ def supervisor_pendencias():
     for p in pendencias:
         p.logs = LogAlteracao.query.filter_by(pendencia_id=p.id).order_by(LogAlteracao.data_hora.desc()).all()
     
-    # Calcular pendências sem resposta por empresa
+    # Calcular pendências sem resposta por empresa (mantido para compatibilidade)
     pendencias_sem_resposta_por_empresa = {}
     for empresa in EMPRESAS:
         count = Pendencia.query.filter(
             Pendencia.empresa == empresa,
-            Pendencia.status == 'PENDENTE SUPERVISOR UP',
+            Pendencia.status.in_(status_abertos_supervisor),
             (Pendencia.resposta_cliente == None) | (Pendencia.resposta_cliente == '')
         ).count()
         pendencias_sem_resposta_por_empresa[empresa] = count
@@ -867,7 +1037,8 @@ def supervisor_pendencias():
         filtro_valor=filtro_valor,
         now=datetime.now().date(),  # Adicionado para uso no template
         timedelta=timedelta,  # Adicionado para uso no template
-        pendencias_sem_resposta_por_empresa=pendencias_sem_resposta_por_empresa
+        pendencias_sem_resposta_por_empresa=pendencias_sem_resposta_por_empresa,
+        pendencias_abertas_por_empresa=pendencias_abertas_por_empresa  # Nova variável para o indicador
     )
 
 @app.route('/supervisor/resolver_pendencia/<int:id>', methods=['POST'])
@@ -1116,6 +1287,28 @@ def gerenciar_usuarios():
     usuarios = Usuario.query.all()
     return render_template('admin/gerenciar_usuarios.html', usuarios=usuarios)
 
+# Lista de funcionalidades e categorias para uso nos formulários de usuário
+FUNCIONALIDADES_CATEGORIZADAS = [
+    ('Gestão de Pendências', [
+        ('cadastrar_pendencia', 'Cadastrar Pendência'),
+        ('editar_pendencia', 'Editar Pendência'),
+        ('aprovar_pendencia', 'Aprovar Pendência'),
+        ('recusar_pendencia', 'Recusar Pendência'),
+        ('baixar_anexo', 'Baixar Anexo'),
+    ]),
+    ('Importações', [
+        ('importar_planilha', 'Importar Planilha'),
+    ]),
+    ('Logs e Relatórios', [
+        ('exportar_logs', 'Exportar Logs'),
+        ('visualizar_relatorios', 'Visualizar Relatórios'),
+    ]),
+    ('Administração', [
+        ('gerenciar_usuarios', 'Gerenciar Usuários'),
+        ('gerenciar_empresas', 'Gerenciar Empresas'),
+    ]),
+]
+
 @app.route('/novo_usuario', methods=['GET', 'POST'])
 @permissao_requerida('supervisor', 'adm')
 def novo_usuario():
@@ -1134,9 +1327,19 @@ def novo_usuario():
             novo.empresas = Empresa.query.filter(Empresa.id.in_(empresas_ids)).all()
         db.session.add(novo)
         db.session.commit()
+        # Permissões individualizadas
+        for categoria, funcionalidades in FUNCIONALIDADES_CATEGORIZADAS:
+            for func, _ in funcionalidades:
+                permitido = request.form.get(f'perm_{func}') == 'on'
+                if permitido != checar_permissao(tipo, func):
+                    p = PermissaoUsuarioPersonalizada(usuario_id=novo.id, funcionalidade=func, permitido=permitido)
+                    db.session.add(p)
+        db.session.commit()
         flash('Usuário criado com sucesso!', 'success')
         return redirect(url_for('gerenciar_usuarios'))
-    return render_template('admin/novo_usuario.html', empresas=empresas)
+    # Permissões padrão do tipo
+    permissoes_tipo = {func: checar_permissao('operador', func) for cat, funclist in FUNCIONALIDADES_CATEGORIZADAS for func, _ in funclist}
+    return render_template('admin/novo_usuario.html', empresas=empresas, funcionalidades_categorizadas=FUNCIONALIDADES_CATEGORIZADAS, permissoes_tipo=permissoes_tipo)
 
 @app.route('/editar_usuario/<int:id>', methods=['GET', 'POST'])
 @permissao_requerida('supervisor', 'adm')
@@ -1155,10 +1358,25 @@ def editar_usuario(id):
         else:
             usuario.empresas = []
         db.session.commit()
+        # Permissões individualizadas
+        # Remove antigas
+        PermissaoUsuarioPersonalizada.query.filter_by(usuario_id=usuario.id).delete()
+        for categoria, funcionalidades in FUNCIONALIDADES_CATEGORIZADAS:
+            for func, _ in funcionalidades:
+                permitido = request.form.get(f'perm_{func}') == 'on'
+                if permitido != checar_permissao(usuario.tipo, func):
+                    p = PermissaoUsuarioPersonalizada(usuario_id=usuario.id, funcionalidade=func, permitido=permitido)
+                    db.session.add(p)
+        db.session.commit()
         flash('Usuário atualizado com sucesso!', 'success')
         return redirect(url_for('gerenciar_usuarios'))
     empresas_permitidas = [e.id for e in usuario.empresas]
-    return render_template('admin/editar_usuario.html', usuario=usuario, empresas=empresas, empresas_permitidas=empresas_permitidas)
+    # Permissões atuais (personalizadas ou herdadas)
+    permissoes_usuario = {}
+    for categoria, funcionalidades in FUNCIONALIDADES_CATEGORIZADAS:
+        for func, _ in funcionalidades:
+            permissoes_usuario[func] = checar_permissao_usuario(usuario.id, usuario.tipo, func)
+    return render_template('admin/editar_usuario.html', usuario=usuario, empresas=empresas, empresas_permitidas=empresas_permitidas, funcionalidades_categorizadas=FUNCIONALIDADES_CATEGORIZADAS, permissoes_usuario=permissoes_usuario)
 
 @app.route('/gerenciar_empresas')
 @permissao_requerida('supervisor', 'adm')
@@ -1241,6 +1459,77 @@ def baixar_anexo(pendencia_id):
         return redirect(url_for('dashboard'))
     
     return send_file(arquivo_path, as_attachment=True, download_name=pendencia.nota_fiscal_arquivo)
+
+def checar_permissao(tipo_usuario, funcionalidade):
+    permissao = PermissaoUsuarioTipo.query.filter_by(tipo_usuario=tipo_usuario, funcionalidade=funcionalidade).first()
+    if permissao:
+        return permissao.permitido
+    # Se não houver registro, por padrão permite (ou pode retornar False, conforme política)
+    return True
+
+def checar_permissao_usuario(usuario_id, tipo_usuario, funcionalidade):
+    p = PermissaoUsuarioPersonalizada.query.filter_by(usuario_id=usuario_id, funcionalidade=funcionalidade).first()
+    if p:
+        return p.permitido
+    return checar_permissao(tipo_usuario, funcionalidade)
+
+def atualizar_permissao(tipo_usuario, funcionalidade, permitido):
+    permissao = PermissaoUsuarioTipo.query.filter_by(tipo_usuario=tipo_usuario, funcionalidade=funcionalidade).first()
+    if permissao:
+        permissao.permitido = permitido
+    else:
+        permissao = PermissaoUsuarioTipo(tipo_usuario=tipo_usuario, funcionalidade=funcionalidade, permitido=permitido)
+        db.session.add(permissao)
+    db.session.commit()
+
+from functools import wraps
+
+def permissao_funcionalidade(funcionalidade):
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            tipo = session.get('usuario_tipo')
+            if not checar_permissao(tipo, funcionalidade):
+                flash('Acesso não autorizado para esta funcionalidade.', 'danger')
+                return redirect(url_for('acesso_negado'))
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
+
+@app.route('/gerenciar_permissoes', methods=['GET', 'POST'])
+@permissao_requerida('adm')
+def gerenciar_permissoes():
+    TIPOS_USUARIO = ['supervisor', 'operador', 'cliente']
+    FUNCIONALIDADES = [
+        ('cadastrar_pendencia', 'Cadastrar Pendência'),
+        ('editar_pendencia', 'Editar Pendência'),
+        ('importar_planilha', 'Importar Planilha'),
+        ('baixar_anexo', 'Baixar Anexo'),
+        ('aprovar_pendencia', 'Aprovar Pendência'),
+        ('recusar_pendencia', 'Recusar Pendência'),
+        ('exportar_logs', 'Exportar Logs'),
+        ('gerenciar_usuarios', 'Gerenciar Usuários'),
+        ('gerenciar_empresas', 'Gerenciar Empresas'),
+        ('visualizar_relatorios', 'Visualizar Relatórios'),
+    ]
+    if request.method == 'POST':
+        for tipo in TIPOS_USUARIO:
+            for func, _ in FUNCIONALIDADES:
+                permitido = request.form.get(f'{tipo}_{func}') == 'on'
+                atualizar_permissao(tipo, func, permitido)
+        flash('Permissões atualizadas com sucesso!', 'success')
+        return redirect(url_for('gerenciar_permissoes'))
+    # Montar matriz de permissões
+    permissoes = {}
+    for tipo in TIPOS_USUARIO:
+        permissoes[tipo] = {}
+        for func, _ in FUNCIONALIDADES:
+            permissoes[tipo][func] = checar_permissao(tipo, func)
+    return render_template('admin/gerenciar_permissoes.html',
+        tipos_usuario=TIPOS_USUARIO,
+        funcionalidades=FUNCIONALIDADES,
+        permissoes=permissoes
+    )
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))

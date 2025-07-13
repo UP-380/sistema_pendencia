@@ -33,8 +33,10 @@
                         
                         <dt class="col-sm-3">Status:</dt>
                         <dd class="col-sm-9">
-                            <span class="badge {% if pendencia.status == 'Pendente Cliente' %}bg-warning
-                                             {% elif pendencia.status == 'Pendente UP' %}bg-info
+                            <span class="badge {% if pendencia.status == 'PENDENTE CLIENTE' %}bg-warning
+                                             {% elif pendencia.status == 'PENDENTE OPERADOR UP' %}bg-info
+                                             {% elif pendencia.status == 'PENDENTE SUPERVISOR UP' %}bg-primary
+                                             {% elif pendencia.status == 'PENDENTE COMPLEMENTO CLIENTE' %}bg-danger
                                              {% else %}bg-success{% endif %}">
                                 {{ pendencia.status }}
                             </span>
@@ -73,24 +75,62 @@
                 </div>
                 {% endif %}
 
-                {% if pendencia.status == 'Pendente Cliente' %}
+                {% if pendencia.status == 'PENDENTE COMPLEMENTO CLIENTE' and pendencia.motivo_recusa %}
                 <div class="mb-4">
-                    <h4>Responder Pendência</h4>
+                    <h4><i class="bi bi-exclamation-triangle text-danger"></i> Resposta Recusada</h4>
+                    <div class="alert alert-danger">
+                        <h5>Motivo da Recusa:</h5>
+                        <p class="mb-0">{{ pendencia.motivo_recusa }}</p>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Por favor, complemente sua resposta com as informações solicitadas.</strong>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if pendencia.status in ['PENDENTE CLIENTE', 'PENDENTE COMPLEMENTO CLIENTE'] %}
+                <div class="mb-4">
+                    <h4>
+                        {% if pendencia.status == 'PENDENTE COMPLEMENTO CLIENTE' %}
+                            <i class="bi bi-plus-circle text-warning"></i> Complementar Resposta
+                        {% else %}
+                            <i class="bi bi-chat-dots"></i> Responder Pendência
+                        {% endif %}
+                    </h4>
                     <form method="POST" action="{{ url_for('ver_pendencia', token=pendencia.token_acesso) }}" enctype="multipart/form-data">
                         <input type="hidden" name="empresa" value="{{ request.args.get('empresa', pendencia.empresa) }}">
                         <input type="hidden" name="tipo_pendencia" value="{{ request.args.get('tipo_pendencia', pendencia.tipo_pendencia) }}">
                         <input type="hidden" name="busca" value="{{ request.args.get('busca', '') }}">
                         <div class="mb-3">
-                            <label for="resposta" class="form-label">Sua Resposta</label>
-                            <textarea class="form-control" id="resposta" name="resposta" rows="4" required></textarea>
-                            <div class="form-text">Por favor, explique do que se trata esta pendência.</div>
+                            <label for="resposta" class="form-label">
+                                {% if pendencia.status == 'PENDENTE COMPLEMENTO CLIENTE' %}
+                                    Complemento da Resposta
+                                {% else %}
+                                    Sua Resposta
+                                {% endif %}
+                            </label>
+                            <textarea class="form-control" id="resposta" name="resposta" rows="4" required 
+                                      placeholder="{% if pendencia.status == 'PENDENTE COMPLEMENTO CLIENTE' %}Adicione as informações solicitadas pelo operador...{% else %}Por favor, explique do que se trata esta pendência...{% endif %}"></textarea>
+                            <div class="form-text">
+                                {% if pendencia.status == 'PENDENTE COMPLEMENTO CLIENTE' %}
+                                    Adicione as informações ou documentos que estavam faltando.
+                                {% else %}
+                                    Por favor, explique do que se trata esta pendência.
+                                {% endif %}
+                            </div>
                         </div>
                         <div class="mb-3">
                             <label for="nota_fiscal_arquivo" class="form-label">Anexar Documento (PDF, JPG, PNG)</label>
                             <input type="file" class="form-control" id="nota_fiscal_arquivo" name="nota_fiscal_arquivo" accept=".pdf,.jpg,.jpeg,.png">
                         </div>
                         <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-send"></i> Enviar Resposta
+                            <i class="bi bi-send"></i> 
+                            {% if pendencia.status == 'PENDENTE COMPLEMENTO CLIENTE' %}
+                                Enviar Complemento
+                            {% else %}
+                                Enviar Resposta
+                            {% endif %}
                         </button>
                     </form>
                 </div>

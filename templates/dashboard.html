@@ -173,9 +173,15 @@
                             
                             {# CLIENTE: Responder Pendência #}
                             {% if session['usuario_tipo'] == 'cliente' and pendencia.status == 'PENDENTE CLIENTE' %}
-                                <a href="{{ url_for('editar_observacao', id=pendencia.id) }}" class="btn btn-sm btn-primary">
-                                    <i class="bi bi-chat-dots"></i> Responder Pendência
-                                </a>
+                                <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalResponder{{ pendencia.id }}">
+                                    <i class="bi bi-chat-dots"></i> Responder
+                                </button>
+                            {% endif %}
+                            {# CLIENTE: Complementar Resposta #}
+                            {% if session['usuario_tipo'] == 'cliente' and pendencia.status == 'PENDENTE COMPLEMENTO CLIENTE' %}
+                                <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#modalComplementar{{ pendencia.id }}">
+                                    <i class="bi bi-chat-dots"></i> Responder Novamente
+                                </button>
                             {% endif %}
                             
                             {# Excluir (apenas admin) #}
@@ -205,6 +211,91 @@
         <i class="bi bi-check-circle"></i> Pendências Resolvidas
     </a>
 </div>
+
+{# MODAIS DE RESPOSTA DO CLIENTE - DEVEM FICAR DENTRO DO BLOCO CONTENT #}
+{% for pendencia in pendencias %}
+    {% if session['usuario_tipo'] == 'cliente' and pendencia.status == 'PENDENTE CLIENTE' %}
+    <div class="modal fade" id="modalResponder{{ pendencia.id }}" tabindex="-1" aria-labelledby="modalResponderLabel{{ pendencia.id }}" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalResponderLabel{{ pendencia.id }}">
+                        <i class="bi bi-chat-dots text-primary"></i> Responder Pendência - #{{ pendencia.id }}
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <form method="POST" action="{{ url_for('ver_pendencia', token=pendencia.token_acesso) }}" enctype="multipart/form-data">
+                    <input type="hidden" name="empresa" value="{{ empresa_filtro }}">
+                    <input type="hidden" name="tipo_pendencia" value="{{ tipo_filtro }}">
+                    <input type="hidden" name="busca" value="{{ request.args.get('busca', '') }}">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="resposta{{ pendencia.id }}" class="form-label">Sua Resposta</label>
+                            <textarea class="form-control" id="resposta{{ pendencia.id }}" name="resposta" rows="4" required placeholder="Explique do que se trata esta pendência..."></textarea>
+                            <div class="form-text">Por favor, explique do que se trata esta pendência.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="nota_fiscal_arquivo{{ pendencia.id }}" class="form-label">Anexar Documento (PDF, JPG, PNG)</label>
+                            <input type="file" class="form-control" id="nota_fiscal_arquivo{{ pendencia.id }}" name="nota_fiscal_arquivo" accept=".pdf,.jpg,.jpeg,.png">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x"></i> Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-send"></i> Enviar Resposta
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    {% if session['usuario_tipo'] == 'cliente' and pendencia.status == 'PENDENTE COMPLEMENTO CLIENTE' %}
+    <div class="modal fade" id="modalComplementar{{ pendencia.id }}" tabindex="-1" aria-labelledby="modalComplementarLabel{{ pendencia.id }}" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalComplementarLabel{{ pendencia.id }}">
+                        <i class="bi bi-chat-dots text-warning"></i> Complementar Resposta - Pendência #{{ pendencia.id }}
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <form method="POST" action="{{ url_for('ver_pendencia', token=pendencia.token_acesso) }}" enctype="multipart/form-data">
+                    <input type="hidden" name="empresa" value="{{ empresa_filtro }}">
+                    <input type="hidden" name="tipo_pendencia" value="{{ tipo_filtro }}">
+                    <input type="hidden" name="busca" value="{{ request.args.get('busca', '') }}">
+                    <div class="modal-body">
+                        <div class="alert alert-danger mb-3">
+                            <strong>O operador solicitou complemento:</strong><br>
+                            <span>{{ pendencia.motivo_recusa }}</span>
+                        </div>
+                        <div class="mb-3">
+                            <label for="resposta{{ pendencia.id }}" class="form-label">Complemento da Resposta</label>
+                            <textarea class="form-control" id="resposta{{ pendencia.id }}" name="resposta" rows="4" required placeholder="Adicione as informações solicitadas pelo operador..."></textarea>
+                            <div class="form-text">Adicione as informações ou documentos que estavam faltando.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="nota_fiscal_arquivo{{ pendencia.id }}" class="form-label">Anexar Documento (PDF, JPG, PNG)</label>
+                            <input type="file" class="form-control" id="nota_fiscal_arquivo{{ pendencia.id }}" name="nota_fiscal_arquivo" accept=".pdf,.jpg,.jpeg,.png">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x"></i> Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-warning">
+                            <i class="bi bi-send"></i> Enviar Complemento
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+{% endfor %}
+
 {% endblock %} 
 
 {# MODAIS PARA OPERADOR RESPONDER PENDÊNCIA #}
