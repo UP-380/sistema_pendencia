@@ -144,6 +144,87 @@ def migrar_empresas_existentes():
             db.session.add(nova_empresa)
     db.session.commit()
 
+def integrar_nova_empresa(empresa):
+    """
+    Função automatizada para integrar uma nova empresa em todo o sistema.
+    Esta função garante que a nova empresa seja automaticamente disponível
+    em todos os filtros, painéis e funcionalidades do sistema.
+    """
+    try:
+        # 1. Atualiza a lista EMPRESAS para incluir a nova empresa
+        if empresa.nome not in EMPRESAS:
+            EMPRESAS.append(empresa.nome)
+            EMPRESAS.sort()  # Mantém a lista ordenada
+        
+        # 2. Registra log da integração
+        log = LogAlteracao(
+            pendencia_id=0,  # 0 indica que é uma alteração de sistema
+            usuario=session.get('usuario_email', 'sistema'),
+            tipo_usuario=session.get('usuario_tipo', 'sistema'),
+            data_hora=now_brazil(),
+            acao='INTEGRAR_EMPRESA',
+            campo_alterado='empresa',
+            valor_anterior='',
+            valor_novo=empresa.nome
+        )
+        db.session.add(log)
+        
+        # 3. Notifica via Teams sobre a nova empresa
+        try:
+            notificar_teams_nova_empresa(empresa)
+        except Exception as e:
+            print(f"Erro ao notificar Teams sobre nova empresa: {e}")
+        
+        db.session.commit()
+        
+        print(f"✅ Empresa '{empresa.nome}' integrada automaticamente ao sistema")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Erro ao integrar empresa '{empresa.nome}': {e}")
+        db.session.rollback()
+        return False
+
+def notificar_teams_nova_empresa(empresa):
+    """Notifica o Teams sobre a criação de uma nova empresa"""
+    webhook_url = os.getenv('TEAMS_WEBHOOK_URL')
+    if not webhook_url:
+        return
+    
+    usuario = session.get('usuario_email', 'Sistema')
+    data_hora = now_brazil().strftime('%d/%m/%Y %H:%M:%S')
+    
+    message = {
+        "text": f"🏢 **Nova Empresa Cadastrada**\n\n"
+                f"**Empresa:** {empresa.nome}\n"
+                f"**Cadastrada por:** {usuario}\n"
+                f"**Data/Hora:** {data_hora}\n\n"
+                f"✅ A empresa foi automaticamente integrada a todos os filtros e painéis do sistema."
+    }
+    
+    try:
+        response = requests.post(webhook_url, json=message)
+        response.raise_for_status()
+    except Exception as e:
+        print(f"Erro ao enviar notificação Teams: {e}")
+
+def obter_empresas_para_usuario():
+    """
+    Retorna a lista de empresas baseada no tipo de usuário e permissões.
+    Para adm/supervisor: todas as empresas
+    Para operador/cliente: apenas empresas permitidas
+    """
+    if session.get('usuario_tipo') in ['adm', 'supervisor']:
+        # Admin e supervisor veem todas as empresas
+        return [empresa.nome for empresa in Empresa.query.order_by(Empresa.nome).all()]
+    else:
+        # Operador e cliente veem apenas suas empresas permitidas
+        usuario = Usuario.query.get(session.get('usuario_id'))
+        if usuario and usuario.empresas:
+            return [empresa.nome for empresa in usuario.empresas]
+        else:
+            return []
+
 def enviar_email_cliente(pendencia):
     if not pendencia.email_cliente:
         return
@@ -253,7 +334,12 @@ def pre_dashboard():
 @app.route('/dashboard', methods=['GET'])
 @permissao_requerida('supervisor', 'adm', 'operador', 'cliente')
 def dashboard():
-    empresa_filtro = request.args.get('empresa', EMPRESAS[0])
+    empresas_usuario = obter_empresas_para_usuario()
+    if not empresas_usuario:
+        flash('Você não tem acesso a nenhuma empresa.', 'warning')
+        return redirect(url_for('pre_dashboard'))
+    
+    empresa_filtro = request.args.get('empresa', empresas_usuario[0])
     tipo_filtro = request.args.get('tipo_pendencia', TIPOS_PENDENCIA[0])
     busca = request.args.get('busca', '')
     
@@ -281,7 +367,7 @@ def dashboard():
         'dashboard.html', 
         pendencias=pendencias, 
         pendencias_empresa=pendencias_empresa, 
-        empresas=EMPRESAS, 
+        empresas=empresas_usuario, 
         empresa_filtro=empresa_filtro, 
         tipos_pendencia=TIPOS_PENDENCIA, 
         tipo_filtro=tipo_filtro, 
@@ -291,6 +377,11 @@ def dashboard():
 @app.route('/nova', methods=['GET', 'POST'])
 @permissao_requerida('supervisor', 'adm', 'operador')
 def nova_pendencia():
+    empresas_usuario = obter_empresas_para_usuario()
+    if not empresas_usuario:
+        flash('Você não tem acesso a nenhuma empresa.', 'warning')
+        return redirect(url_for('pre_dashboard'))
+    
     if request.method == 'POST':
         try:
             empresa = request.form['empresa']
@@ -332,7 +423,7 @@ def nova_pendencia():
         except Exception as e:
             flash(f'Erro ao criar pendência: {str(e)}', 'error')
             return redirect(url_for('nova_pendencia'))
-    return render_template('nova_pendencia.html', empresas=EMPRESAS, tipos_pendencia=TIPOS_PENDENCIA)
+    return render_template('nova_pendencia.html', empresas=empresas_usuario, tipos_pendencia=TIPOS_PENDENCIA)
 
 @app.route('/pendencia/<token>', methods=['GET', 'POST'])
 def ver_pendencia(token):
@@ -438,6 +529,11 @@ def baixar_modelo():
 @app.route('/importar', methods=['GET', 'POST'])
 @permissao_requerida('supervisor', 'adm')
 def importar_planilha():
+    empresas_usuario = obter_empresas_para_usuario()
+    if not empresas_usuario:
+        flash('Você não tem acesso a nenhuma empresa.', 'warning')
+        return redirect(url_for('pre_dashboard'))
+    
     preview = None
     erros = []
     if request.method == 'POST':
@@ -505,7 +601,7 @@ def importar_planilha():
                     erros.append(f'Erro ao processar arquivo: {e}')
             else:
                 flash('Nenhum arquivo selecionado.', 'error')
-    return render_template('importar_planilha.html', empresas=EMPRESAS, preview=preview, erros=erros)
+    return render_template('importar_planilha.html', empresas=empresas_usuario, preview=preview, erros=erros)
 
 @app.route('/historico_importacoes')
 @permissao_requerida('supervisor', 'adm')
@@ -516,6 +612,11 @@ def historico_importacoes():
 @app.route('/editar/<int:id>', methods=['GET', 'POST'])
 @permissao_requerida('supervisor', 'adm')
 def editar_pendencia(id):
+    empresas_usuario = obter_empresas_para_usuario()
+    if not empresas_usuario:
+        flash('Você não tem acesso a nenhuma empresa.', 'warning')
+        return redirect(url_for('pre_dashboard'))
+    
     pendencia = Pendencia.query.get_or_404(id)
     if pendencia.resposta_cliente:
         flash('Não é possível editar uma pendência já respondida pelo cliente.', 'danger')
@@ -565,7 +666,7 @@ def editar_pendencia(id):
         db.session.commit()
         flash('Pendência editada com sucesso!', 'success')
         return redirect(url_for('dashboard'))
-    return render_template('editar_pendencia.html', pendencia=pendencia, empresas=EMPRESAS, tipos_pendencia=TIPOS_PENDENCIA)
+    return render_template('editar_pendencia.html', pendencia=pendencia, empresas=empresas_usuario, tipos_pendencia=TIPOS_PENDENCIA)
 
 TEAMS_WEBHOOK_URL = "https://upfinance.webhook.office.com/webhookb2/7c8dacfa-6413-4b34-9659-5be33e876493@62d96e16-cfeb-4bad-8803-4a764ac7339a/IncomingWebhook/a6612b3a144d4915bf9bc1171093c8c9/9cdf59ae-5ee6-4c43-8604-31390b2d5425/V21glDBnmGcX-HxLgk_gJxnhqHC79TV9BLey3t5_DzMbU1"
 
@@ -687,7 +788,12 @@ def notificar_teams_recusa_cliente(pendencia):
 @permissao_requerida('operador', 'adm')
 def operador_pendencias():
     """Dashboard do operador - mostra pendências PENDENTE OPERADOR UP"""
-    empresa_filtro = request.args.get('empresa', EMPRESAS[0])
+    empresas_usuario = obter_empresas_para_usuario()
+    if not empresas_usuario:
+        flash('Você não tem acesso a nenhuma empresa.', 'warning')
+        return redirect(url_for('pre_dashboard'))
+    
+    empresa_filtro = request.args.get('empresa', empresas_usuario[0])
     tipo_filtro = request.args.get('tipo_pendencia', TIPOS_PENDENCIA[0])
     busca = request.args.get('busca', '')
     empresas_selecionadas = request.args.getlist('empresas')
@@ -701,7 +807,7 @@ def operador_pendencias():
     # Obter empresas permitidas para o usuário
     usuario = Usuario.query.get(session['usuario_id'])
     if session.get('usuario_tipo') == 'adm':
-        empresas_permitidas = EMPRESAS
+        empresas_permitidas = empresas_usuario
     else:
         empresas_permitidas = [e.nome for e in usuario.empresas]
     
@@ -763,7 +869,7 @@ def operador_pendencias():
     
     # Calcular pendências sem resposta por empresa (mantido para compatibilidade)
     pendencias_sem_resposta_por_empresa = {}
-    for empresa in EMPRESAS:
+    for empresa in empresas_usuario:
         count = Pendencia.query.filter(
             Pendencia.empresa == empresa,
             Pendencia.status.in_(status_abertos_operador),
@@ -774,7 +880,7 @@ def operador_pendencias():
     return render_template(
         'operador_pendencias.html', 
         pendencias=pendencias, 
-        empresas=EMPRESAS, 
+        empresas=empresas_usuario, 
         empresas_selecionadas=empresas_selecionadas,
         empresa_filtro=empresa_filtro, 
         tipos_pendencia=TIPOS_PENDENCIA, 
@@ -933,7 +1039,12 @@ def operador_lote_enviar_supervisor():
 @permissao_requerida('supervisor', 'adm')
 def supervisor_pendencias():
     """Dashboard do supervisor - mostra pendências PENDENTE SUPERVISOR UP"""
-    empresa_filtro = request.args.get('empresa', EMPRESAS[0])
+    empresas_usuario = obter_empresas_para_usuario()
+    if not empresas_usuario:
+        flash('Você não tem acesso a nenhuma empresa.', 'warning')
+        return redirect(url_for('pre_dashboard'))
+    
+    empresa_filtro = request.args.get('empresa', empresas_usuario[0])
     tipo_filtro = request.args.get('tipo_pendencia', '')
     busca = request.args.get('busca', '')
     empresas_selecionadas = request.args.getlist('empresas')
@@ -947,7 +1058,7 @@ def supervisor_pendencias():
     # Obter empresas permitidas para o usuário
     usuario = Usuario.query.get(session['usuario_id'])
     if session.get('usuario_tipo') == 'adm':
-        empresas_permitidas = EMPRESAS
+        empresas_permitidas = empresas_usuario
     else:
         empresas_permitidas = [e.nome for e in usuario.empresas]
     
@@ -1015,7 +1126,7 @@ def supervisor_pendencias():
     
     # Calcular pendências sem resposta por empresa (mantido para compatibilidade)
     pendencias_sem_resposta_por_empresa = {}
-    for empresa in EMPRESAS:
+    for empresa in empresas_usuario:
         count = Pendencia.query.filter(
             Pendencia.empresa == empresa,
             Pendencia.status.in_(status_abertos_supervisor),
@@ -1026,7 +1137,7 @@ def supervisor_pendencias():
     return render_template(
         'supervisor_pendencias.html', 
         pendencias=pendencias, 
-        empresas=EMPRESAS, 
+        empresas=empresas_usuario, 
         empresas_selecionadas=empresas_selecionadas,
         empresa_filtro=empresa_filtro, 
         tipos_pendencia=TIPOS_PENDENCIA, 
@@ -1149,7 +1260,12 @@ def editar_observacao(id):
 @app.route('/resolvidas', methods=['GET'])
 @permissao_requerida('supervisor', 'adm')
 def dashboard_resolvidas():
-    empresa_filtro = request.args.get('empresa', EMPRESAS[0])
+    empresas_usuario = obter_empresas_para_usuario()
+    if not empresas_usuario:
+        flash('Você não tem acesso a nenhuma empresa.', 'warning')
+        return redirect(url_for('pre_dashboard'))
+    
+    empresa_filtro = request.args.get('empresa', empresas_usuario[0])
     tipo_filtro = request.args.get('tipo_pendencia', TIPOS_PENDENCIA[0])
     data_inicio = request.args.get('data_inicio')
     data_fim = request.args.get('data_fim')
@@ -1167,7 +1283,7 @@ def dashboard_resolvidas():
         'resolvidas.html',
         resolvidas=resolvidas,
         logs_por_pendencia=logs_por_pendencia,
-        empresas=EMPRESAS,
+        empresas=empresas_usuario,
         empresa_filtro=empresa_filtro,
         tipos_pendencia=TIPOS_PENDENCIA,
         tipo_filtro=tipo_filtro,
@@ -1392,10 +1508,18 @@ def nova_empresa():
         if Empresa.query.filter_by(nome=nome).first():
             flash('Empresa já cadastrada.', 'danger')
             return redirect(url_for('nova_empresa'))
+        
+        # Cria a nova empresa
         nova = Empresa(nome=nome)
         db.session.add(nova)
-        db.session.commit()
-        flash('Empresa criada com sucesso!', 'success')
+        db.session.flush()  # Gera o ID da empresa
+        
+        # Integra automaticamente a nova empresa em todo o sistema
+        if integrar_nova_empresa(nova):
+            flash(f'Empresa "{nome}" criada e integrada automaticamente em todo o sistema!', 'success')
+        else:
+            flash(f'Empresa "{nome}" criada, mas houve um problema na integração automática.', 'warning')
+        
         return redirect(url_for('gerenciar_empresas'))
     return render_template('admin/form_empresa.html', title='Nova Empresa')
 
