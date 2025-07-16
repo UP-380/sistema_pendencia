@@ -239,6 +239,18 @@
                                             <i class="bi bi-x-circle"></i> Recusar
                                         </button>
                                     </div>
+                                {% elif pendencia.status == 'DEVOLVIDA AO OPERADOR' %}
+                                    <div class="btn-group" role="group">
+                                        <a href="{{ url_for('operador_natureza_operacao', id=pendencia.id) }}" 
+                                           class="btn btn-warning btn-sm">
+                                            <i class="bi bi-arrow-clockwise"></i> Corrigir e Reenviar
+                                        </a>
+                                        <button type="button" class="btn btn-info btn-sm" 
+                                                data-bs-toggle="modal" data-bs-target="#modalMotivoRecusa{{ pendencia.id }}"
+                                                title="Ver motivo da recusa">
+                                            <i class="bi bi-info-circle"></i> Ver Motivo
+                                        </button>
+                                    </div>
                                 {% elif pendencia.status == 'PENDENTE COMPLEMENTO CLIENTE' %}
                                     <span class="badge bg-warning text-dark">
                                         <i class="bi bi-clock"></i> Aguardando Cliente
@@ -376,6 +388,64 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+
+{# MODAIS DE MOTIVO DE RECUSA DO SUPERVISOR #}
+{% for pendencia in pendencias %}
+{% if pendencia.status == 'DEVOLVIDA AO OPERADOR' and pendencia.motivo_recusa_supervisor %}
+<div class="modal fade" id="modalMotivoRecusa{{ pendencia.id }}" tabindex="-1" aria-labelledby="modalMotivoRecusaLabel{{ pendencia.id }}" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="modalMotivoRecusaLabel{{ pendencia.id }}">
+                    <i class="bi bi-exclamation-triangle"></i> Motivo da Recusa - Pendência #{{ pendencia.id }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>Pendência devolvida pelo Supervisor</strong><br>
+                    Esta pendência foi recusada e devolvida para correção.
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label"><strong>Motivo da Recusa:</strong></label>
+                    <div class="border rounded p-3 bg-light">
+                        <i class="bi bi-chat-quote"></i>
+                        {{ pendencia.motivo_recusa_supervisor }}
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label"><strong>Natureza de Operação Atual:</strong></label>
+                    <div class="border rounded p-2 bg-light">
+                        {{ pendencia.natureza_operacao or 'Não informada' }}
+                    </div>
+                </div>
+                
+                <div class="alert alert-info">
+                    <i class="bi bi-lightbulb"></i>
+                    <strong>Próximos passos:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>Analise o motivo da recusa</li>
+                        <li>Corrija as informações conforme solicitado</li>
+                        <li>Clique em "Corrigir e Reenviar" para enviar novamente ao supervisor</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x"></i> Fechar
+                </button>
+                <a href="{{ url_for('operador_natureza_operacao', id=pendencia.id) }}" class="btn btn-warning">
+                    <i class="bi bi-arrow-clockwise"></i> Corrigir e Reenviar
+                </a>
+            </div>
         </div>
     </div>
 </div>

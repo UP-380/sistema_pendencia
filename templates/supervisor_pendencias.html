@@ -525,6 +525,49 @@
                         <i class="bi bi-check-circle"></i> Resolver Pendência
                     </button>
                 </form>
+                <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#modalRecusa{{ pendencia.id }}">
+                    <i class="bi bi-x-circle"></i> Recusar e Devolver
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Recusa -->
+<div class="modal fade" id="modalRecusa{{ pendencia.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle"></i> Recusar e Devolver ao Operador
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>Atenção:</strong> Esta ação irá recusar a pendência e devolvê-la ao operador para correção.
+                </div>
+                <form method="POST" action="{{ url_for('supervisor_recusar_devolver_operador', id=pendencia.id) }}">
+                    <div class="mb-3">
+                        <label for="motivo_recusa_supervisor" class="form-label">
+                            <strong>Motivo da Recusa *</strong>
+                        </label>
+                        <textarea class="form-control" id="motivo_recusa_supervisor" name="motivo_recusa_supervisor" 
+                                  rows="4" required placeholder="Informe o motivo da recusa (ex: Natureza da operação incorreta, informações insuficientes, etc.)"></textarea>
+                        <div class="form-text">
+                            Este motivo será registrado no histórico e enviado ao operador.
+                        </div>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-warning" onclick="return confirm('Confirmar recusa e devolução ao operador?')">
+                            <i class="bi bi-x-circle"></i> Confirmar Recusa e Devolução
+                        </button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

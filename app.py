@@ -80,6 +80,7 @@ class Pendencia(db.Model):
     nota_fiscal_arquivo = db.Column(db.String(300))  # Caminho do arquivo da nota fiscal
     natureza_operacao = db.Column(db.String(500))  # Campo para Natureza de Operação
     motivo_recusa = db.Column(db.String(500))  # Campo para motivo da recusa pelo operador
+    motivo_recusa_supervisor = db.Column(db.String(500))  # Campo para motivo da recusa pelo supervisor
 
 class Usuario(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -784,6 +785,36 @@ def notificar_teams_recusa_cliente(pendencia):
     except Exception as e:
         print(f"Erro ao notificar Teams: {e}")
 
+def notificar_teams_recusa_supervisor(pendencia):
+    """Notifica quando pendência é recusada pelo supervisor e devolvida ao operador"""
+    webhook_url = TEAMS_WEBHOOK_URL
+    if not webhook_url:
+        return
+    mensagem = {
+        "title": "🔄 Pendência Devolvida pelo Supervisor",
+        "text": (
+            f"<b>Pendência recusada e devolvida ao operador!</b><br><br>"
+            f"<b>ID:</b> {pendencia.id}<br>"
+            f"<b>Empresa:</b> {pendencia.empresa}<br>"
+            f"<b>Fornecedor/Cliente:</b> {pendencia.fornecedor_cliente}<br>"
+            f"<b>Valor:</b> R$ {pendencia.valor:.2f}<br>"
+            f"<b>Natureza de Operação:</b> {pendencia.natureza_operacao}<br>"
+            f"<b>Motivo da Recusa:</b> {pendencia.motivo_recusa_supervisor}<br><br>"
+            f"<b>@Operadores UP380</b> - Pendência devolvida para correção!"
+        )
+    }
+    try:
+        requests.post(webhook_url, json={
+            "@type": "MessageCard",
+            "@context": "http://schema.org/extensions",
+            "summary": mensagem["title"],
+            "themeColor": "FFA500",
+            "title": mensagem["title"],
+            "text": mensagem["text"]
+        }, timeout=5)
+    except Exception as e:
+        print(f"Erro ao notificar Teams: {e}")
+
 @app.route('/operador/pendencias')
 @permissao_requerida('operador', 'adm')
 def operador_pendencias():
@@ -802,7 +833,7 @@ def operador_pendencias():
     filtro_valor = request.args.get('filtro_valor', '')
     
     # Definir status de pendências em aberto para o operador
-    status_abertos_operador = ['PENDENTE OPERADOR UP', 'PENDENTE COMPLEMENTO CLIENTE']
+    status_abertos_operador = ['PENDENTE OPERADOR UP', 'PENDENTE COMPLEMENTO CLIENTE', 'DEVOLVIDA AO OPERADOR']
     
     # Obter empresas permitidas para o usuário
     usuario = Usuario.query.get(session['usuario_id'])
@@ -898,7 +929,7 @@ def operador_natureza_operacao(id):
     """Operador informa a Natureza de Operação"""
     pendencia = Pendencia.query.get_or_404(id)
     
-    if pendencia.status != 'PENDENTE OPERADOR UP':
+    if pendencia.status not in ['PENDENTE OPERADOR UP', 'DEVOLVIDA AO OPERADOR']:
         flash('Esta pendência não está disponível para operador.', 'warning')
         return redirect(url_for('operador_pendencias'))
     
@@ -912,6 +943,10 @@ def operador_natureza_operacao(id):
         pendencia.natureza_operacao = natureza_operacao
         pendencia.status = 'PENDENTE SUPERVISOR UP'
         pendencia.modificado_por = session.get('usuario_email', 'Operador UP380')
+        
+        # Se era uma pendência devolvida, limpa o motivo de recusa
+        if pendencia.motivo_recusa_supervisor:
+            pendencia.motivo_recusa_supervisor = None
         
         db.session.commit()
         
@@ -1218,6 +1253,62 @@ def supervisor_lote_resolver_pendencias():
     
     db.session.commit()
     flash(f'{count} pendência(s) resolvidas com sucesso!', 'success')
+    return redirect(url_for('supervisor_pendencias'))
+
+@app.route('/supervisor/recusar_devolver_operador/<int:id>', methods=['POST'])
+@permissao_requerida('supervisor', 'adm')
+def supervisor_recusar_devolver_operador(id):
+    """Supervisor recusa a pendência e devolve ao operador para correção"""
+    pendencia = Pendencia.query.get_or_404(id)
+    
+    if pendencia.status != 'PENDENTE SUPERVISOR UP':
+        flash('Esta pendência não está disponível para recusa.', 'warning')
+        return redirect(url_for('supervisor_pendencias'))
+    
+    motivo_recusa = request.form.get('motivo_recusa_supervisor', '').strip()
+    if not motivo_recusa:
+        flash('Motivo da recusa é obrigatório.', 'danger')
+        return redirect(url_for('supervisor_pendencias'))
+    
+    # Atualiza pendência
+    valor_anterior = pendencia.status
+    pendencia.motivo_recusa_supervisor = motivo_recusa
+    pendencia.status = 'DEVOLVIDA AO OPERADOR'
+    pendencia.modificado_por = session.get('usuario_email', 'Supervisor UP380')
+    
+    db.session.commit()
+    
+    # Log da recusa
+    log = LogAlteracao(
+        pendencia_id=pendencia.id,
+        usuario=session.get('usuario_email', 'Supervisor UP380'),
+        tipo_usuario='supervisor',
+        data_hora=now_brazil(),
+        acao='Recusa e Devolução ao Operador',
+        campo_alterado='status',
+        valor_anterior=valor_anterior,
+        valor_novo='DEVOLVIDA AO OPERADOR'
+    )
+    db.session.add(log)
+    
+    # Log do motivo da recusa
+    log_motivo = LogAlteracao(
+        pendencia_id=pendencia.id,
+        usuario=session.get('usuario_email', 'Supervisor UP380'),
+        tipo_usuario='supervisor',
+        data_hora=now_brazil(),
+        acao='Recusa e Devolução ao Operador',
+        campo_alterado='motivo_recusa_supervisor',
+        valor_anterior='',
+        valor_novo=motivo_recusa
+    )
+    db.session.add(log_motivo)
+    db.session.commit()
+    
+    # Notificação Teams
+    notificar_teams_recusa_supervisor(pendencia)
+    
+    flash('Pendência recusada e devolvida ao operador para correção!', 'success')
     return redirect(url_for('supervisor_pendencias'))
 
 @app.route('/editar_observacao/<int:id>', methods=['GET', 'POST'])
