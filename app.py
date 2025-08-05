@@ -23,6 +23,19 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', secrets.token_hex(16))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///pendencias.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+# Iframe do ClickUp para formulário de suporte
+iframe_clickup = """
+<iframe class="clickup-embed clickup-dynamic-height"
+        src="https://forms.clickup.com/9007138778/f/8cdw1yu-193593/AZ6310ZHFCSW9ANQGA"
+        width="100%" height="100%"
+        style="background: transparent; border: 1px solid #ccc;"></iframe>
+<script async src="https://app-cdn.clickup.com/assets/js/forms-embed/v1.js"></script>
+"""
+
+# Registra o iframe como variável global do Jinja2
+app.jinja_env.globals['iframe_clickup'] = iframe_clickup
+
+
 # Configuração de e-mail
 app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
 app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT', 587))
@@ -1659,6 +1672,24 @@ def deletar_pendencia(id):
 @app.route('/acesso_negado')
 def acesso_negado():
     return render_template('acesso_negado.html'), 403
+
+@app.route('/log_suporte', methods=['POST'])
+def log_suporte():
+    """Registra log de abertura do modal de suporte"""
+    if 'usuario_id' in session:
+        log = LogAlteracao(
+            pendencia_id=0,  # 0 indica que é uma ação de sistema
+            usuario=session.get('usuario_email', 'Sistema'),
+            tipo_usuario=session.get('usuario_tipo', 'sistema'),
+            data_hora=now_brazil(),
+            acao='open_support_modal',
+            campo_alterado='suporte',
+            valor_anterior='',
+            valor_novo='Modal de suporte aberto'
+        )
+        db.session.add(log)
+        db.session.commit()
+    return {'status': 'success'}
 
 @app.route('/baixar_anexo/<int:pendencia_id>')
 @permissao_requerida('supervisor', 'adm', 'operador')

@@ -77,6 +77,15 @@
                         </ul>
                     </li>
                     {% endif %}
+                    
+                    <!-- Item de menu Suporte -->
+                    {% if session.get('usuario_email') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#modalSuporte" onclick="logSuporte()">
+                            <i class="bi bi-life-preserver me-1"></i>Suporte
+                        </a>
+                    </li>
+                    {% endif %}
                 </ul>
                 <div class="d-flex align-items-center">
                     {% if session.get('usuario_email') %}
@@ -151,6 +160,33 @@
             filtro.focus();
         }
     }
+    
+    function logSuporte() {
+        // Registra log de abertura do modal de suporte
+        fetch('/log_suporte', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        }).catch(error => console.log('Erro ao registrar log de suporte:', error));
+    }
     </script>
+    
+    <!-- Modal Suporte -->
+    <div class="modal fade" id="modalSuporte" tabindex="-1" aria-labelledby="modalSuporteLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalSuporteLabel">
+                        <i class="bi bi-life-preserver me-2"></i>Abrir chamado de suporte
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-0" style="height:80vh;">
+                    {{ iframe_clickup|safe }}
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html> 
