@@ -28,8 +28,11 @@ COPY . .
 # Criar diretório para logs se não existir
 RUN mkdir -p logs
 
+# Tornar o script executável
+RUN chmod +x start.sh
+
 # Expor a porta 5000
 EXPOSE 5000
 
-# Comando para executar a aplicação
-CMD ["python", "app.py"] 
+# Comando para executar o script de inicialização
+CMD ["./start.sh"] 
