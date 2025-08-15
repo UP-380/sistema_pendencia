@@ -14,8 +14,9 @@
                     <div class="mb-3">
                         <label for="empresa" class="form-label">Empresa</label>
                         <select class="form-select" id="empresa" name="empresa" required>
+                            <option value="" disabled {{ 'selected' if not preselect_empresa else '' }}>Selecione a empresa</option>
                             {% for emp in empresas %}
-                                <option value="{{ emp }}">{{ emp }}</option>
+                                <option value="{{ emp }}" {{ 'selected' if emp == preselect_empresa else '' }}>{{ emp }}</option>
                             {% endfor %}
                         </select>
                     </div>

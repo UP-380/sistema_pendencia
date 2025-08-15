@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, ses
 from flask_sqlalchemy import SQLAlchemy
 from flask_mail import Mail, Message
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
+from datetime import datetime, timedelta
 import secrets
 import os
 from dotenv import load_dotenv
@@ -239,6 +239,27 @@ def obter_empresas_para_usuario():
         else:
             return []
 
+def pode_atuar_como_operador():
+    """
+    Verifica se o usuário atual pode atuar como operador.
+    Permite que supervisor execute ações de operador.
+    """
+    return session.get('usuario_tipo') in ['operador', 'supervisor']
+
+def pode_atuar_como_supervisor():
+    """
+    Verifica se o usuário atual pode atuar como supervisor.
+    """
+    return session.get('usuario_tipo') in ['adm', 'supervisor']
+
+@app.context_processor
+def inject_today_str():
+    """Injeta a data de hoje em formato string em todos os templates"""
+    return {
+        'today_str': now_brazil().strftime('%Y-%m-%d'),
+        'current_month': now_brazil().strftime('%Y-%m')
+    }
+
 def enviar_email_cliente(pendencia):
     if not pendencia.email_cliente:
         return
@@ -336,13 +357,18 @@ def pre_dashboard():
                 # Status antigos (Pendente UP, etc.)
                 status_counts[0] += 1
     
+    today_str = now_brazil().strftime('%Y-%m-%d')
+    current_month = now_brazil().strftime('%Y-%m')
+    
     return render_template(
         'pre_dashboard.html',
         empresas_info=empresas_info,
         tipos_pendencia=TIPOS_PENDENCIA,
         tipo_counts=[tipo_counts[t] for t in TIPOS_PENDENCIA],
         status_labels=status_labels,
-        status_counts=status_counts
+        status_counts=status_counts,
+        today_str=today_str,
+        current_month=current_month
     )
 
 @app.route('/dashboard', methods=['GET'])
@@ -377,6 +403,12 @@ def dashboard():
     
     pendencias = query.order_by(Pendencia.data.desc()).all()
     
+    # Obter empresa para o relatório
+    empresa_obj = Empresa.query.filter_by(nome=empresa_filtro).first()
+    empresa_id = empresa_obj.id if empresa_obj else None
+    today_str = now_brazil().strftime('%Y-%m-%d')
+    current_month = now_brazil().strftime('%Y-%m')
+    
     return render_template(
         'dashboard.html', 
         pendencias=pendencias, 
@@ -385,7 +417,10 @@ def dashboard():
         empresa_filtro=empresa_filtro, 
         tipos_pendencia=TIPOS_PENDENCIA, 
         tipo_filtro=tipo_filtro, 
-        busca=busca
+        busca=busca,
+        empresa_id=empresa_id,
+        today_str=today_str,
+        current_month=current_month
     )
 
 @app.route('/nova', methods=['GET', 'POST'])
@@ -395,6 +430,14 @@ def nova_pendencia():
     if not empresas_usuario:
         flash('Você não tem acesso a nenhuma empresa.', 'warning')
         return redirect(url_for('pre_dashboard'))
+    
+    # Obter empresa pré-selecionada da query string
+    empresa_preselecionada = request.args.get('empresa')
+    preselect_empresa = None
+    
+    # Validar se a empresa pré-selecionada está na lista de empresas do usuário
+    if empresa_preselecionada and empresa_preselecionada in empresas_usuario:
+        preselect_empresa = empresa_preselecionada
     
     if request.method == 'POST':
         try:
@@ -413,6 +456,12 @@ def nova_pendencia():
                     filename = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{file.filename}"
                     file.save(os.path.join('static/notas_fiscais', filename))
                     nota_fiscal_arquivo = filename
+            
+            # Validar se o usuário tem acesso à empresa selecionada
+            if empresa not in empresas_usuario:
+                flash('Você não tem acesso a esta empresa.', 'danger')
+                return redirect(url_for('nova_pendencia'))
+            
             nova_p = Pendencia(
                 empresa=empresa,
                 tipo_pendencia=tipo_pendencia,
@@ -427,6 +476,21 @@ def nova_pendencia():
             )
             db.session.add(nova_p)
             db.session.commit()
+            
+            # Log da criação da pendência
+            log = LogAlteracao(
+                pendencia_id=nova_p.id,
+                usuario=session.get('usuario_email', 'Sistema'),
+                tipo_usuario=session.get('usuario_tipo', 'sistema'),
+                data_hora=now_brazil(),
+                acao='Criação de Pendência',
+                campo_alterado='empresa',
+                valor_anterior='',
+                valor_novo=empresa
+            )
+            db.session.add(log)
+            db.session.commit()
+            
             enviar_email_cliente(nova_p)
             flash('Pendência criada com sucesso!', 'success')
             # Redireciona para o painel correto já filtrado pela empresa
@@ -437,7 +501,11 @@ def nova_pendencia():
         except Exception as e:
             flash(f'Erro ao criar pendência: {str(e)}', 'error')
             return redirect(url_for('nova_pendencia'))
-    return render_template('nova_pendencia.html', empresas=empresas_usuario, tipos_pendencia=TIPOS_PENDENCIA)
+    
+    return render_template('nova_pendencia.html', 
+                         empresas=empresas_usuario, 
+                         tipos_pendencia=TIPOS_PENDENCIA,
+                         preselect_empresa=preselect_empresa)
 
 @app.route('/pendencia/<token>', methods=['GET', 'POST'])
 def ver_pendencia(token):
@@ -1395,6 +1463,71 @@ def dashboard_resolvidas():
         data_fim=data_fim
     )
 
+@app.route('/pendencias')
+@permissao_requerida('supervisor', 'adm', 'operador')
+def listar_pendencias():
+    """
+    Rota genérica para listar pendências com filtros
+    """
+    status = request.args.get('status')
+    empresa = request.args.get('empresa')
+    page = request.args.get('page', default=1, type=int)
+    per_page = request.args.get('per_page', default=50, type=int)
+    per_page = max(10, min(per_page, 200))  # limites seguros
+
+    empresas_usuario = obter_empresas_para_usuario()
+    if not empresas_usuario:
+        flash('Você não tem acesso a nenhuma empresa.', 'warning')
+        return redirect(url_for('pre_dashboard'))
+
+    query = Pendencia.query
+
+    # Filtro por empresa
+    if empresa:
+        if empresa not in empresas_usuario:
+            flash('Você não tem acesso a esta empresa.', 'danger')
+            return redirect(url_for('pre_dashboard'))
+        query = query.filter(Pendencia.empresa == empresa)
+
+    # Filtro por status
+    if status:
+        query = query.filter(Pendencia.status == status)
+
+    # Ordenação padrão
+    if status == "RESOLVIDA":
+        query = query.order_by(Pendencia.data_resposta.desc().nullslast(), Pendencia.id.desc())
+    else:
+        query = query.order_by(Pendencia.data.desc().nullslast(), Pendencia.id.desc())
+
+    pager = query.paginate(page=page, per_page=per_page, error_out=False)
+
+    # Registrar log de visualização
+    log = LogAlteracao(
+        pendencia_id=0,  # 0 indica que é uma alteração de sistema
+        usuario=session.get('usuario_email', 'sistema'),
+        tipo_usuario=session.get('usuario_tipo', 'sistema'),
+        data_hora=now_brazil(),
+        acao="view",
+        campo_alterado="pendencias_list",
+        valor_anterior=None,
+        valor_novo=f"status={status}; empresa={empresa}; page={page}; per_page={per_page}"
+    )
+    db.session.add(log)
+    db.session.commit()
+
+    return render_template(
+        'pendencias_list.html',
+        pager=pager,
+        status=status,
+        empresa=empresa,
+        empresas=empresas_usuario,
+        filtros={
+            "status": status,
+            "empresa": empresa,
+            "ordenacao": "data_resposta_desc" if status == "RESOLVIDA" else "data_desc"
+        }
+    )
+
 @app.route('/logs/<int:pendencia_id>')
 @permissao_requerida('supervisor', 'adm')
 def ver_logs_pendencia(pendencia_id):
@@ -1465,6 +1598,441 @@ def exportar_logs_csv():
         'Content-Disposition': 'attachment; filename=logs_recentes.csv'
     }
     return Response(generate(), mimetype='text/csv', headers=headers)
+
+@app.route('/exportar_pendencias_csv')
+@permissao_requerida('supervisor', 'adm', 'operador')
+def exportar_pendencias_csv():
+    """
+    Exporta pendências para CSV com filtros aplicados
+    """
+    status = request.args.get('status')
+    empresa = request.args.get('empresa')
+    
+    empresas_usuario = obter_empresas_para_usuario()
+    if not empresas_usuario:
+        flash('Você não tem acesso a nenhuma empresa.', 'warning')
+        return redirect(url_for('pre_dashboard'))
+
+    query = Pendencia.query
+
+    # Filtro por empresa
+    if empresa:
+        if empresa not in empresas_usuario:
+            flash('Você não tem acesso a esta empresa.', 'danger')
+            return redirect(url_for('pre_dashboard'))
+        query = query.filter(Pendencia.empresa == empresa)
+
+    # Filtro por status
+    if status:
+        query = query.filter(Pendencia.status == status)
+
+    # Ordenação
+    if status == "RESOLVIDA":
+        query = query.order_by(Pendencia.data_resposta.desc().nullslast(), Pendencia.id.desc())
+    else:
+        query = query.order_by(Pendencia.data.desc().nullslast(), Pendencia.id.desc())
+
+    pendencias = query.all()
+
+    def generate():
+        data = io.StringIO()
+        writer = csv.writer(data)
+        writer.writerow([
+            'ID', 'Empresa', 'Tipo', 'Status', 'Data', 'Data Resposta', 
+            'Fornecedor/Cliente', 'Valor', 'Observação', 'Banco', 
+            'Natureza Operação', 'Modificado por'
+        ])
+        yield data.getvalue()
+        data.seek(0)
+        data.truncate(0)
+        
+        for pendencia in pendencias:
+            writer.writerow([
+                pendencia.id,
+                pendencia.empresa,
+                pendencia.tipo_pendencia,
+                pendencia.status,
+                pendencia.data.strftime('%d/%m/%Y') if pendencia.data else '',
+                pendencia.data_resposta.strftime('%d/%m/%Y') if pendencia.data_resposta else '',
+                pendencia.fornecedor_cliente,
+                f"R$ {pendencia.valor:.2f}" if pendencia.valor else '',
+                pendencia.observacao or '',
+                pendencia.banco or '',
+                pendencia.natureza_operacao or '',
+                pendencia.modificado_por or ''
+            ])
+            yield data.getvalue()
+            data.seek(0)
+            data.truncate(0)
+
+    # Nome do arquivo
+    filename = f"pendencias_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    if empresa:
+        filename += f"_{empresa.replace(' ', '_')}"
+    if status:
+        filename += f"_{status.replace(' ', '_')}"
+    filename += ".csv"
+
+    headers = {
+        'Content-Disposition': f'attachment; filename={filename}'
+    }
+    
+    return Response(generate(), mimetype='text/csv', headers=headers)
+
+@app.route('/pendencia/<int:id>/informar_natureza', methods=['POST'])
+@permissao_requerida('operador', 'supervisor')
+def informar_natureza_operacao(id):
+    """
+    Permite que operador ou supervisor informe a natureza da operação
+    """
+    if not pode_atuar_como_operador():
+        flash('Você não tem permissão para executar esta ação.', 'danger')
+        return redirect(url_for('dashboard'))
+    
+    pendencia = Pendencia.query.get_or_404(id)
+    
+    # Verificar se o status atual permite a ação
+    if pendencia.status != 'PENDENTE OPERADOR UP':
+        flash('Esta pendência não está no status correto para esta ação.', 'warning')
+        return redirect(url_for('ver_pendencia', token=pendencia.token_acesso))
+    
+    # Verificar permissão de empresa
+    empresas_usuario = obter_empresas_para_usuario()
+    if pendencia.empresa not in empresas_usuario:
+        flash('Você não tem acesso a esta empresa.', 'danger')
+        return redirect(url_for('dashboard'))
+    
+    natureza_operacao = request.form.get('natureza_operacao')
+    if not natureza_operacao:
+        flash('Natureza da operação é obrigatória.', 'danger')
+        return redirect(url_for('ver_pendencia', token=pendencia.token_acesso))
+    
+    # Atualizar a pendência
+    valor_anterior = pendencia.natureza_operacao
+    pendencia.natureza_operacao = natureza_operacao
+    pendencia.modificado_por = session.get('usuario_email', 'Sistema')
+    
+    db.session.commit()
+    
+    # Log da alteração
+    log = LogAlteracao(
+        pendencia_id=pendencia.id,
+        usuario=session.get('usuario_email', 'Sistema'),
+        tipo_usuario=session.get('usuario_tipo', 'sistema'),
+        data_hora=now_brazil(),
+        acao='Informação de Natureza de Operação',
+        campo_alterado='natureza_operacao',
+        valor_anterior=valor_anterior,
+        valor_novo=natureza_operacao
+    )
+    db.session.add(log)
+    db.session.commit()
+    
+    flash('Natureza da operação informada com sucesso!', 'success')
+    return redirect(url_for('ver_pendencia', token=pendencia.token_acesso))
+
+@app.route('/pendencia/<int:id>/aceitar_resposta', methods=['POST'])
+@permissao_requerida('operador', 'supervisor')
+def aceitar_resposta_cliente(id):
+    """
+    Permite que operador ou supervisor aceite a resposta do cliente
+    """
+    if not pode_atuar_como_operador():
+        flash('Você não tem permissão para executar esta ação.', 'danger')
+        return redirect(url_for('dashboard'))
+    
+    pendencia = Pendencia.query.get_or_404(id)
+    
+    # Verificar se o status atual permite a ação
+    if pendencia.status != 'PENDENTE OPERADOR UP':
+        flash('Esta pendência não está no status correto para esta ação.', 'warning')
+        return redirect(url_for('ver_pendencia', token=pendencia.token_acesso))
+    
+    # Verificar permissão de empresa
+    empresas_usuario = obter_empresas_para_usuario()
+    if pendencia.empresa not in empresas_usuario:
+        flash('Você não tem acesso a esta empresa.', 'danger')
+        return redirect(url_for('dashboard'))
+    
+    # Atualizar status
+    valor_anterior = pendencia.status
+    pendencia.status = 'PENDENTE SUPERVISOR UP'
+    pendencia.modificado_por = session.get('usuario_email', 'Sistema')
+    
+    db.session.commit()
+    
+    # Log da alteração
+    log = LogAlteracao(
+        pendencia_id=pendencia.id,
+        usuario=session.get('usuario_email', 'Sistema'),
+        tipo_usuario=session.get('usuario_tipo', 'sistema'),
+        data_hora=now_brazil(),
+        acao='Aceitar Resposta do Cliente',
+        campo_alterado='status',
+        valor_anterior=valor_anterior,
+        valor_novo='PENDENTE SUPERVISOR UP'
+    )
+    db.session.add(log)
+    db.session.commit()
+    
+    flash('Resposta do cliente aceita! Pendência enviada para supervisor.', 'success')
+    return redirect(url_for('ver_pendencia', token=pendencia.token_acesso))
+
+@app.route('/pendencia/<int:id>/recusar_resposta', methods=['POST'])
+@permissao_requerida('operador', 'supervisor')
+def recusar_resposta_cliente(id):
+    """
+    Permite que operador ou supervisor recuse a resposta do cliente
+    """
+    if not pode_atuar_como_operador():
+        flash('Você não tem permissão para executar esta ação.', 'danger')
+        return redirect(url_for('dashboard'))
+    
+    pendencia = Pendencia.query.get_or_404(id)
+    
+    # Verificar se o status atual permite a ação
+    if pendencia.status != 'PENDENTE OPERADOR UP':
+        flash('Esta pendência não está no status correto para esta ação.', 'warning')
+        return redirect(url_for('ver_pendencia', token=pendencia.token_acesso))
+    
+    # Verificar permissão de empresa
+    empresas_usuario = obter_empresas_para_usuario()
+    if pendencia.empresa not in empresas_usuario:
+        flash('Você não tem acesso a esta empresa.', 'danger')
+        return redirect(url_for('dashboard'))
+    
+    motivo_recusa = request.form.get('motivo_recusa')
+    if not motivo_recusa:
+        flash('Motivo da recusa é obrigatório.', 'danger')
+        return redirect(url_for('ver_pendencia', token=pendencia.token_acesso))
+    
+    # Atualizar status e motivo
+    valor_anterior_status = pendencia.status
+    valor_anterior_motivo = pendencia.motivo_recusa
+    
+    pendencia.status = 'PENDENTE CLIENTE'
+    pendencia.motivo_recusa = motivo_recusa
+    pendencia.modificado_por = session.get('usuario_email', 'Sistema')
+    
+    db.session.commit()
+    
+    # Log da alteração
+    log = LogAlteracao(
+        pendencia_id=pendencia.id,
+        usuario=session.get('usuario_email', 'Sistema'),
+        tipo_usuario=session.get('usuario_tipo', 'sistema'),
+        data_hora=now_brazil(),
+        acao='Recusar Resposta do Cliente',
+        campo_alterado='status',
+        valor_anterior=valor_anterior_status,
+        valor_novo='PENDENTE CLIENTE'
+    )
+    db.session.add(log)
+    
+    # Log do motivo da recusa
+    log_motivo = LogAlteracao(
+        pendencia_id=pendencia.id,
+        usuario=session.get('usuario_email', 'Sistema'),
+        tipo_usuario=session.get('usuario_tipo', 'sistema'),
+        data_hora=now_brazil(),
+        acao='Motivo da Recusa',
+        campo_alterado='motivo_recusa',
+        valor_anterior=valor_anterior_motivo,
+        valor_novo=motivo_recusa
+    )
+    db.session.add(log_motivo)
+    db.session.commit()
+    
+    flash('Resposta do cliente recusada! Pendência devolvida ao cliente.', 'warning')
+    return redirect(url_for('ver_pendencia', token=pendencia.token_acesso))
+
+@app.route('/aprovar_pendencia/<int:id>', methods=['POST'])
+@permissao_requerida('adm')
+def aprovar_pendencia(id):
+    """Admin aprova uma pendência diretamente"""
+    pendencia = Pendencia.query.get_or_404(id)
+    
+    if pendencia.status == 'RESOLVIDA':
+        flash('Esta pendência já está resolvida.', 'warning')
+        return redirect(url_for('ver_pendencia', token=pendencia.token_acesso))
+    
+    valor_anterior = pendencia.status
+    pendencia.status = 'RESOLVIDA'
+    pendencia.modificado_por = session.get('usuario_email', 'Admin UP380')
+    pendencia.data_resposta = now_brazil()
+    
+    db.session.commit()
+    
+    # Log da aprovação
+    log = LogAlteracao(
+        pendencia_id=pendencia.id,
+        usuario=session.get('usuario_email', 'Admin UP380'),
+        tipo_usuario='adm',
+        data_hora=now_brazil(),
+        acao='Aprovação Direta pelo Admin',
+        campo_alterado='status',
+        valor_anterior=valor_anterior,
+        valor_novo='RESOLVIDA'
+    )
+    db.session.add(log)
+    db.session.commit()
+    
+    flash('Pendência aprovada com sucesso!', 'success')
+    return redirect(url_for('ver_pendencia', token=pendencia.token_acesso))
+
+@app.route("/relatorios/pendencias/mes", methods=["GET"])
+@permissao_requerida('supervisor', 'adm', 'operador')
+def relatorio_pendencias_mes():
+    """
+    Relatório mensal de pendências - resolvidas vs pendentes por mês
+    """
+    from sqlalchemy import func
+    
+    # --- parâmetros ---
+    month_str = request.args.get("month")
+    if not month_str:
+        # Se não informado, usar o mês atual
+        current_date = now_brazil()
+        month_str = current_date.strftime("%Y-%m")
+    
+    try:
+        # Converter YYYY-MM para primeiro dia do mês
+        year, month = map(int, month_str.split('-'))
+        start_date = datetime(year, month, 1).date()
+        # Último dia do mês
+        if month == 12:
+            end_date = datetime(year + 1, 1, 1).date() - timedelta(days=1)
+        else:
+            end_date = datetime(year, month + 1, 1).date() - timedelta(days=1)
+    except ValueError:
+        flash('Formato de mês inválido. Use YYYY-MM.', 'danger')
+        return redirect(url_for('dashboard'))
+
+    empresa_id = request.args.get("empresa_id", type=int)
+    fmt = request.args.get("format", "html")
+
+    # --- empresa e permissão ---
+    empresa = None
+    if empresa_id:
+        empresa = Empresa.query.get_or_404(empresa_id)
+        empresas_usuario = obter_empresas_para_usuario()
+        if empresa.nome not in empresas_usuario:
+            flash('Você não tem acesso a esta empresa.', 'danger')
+            return redirect(url_for('dashboard'))
+
+    # helper de filtro por empresa (tabela Pendencia guarda nome)
+    def q_empresa(query):
+        return query.filter(Pendencia.empresa == empresa.nome) if empresa else query
+
+    # --- resolvidas no mês (data_resposta) ---
+    resolvidas_q = q_empresa(
+        db.session.query(
+            Pendencia.status.label("status"),
+            func.count(Pendencia.id).label("qtde")
+        ).filter(
+            Pendencia.status == "RESOLVIDA",
+            func.date(Pendencia.data_resposta) >= start_date,
+            func.date(Pendencia.data_resposta) <= end_date
+        ).group_by(Pendencia.status)
+    )
+    resolvidas_map = {r.status: r.qtde for r in resolvidas_q.all()}
+    total_resolvidas = sum(resolvidas_map.values()) if resolvidas_map else 0
+
+    # --- em pendência no mês (data) ---
+    pendentes_q = q_empresa(
+        db.session.query(
+            Pendencia.status.label("status"),
+            func.count(Pendencia.id).label("qtde")
+        ).filter(
+            Pendencia.status != "RESOLVIDA",
+            func.date(Pendencia.data) >= start_date,
+            func.date(Pendencia.data) <= end_date
+        ).group_by(Pendencia.status)
+    )
+    pendentes_por_status = {r.status: r.qtde for r in pendentes_q.all()}
+    total_pendentes = sum(pendentes_por_status.values())
+
+    # --- agrupamento por "na mão de quem" (map por status) ---
+    responsavel_map = {
+        "PENDENTE CLIENTE": "Cliente",
+        "PENDENTE COMPLEMENTO CLIENTE": "Cliente",
+        "PENDENTE OPERADOR UP": "Operador UP",
+        "PENDENTE SUPERVISOR UP": "Supervisor UP",
+        "RESOLVIDA": "--"
+    }
+    pendentes_por_responsavel = {}
+    for st, qt in pendentes_por_status.items():
+        resp = responsavel_map.get(st, "Indefinido")
+        pendentes_por_responsavel[resp] = pendentes_por_responsavel.get(resp, 0) + qt
+
+    # --- resposta comum ---
+    payload = {
+        "month": month_str,
+        "start_date": start_date.isoformat(),
+        "end_date": end_date.isoformat(),
+        "empresa": (empresa.nome if empresa else None),
+        "totais": {
+            "resolvidas_no_mes": total_resolvidas,
+            "pendentes_no_mes": total_pendentes
+        },
+        "detalhes": {
+            "por_status_pendentes": pendentes_por_status,
+            "por_responsavel_pendentes": pendentes_por_responsavel,
+            "resolvidas": {"RESOLVIDA": total_resolvidas}
+        }
+    }
+
+    # --- logging ---
+    log = LogAlteracao(
+        pendencia_id=0,  # 0 indica que é uma alteração de sistema
+        usuario=session.get('usuario_email', 'sistema'),
+        tipo_usuario=session.get('usuario_tipo', 'sistema'),
+        data_hora=now_brazil(),
+        acao="report_monthly_summary",
+        campo_alterado="relatorio_pendencias_mes",
+        valor_anterior=None,
+        valor_novo=f"month={month_str}; empresa_id={empresa_id}"
+    )
+    db.session.add(log)
+    db.session.commit()
+
+    # --- formatos ---
+    if fmt == "json":
+        return jsonify(payload)
+
+    if fmt == "csv":
+        # CSV com três blocos: totais; por_status_pendentes; por_responsavel_pendentes
+        buf = io.StringIO()
+        w = csv.writer(buf, lineterminator="\n")
+        w.writerow(["Relatório mensal de pendências", month_str, empresa.nome if empresa else "Todas"])
+        w.writerow([f"Período: {start_date.strftime('%d/%m/%Y')} a {end_date.strftime('%d/%m/%Y')}"])
+        w.writerow([])
+        w.writerow(["Totais"])
+        w.writerow(["resolvidas_no_mes", total_resolvidas])
+        w.writerow(["pendentes_no_mes", total_pendentes])
+        w.writerow([])
+        w.writerow(["Pendentes por status"])
+        w.writerow(["status", "quantidade"])
+        for st, qt in pendentes_por_status.items():
+            w.writerow([st, qt])
+        w.writerow([])
+        w.writerow(["Pendentes por responsável"])
+        w.writerow(["responsavel", "quantidade"])
+        for resp, qt in pendentes_por_responsavel.items():
+            w.writerow([resp, qt])
+
+        resp = Response(buf.getvalue(), mimetype='text/csv')
+        nome_arq = f"relatorio_pendencias_{month_str}_{empresa.nome if empresa else 'todas'}.csv"
+        resp.headers["Content-Disposition"] = f"attachment; filename={nome_arq}"
+        return resp
+
+    # formato HTML (default)
+    return render_template("relatorio_pendencias_mes.html",
+                           payload=payload,
+                           month_str=month_str,
+                           start_date=start_date,
+                           end_date=end_date,
+                           empresa=empresa)
 
 @app.route('/relatorio_operadores')
 @permissao_requerida('adm', 'supervisor')

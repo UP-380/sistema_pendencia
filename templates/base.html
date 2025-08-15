@@ -48,7 +48,7 @@
                     {% endif %}
                     
                     <!-- Novos links para o fluxo de aprovação -->
-                    {% if session.get('usuario_tipo') in ['adm', 'operador'] %}
+                    {% if session.get('usuario_tipo') in ['adm', 'operador', 'supervisor'] %}
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('operador_pendencias') }}">
                             <i class="bi bi-person-gear"></i> Operador
@@ -60,6 +60,14 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('supervisor_pendencias') }}">
                             <i class="bi bi-person-check"></i> Supervisor
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% if session.get('usuario_tipo') in ['adm', 'supervisor', 'operador'] %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('relatorio_pendencias_mes', month=current_month) }}">
+                            <i class="bi bi-calendar-month"></i> Relatório Mensal
                         </a>
                     </li>
                     {% endif %}

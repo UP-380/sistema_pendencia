@@ -1,0 +1,258 @@
+{% extends 'base.html' %}
+{% block title %}Relatório Mensal de Pendências{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>
+            <i class="bi bi-calendar-month text-primary"></i>
+            Relatório Mensal de Pendências
+        </h2>
+        <div>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Voltar ao Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Breadcrumbs -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('pre_dashboard') }}">Empresas</a></li>
+            {% if empresa %}
+            <li class="breadcrumb-item"><a href="{{ url_for('dashboard', empresa=empresa.nome) }}">{{ empresa.nome }}</a></li>
+            {% endif %}
+            <li class="breadcrumb-item active">Relatório Mensal</li>
+        </ol>
+    </nav>
+
+    <!-- Formulário de filtro -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form class="d-flex flex-wrap gap-3 align-items-end" method="get" action="{{ url_for('relatorio_pendencias_mes') }}">
+                <div>
+                    <label class="form-label">Mês/Ano</label>
+                    <input type="month" name="month" class="form-control" value="{{ month_str }}" required>
+                </div>
+                {% if empresa %}
+                    <input type="hidden" name="empresa_id" value="{{ empresa.id }}">
+                    <div class="d-flex align-items-center">
+                        <span class="badge bg-primary fs-6">Empresa: {{ empresa.nome }}</span>
+                    </div>
+                {% endif %}
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-arrow-repeat me-1"></i>Atualizar
+                    </button>
+                    <a class="btn btn-outline-success"
+                       href="{{ url_for('relatorio_pendencias_mes', month=month_str, empresa_id=(empresa.id if empresa else None), format='csv') }}">
+                       <i class="bi bi-filetype-csv me-1"></i>Exportar CSV
+                    </a>
+                    <a class="btn btn-outline-info"
+                       href="{{ url_for('relatorio_pendencias_mes', month=month_str, empresa_id=(empresa.id if empresa else None), format='json') }}">
+                       <i class="bi bi-braces me-1"></i>JSON
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Informações do relatório -->
+    <div class="alert alert-info mb-4">
+        <i class="bi bi-info-circle me-2"></i>
+        <strong>Relatório para:</strong> {{ start_date.strftime('%B/%Y') }}
+        <strong class="ms-3">Período:</strong> {{ start_date.strftime('%d/%m/%Y') }} a {{ end_date.strftime('%d/%m/%Y') }}
+        {% if empresa %}
+        <strong class="ms-3">Empresa:</strong> {{ empresa.nome }}
+        {% else %}
+        <strong class="ms-3">Todas as empresas</strong>
+        {% endif %}
+    </div>
+
+    <!-- Cards com Totais -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card border-success h-100">
+                <div class="card-body text-center">
+                    <div class="display-4 text-success mb-2">
+                        <i class="bi bi-check-circle"></i>
+                        {{ payload.totais.resolvidas_no_mes }}
+                    </div>
+                    <h5 class="card-title">Resolvidas no Mês</h5>
+                    <p class="card-text text-muted">
+                        Pendências resolvidas em {{ start_date.strftime('%B/%Y') }}
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-warning h-100">
+                <div class="card-body text-center">
+                    <div class="display-4 text-warning mb-2">
+                        <i class="bi bi-clock"></i>
+                        {{ payload.totais.pendentes_no_mes }}
+                    </div>
+                    <h5 class="card-title">Em Pendência no Mês</h5>
+                    <p class="card-text text-muted">
+                        Pendências criadas em {{ start_date.strftime('%B/%Y') }} ainda não resolvidas
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabelas de Detalhamento -->
+    <div class="row">
+        <!-- Pendentes por Status -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-list-ul text-primary"></i>
+                        Pendentes por Status
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if payload.detalhes.por_status_pendentes %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Status</th>
+                                    <th class="text-center">Quantidade</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for status, quantidade in payload.detalhes.por_status_pendentes.items() %}
+                                <tr>
+                                    <td>
+                                        {% if status == 'PENDENTE CLIENTE' %}
+                                            <span class="badge bg-warning">{{ status }}</span>
+                                        {% elif status == 'PENDENTE OPERADOR UP' %}
+                                            <span class="badge bg-info">{{ status }}</span>
+                                        {% elif status == 'PENDENTE SUPERVISOR UP' %}
+                                            <span class="badge bg-primary">{{ status }}</span>
+                                        {% elif status == 'PENDENTE COMPLEMENTO CLIENTE' %}
+                                            <span class="badge bg-danger">{{ status }}</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ status }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        <strong>{{ quantidade }}</strong>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-inbox display-4 text-muted"></i>
+                        <p class="text-muted mt-2">Nenhuma pendência encontrada para este mês.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Pendentes por Responsável -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-person-badge text-success"></i>
+                        Pendentes por Responsável
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if payload.detalhes.por_responsavel_pendentes %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Responsável</th>
+                                    <th class="text-center">Quantidade</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for responsavel, quantidade in payload.detalhes.por_responsavel_pendentes.items() %}
+                                <tr>
+                                    <td>
+                                        {% if responsavel == 'Cliente' %}
+                                            <span class="badge bg-warning">{{ responsavel }}</span>
+                                        {% elif responsavel == 'Operador UP' %}
+                                            <span class="badge bg-info">{{ responsavel }}</span>
+                                        {% elif responsavel == 'Supervisor UP' %}
+                                            <span class="badge bg-primary">{{ responsavel }}</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ responsavel }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        <strong>{{ quantidade }}</strong>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-inbox display-4 text-muted"></i>
+                        <p class="text-muted mt-2">Nenhuma pendência encontrada para este mês.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resumo -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-graph-up text-info"></i>
+                        Resumo do Mês
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <div class="border-end">
+                                <h4 class="text-success">{{ payload.totais.resolvidas_no_mes }}</h4>
+                                <p class="text-muted mb-0">Resolvidas</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="border-end">
+                                <h4 class="text-warning">{{ payload.totais.pendentes_no_mes }}</h4>
+                                <p class="text-muted mb-0">Em Pendência</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div>
+                                <h4 class="text-primary">{{ payload.totais.resolvidas_no_mes + payload.totais.pendentes_no_mes }}</h4>
+                                <p class="text-muted mb-0">Total</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ações -->
+    <div class="mt-4 text-center">
+        <a href="{{ url_for('listar_pendencias', empresa=(empresa.nome if empresa else None)) }}" class="btn btn-outline-primary me-2">
+            <i class="bi bi-list-ul"></i> Ver Lista Completa
+        </a>
+        {% if empresa %}
+        <a href="{{ url_for('dashboard', empresa=empresa.nome) }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Voltar para {{ empresa.nome }}
+        </a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -42,15 +42,47 @@
                     <div class="label">Pendências em aberto: {% if empresa.abertas > 0 %}<b class="destaque-aberto{% if empresa.abertas > 5 %} badge-alerta{% endif %}">{{ empresa.abertas }}</b>{% else %}<b>{{ empresa.abertas }}</b>{% endif %}</div>
                 </div>
             </div>
-            <div class="mt-3 text-end w-100">
-                <a href="{{ url_for('dashboard', empresa=empresa.nome) }}" class="btn btn-primary btn-sm">
+            <div class="mt-3">
+                {% if session['usuario_tipo'] == 'cliente' %}
+                <!-- Apenas o botão Ver Pendências para cliente -->
+                <a href="{{ url_for('dashboard', empresa=empresa.nome) }}" class="btn btn-primary btn-sm w-100">
                     <i class="bi bi-arrow-right-circle"></i> Ver Pendências
                 </a>
+                {% else %}
+                <!-- Botões completos para outros usuários -->
+                <div class="row g-2">
+                    <div class="col-6">
+                        <a href="{{ url_for('dashboard', empresa=empresa.nome) }}" class="btn btn-primary btn-sm w-100">
+                            <i class="bi bi-arrow-right-circle"></i> Ver Pendências
+                        </a>
+                    </div>
+                    {% if session['usuario_tipo'] in ['adm', 'operador', 'supervisor'] %}
+                    <div class="col-6">
+                        <a href="{{ url_for('nova_pendencia', empresa=empresa.nome) }}" class="btn btn-success btn-sm w-100">
+                            <i class="bi bi-plus-circle"></i> Nova Pendência
+                        </a>
+                    </div>
+                    {% endif %}
+                    {% if session['usuario_tipo'] in ['adm', 'supervisor'] %}
+                    <div class="col-6">
+                        <a href="{{ url_for('listar_pendencias', status='RESOLVIDA', empresa=empresa.nome) }}" class="btn btn-outline-success btn-sm w-100">
+                            <i class="bi bi-check-circle"></i> Resolvidas
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="{{ url_for('relatorio_pendencias_mes', month=current_month, empresa_id=empresa.id) }}" class="btn btn-outline-primary btn-sm w-100">
+                            <i class="bi bi-calendar-month"></i> Relatório Mensal
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
     {% endfor %}
 </div>
+
 {% if session['usuario_tipo'] != 'cliente' %}
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
