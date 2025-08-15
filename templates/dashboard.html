@@ -90,7 +90,8 @@
                     <tr>
                         <th>Tipo</th>
                         <th>Banco</th>
-                        <th>Data de Competência</th>
+                        <th>Data da Pendência</th>
+                        <th>Data de Abertura</th>
                         <th>Fornecedor/Cliente</th>
                         <th>Valor</th>
                         <th>Observação</th>
@@ -105,7 +106,14 @@
                     <tr>
                         <td>{{ pendencia.tipo_pendencia }}</td>
                         <td>{{ pendencia.banco }}</td>
-                        <td>{{ pendencia.data.strftime('%d/%m/%Y') }}</td>
+                        <td>
+                            {% if pendencia.data %}
+                                {{ pendencia.data.strftime('%d/%m/%Y') }}
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ pendencia.data_abertura.strftime('%d/%m/%Y %H:%M') }}</td>
                         <td>{{ pendencia.fornecedor_cliente }}</td>
                         <td>R$ {{ "%.2f"|format(pendencia.valor) }}</td>
                         <td>{{ pendencia.observacao }}</td>

@@ -33,8 +33,9 @@
                         <input type="text" class="form-control" id="banco" name="banco" required>
                     </div>
                     <div class="mb-3">
-                        <label for="data" class="form-label">Data de Competência</label>
+                        <label for="data" class="form-label">Data da Pendência</label>
                         <input type="date" class="form-control" id="data" name="data" required>
+                        <div class="form-text">Data do lançamento/extrato. Para "Nota Fiscal Não Identificada", deixe em branco.</div>
                     </div>
                     <div class="mb-3">
                         <label for="fornecedor_cliente" class="form-label">Fornecedor/Cliente</label>
@@ -72,10 +73,24 @@
 <script>
 document.getElementById('tipo_pendencia').addEventListener('change', function() {
     var uploadDiv = document.getElementById('nota_fiscal_upload');
+    var dataField = document.getElementById('data');
+    var dataLabel = dataField.previousElementSibling;
+    
     if (this.value === 'Nota Fiscal Não Anexada') {
         uploadDiv.style.display = 'block';
     } else {
         uploadDiv.style.display = 'none';
+    }
+    
+    if (this.value === 'Nota Fiscal Não Identificada') {
+        dataField.disabled = true;
+        dataField.required = false;
+        dataField.value = '';
+        dataLabel.innerHTML = 'Data da Pendência <span class="text-muted">(não aplicável)</span>';
+    } else {
+        dataField.disabled = false;
+        dataField.required = true;
+        dataLabel.innerHTML = 'Data da Pendência';
     }
 });
 </script>

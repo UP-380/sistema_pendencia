@@ -80,7 +80,8 @@ class Pendencia(db.Model):
     empresa = db.Column(db.String(50), nullable=False)
     tipo_pendencia = db.Column(db.String(30), nullable=False)
     banco = db.Column(db.String(50), nullable=False)
-    data = db.Column(db.Date, nullable=False)
+    data = db.Column(db.Date, nullable=True)  # Data da Pendência (informada pelo usuário)
+    data_abertura = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)  # Data de Abertura (automática)
     fornecedor_cliente = db.Column(db.String(200), nullable=False)
     valor = db.Column(db.Float, nullable=False)
     observacao = db.Column(db.String(300), default='DO QUE SE TRATA?')
@@ -257,7 +258,8 @@ def inject_today_str():
     """Injeta a data de hoje em formato string em todos os templates"""
     return {
         'today_str': now_brazil().strftime('%Y-%m-%d'),
-        'current_month': now_brazil().strftime('%Y-%m')
+        'current_month': now_brazil().strftime('%Y-%m'),
+        'now_brazil': now_brazil
     }
 
 def enviar_email_cliente(pendencia):
@@ -444,7 +446,14 @@ def nova_pendencia():
             empresa = request.form['empresa']
             tipo_pendencia = request.form['tipo_pendencia']
             banco = request.form['banco']
-            data = datetime.strptime(request.form['data'], '%Y-%m-%d').date()
+            
+            # Tratar Data da Pendência (pode ser NULL para "Nota Fiscal Não Identificada")
+            data_pendencia = request.form.get('data')
+            if tipo_pendencia == 'Nota Fiscal Não Identificada':
+                data_value = None
+            else:
+                data_value = datetime.strptime(data_pendencia, '%Y-%m-%d').date() if data_pendencia else None
+            
             fornecedor_cliente = request.form['fornecedor_cliente']
             valor = float(request.form['valor'])
             observacao = request.form.get('observacao') or 'DO QUE SE TRATA?'
@@ -466,7 +475,8 @@ def nova_pendencia():
                 empresa=empresa,
                 tipo_pendencia=tipo_pendencia,
                 banco=banco,
-                data=data,
+                data=data_value,  # Data da Pendência (pode ser NULL)
+                data_abertura=datetime.utcnow(),  # Data de Abertura (automática)
                 fornecedor_cliente=fornecedor_cliente,
                 valor=valor,
                 observacao=observacao,
@@ -1638,7 +1648,7 @@ def exportar_pendencias_csv():
         data = io.StringIO()
         writer = csv.writer(data)
         writer.writerow([
-            'ID', 'Empresa', 'Tipo', 'Status', 'Data', 'Data Resposta', 
+            'ID', 'Empresa', 'Tipo', 'Status', 'Data da Pendência', 'Data de Abertura', 'Data Resposta', 
             'Fornecedor/Cliente', 'Valor', 'Observação', 'Banco', 
             'Natureza Operação', 'Modificado por'
         ])
@@ -1653,6 +1663,7 @@ def exportar_pendencias_csv():
                 pendencia.tipo_pendencia,
                 pendencia.status,
                 pendencia.data.strftime('%d/%m/%Y') if pendencia.data else '',
+                pendencia.data_abertura.strftime('%d/%m/%Y %H:%M') if pendencia.data_abertura else '',
                 pendencia.data_resposta.strftime('%d/%m/%Y') if pendencia.data_resposta else '',
                 pendencia.fornecedor_cliente,
                 f"R$ {pendencia.valor:.2f}" if pendencia.valor else '',
@@ -1965,6 +1976,26 @@ def relatorio_pendencias_mes():
         resp = responsavel_map.get(st, "Indefinido")
         pendentes_por_responsavel[resp] = pendentes_por_responsavel.get(resp, 0) + qt
 
+    # --- buscar pendências detalhadas do mês ---
+    from sqlalchemy import or_, and_
+    
+    pendencias_detalhadas = q_empresa(
+        Pendencia.query.filter(
+            or_(
+                and_(
+                    Pendencia.status == "RESOLVIDA",
+                    func.date(Pendencia.data_resposta) >= start_date,
+                    func.date(Pendencia.data_resposta) <= end_date
+                ),
+                and_(
+                    Pendencia.status != "RESOLVIDA",
+                    func.date(Pendencia.data) >= start_date,
+                    func.date(Pendencia.data) <= end_date
+                )
+            )
+        ).order_by(Pendencia.data_abertura.desc())
+    ).all()
+
     # --- resposta comum ---
     payload = {
         "month": month_str,
@@ -2032,7 +2063,8 @@ def relatorio_pendencias_mes():
                            month_str=month_str,
                            start_date=start_date,
                            end_date=end_date,
-                           empresa=empresa)
+                           empresa=empresa,
+                           pendencias_detalhadas=pendencias_detalhadas)
 
 @app.route('/relatorio_operadores')
 @permissao_requerida('adm', 'supervisor')

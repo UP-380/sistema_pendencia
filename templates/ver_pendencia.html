@@ -33,8 +33,17 @@
                         <dt class="col-sm-3">Banco:</dt>
                         <dd class="col-sm-9">{{ pendencia.banco }}</dd>
                         
-                        <dt class="col-sm-3">Data:</dt>
-                        <dd class="col-sm-9">{{ pendencia.data.strftime('%d/%m/%Y') }}</dd>
+                        <dt class="col-sm-3">Data da Pendência:</dt>
+                        <dd class="col-sm-9">
+                            {% if pendencia.data %}
+                                {{ pendencia.data.strftime('%d/%m/%Y') }}
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </dd>
+                        
+                        <dt class="col-sm-3">Data de Abertura:</dt>
+                        <dd class="col-sm-9">{{ pendencia.data_abertura.strftime('%d/%m/%Y %H:%M') }}</dd>
                         
                         <dt class="col-sm-3">Fornecedor/Cliente:</dt>
                         <dd class="col-sm-9">{{ pendencia.fornecedor_cliente }}</dd>
