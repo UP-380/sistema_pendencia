@@ -107,7 +107,31 @@
 <script>
 // Configuração de campos por tipo de pendência
 const tipoConfig = {
-            "Natureza Errada": {
+    "Cartão de Crédito Não Identificado": {
+        show: ["grp_banco", "grp_data", "grp_fornecedor", "grp_valor", "grp_obs"],
+        hide: ["grp_data_competencia", "grp_data_baixa", "grp_codigo", "grp_natureza_sistema"],
+        required: ["banco", "data", "fornecedor_cliente", "valor"],
+        label_data: null
+    },
+    "Pagamento Não Identificado": {
+        show: ["grp_banco", "grp_data", "grp_fornecedor", "grp_valor", "grp_obs"],
+        hide: ["grp_data_competencia", "grp_data_baixa", "grp_codigo", "grp_natureza_sistema"],
+        required: ["banco", "data", "fornecedor_cliente", "valor"],
+        label_data: null
+    },
+    "Recebimento Não Identificado": {
+        show: ["grp_banco", "grp_data", "grp_fornecedor", "grp_valor", "grp_obs"],
+        hide: ["grp_data_competencia", "grp_data_baixa", "grp_codigo", "grp_natureza_sistema"],
+        required: ["banco", "data", "fornecedor_cliente", "valor"],
+        label_data: null
+    },
+    "Nota Fiscal Não Anexada": {
+        show: ["grp_fornecedor", "grp_valor", "grp_obs"],
+        hide: ["grp_banco", "grp_data", "grp_data_competencia", "grp_data_baixa", "grp_codigo", "grp_natureza_sistema"],
+        required: ["fornecedor_cliente", "valor"],
+        label_data: null
+    },
+    "Natureza Errada": {
         show: ["grp_fornecedor", "grp_valor", "grp_codigo", "grp_obs", "grp_data", "grp_natureza_sistema"],
         hide: ["grp_banco", "grp_data_competencia", "grp_data_baixa"],
         required: ["fornecedor_cliente", "valor", "codigo_lancamento", "data"],
@@ -127,7 +151,7 @@ const tipoConfig = {
     },
     "Nota Fiscal Não Identificada": {
         show: ["grp_fornecedor", "grp_valor", "grp_obs"],
-        hide: ["grp_banco", "grp_data_competencia", "grp_data_baixa", "grp_codigo", "grp_natureza_sistema"],
+        hide: ["grp_banco", "grp_data", "grp_data_competencia", "grp_data_baixa", "grp_codigo", "grp_natureza_sistema"],
         required: ["fornecedor_cliente", "valor"],
         label_data: null,
         disable_data: true

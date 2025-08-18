@@ -59,9 +59,10 @@ TIPOS_PENDENCIA = [
     'Pagamento Não Identificado',
     'Recebimento Não Identificado',
     'Nota Fiscal Não Anexada',
+    'Nota Fiscal Não Identificada',
     'Natureza Errada',
     'Competência Errada',
-    'Data Da Baixa Errada'
+    'Data da Baixa Errada'
 ]
 
 # Função utilitária para data/hora local
@@ -96,22 +97,32 @@ TIPO_RULES = {
         "import_columns": ["empresa", "banco", "data_baixa", "fornecedor", "valor", "codigo_lancamento", "observacao", "email_cliente"]
     },
     "Cartão de Crédito Não Identificado": {
+        "required": ["banco", "data", "fornecedor_cliente", "valor"],
+        "forbidden": [],
         "columns": ["tipo", "banco", "data", "fornecedor_cliente", "valor", "observacao", "status", "modificado_por"],
         "import_columns": ["empresa", "banco", "data", "valor", "observacao", "email_cliente"]
     },
     "Pagamento Não Identificado": {
+        "required": ["banco", "data", "fornecedor_cliente", "valor"],
+        "forbidden": [],
         "columns": ["tipo", "banco", "data", "fornecedor_cliente", "valor", "observacao", "status", "modificado_por"],
         "import_columns": ["empresa", "banco", "data", "fornecedor", "valor", "observacao", "email_cliente"]
     },
     "Recebimento Não Identificado": {
+        "required": ["banco", "data", "fornecedor_cliente", "valor"],
+        "forbidden": [],
         "columns": ["tipo", "banco", "data", "fornecedor_cliente", "valor", "observacao", "status", "modificado_por"],
         "import_columns": ["empresa", "banco", "data", "valor", "observacao", "email_cliente"]
     },
     "Nota Fiscal Não Anexada": {
+        "required": ["fornecedor_cliente", "valor"],
+        "forbidden": [],
         "columns": ["tipo", "banco", "data", "fornecedor_cliente", "valor", "observacao", "status", "modificado_por"],
         "import_columns": ["empresa", "fornecedor", "valor", "nota_fiscal", "observacao", "email_cliente"]
     },
     "Nota Fiscal Não Identificada": {
+        "required": ["fornecedor_cliente", "valor"],
+        "forbidden": [],
         "columns": ["tipo", "banco", "fornecedor_cliente", "valor", "observacao", "status", "modificado_por"],
         "import_columns": ["empresa", "fornecedor", "valor", "observacao", "email_cliente"]
     }
@@ -136,10 +147,11 @@ def validar_por_tipo(payload):
     if not rule:
         return False, f"Tipo de pendência inválido: {tipo}"
 
-    # Verificar campos obrigatórios
-    for field in rule["required"]:
-        if not payload.get(field):
-            return False, f"Campo obrigatório ausente: {field} (tipo {tipo})"
+    # Verificar campos obrigatórios (apenas se existir a chave "required")
+    if "required" in rule:
+        for field in rule["required"]:
+            if not payload.get(field):
+                return False, f"Campo obrigatório ausente: {field} (tipo {tipo})"
 
     # Verificar campos proibidos
     for field in rule.get("forbidden", []):
