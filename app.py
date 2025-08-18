@@ -878,7 +878,7 @@ def baixar_modelo():
     return send_file(output, as_attachment=True, download_name=filename, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
 @app.route("/import/modelo", methods=["GET"])
-@permissao_requerida('supervisor', 'adm')
+@permissao_requerida('supervisor', 'adm', 'operador')
 def download_modelo_pendencias():
     tipo = request.args.get("tipo")
     
@@ -997,7 +997,7 @@ def download_modelo_pendencias():
     return resp
 
 @app.route('/importar', methods=['GET', 'POST'])
-@permissao_requerida('supervisor', 'adm')
+@permissao_requerida('supervisor', 'adm', 'operador')
 def importar_planilha():
     empresas_usuario = obter_empresas_para_usuario()
     if not empresas_usuario:
@@ -1166,7 +1166,7 @@ def importar_planilha():
                          tipos_importacao=TIPO_IMPORT_MAP.keys())
 
 @app.route('/historico_importacoes')
-@permissao_requerida('supervisor', 'adm')
+@permissao_requerida('supervisor', 'adm', 'operador')
 def historico_importacoes():
     historico = Importacao.query.order_by(Importacao.data_hora.desc()).limit(20).all()
     return render_template('historico_importacoes.html', historico=historico)
@@ -2773,6 +2773,40 @@ def atualizar_permissao(tipo_usuario, funcionalidade, permitido):
         db.session.add(permissao)
     db.session.commit()
 
+def configurar_permissoes_padrao():
+    """Configura as permissões padrão do sistema"""
+    # Permissões para operadores
+    atualizar_permissao('operador', 'importar_planilha', True)
+    atualizar_permissao('operador', 'cadastrar_pendencia', True)
+    atualizar_permissao('operador', 'editar_pendencia', True)
+    atualizar_permissao('operador', 'baixar_anexo', True)
+    atualizar_permissao('operador', 'aprovar_pendencia', True)
+    atualizar_permissao('operador', 'recusar_pendencia', True)
+    atualizar_permissao('operador', 'visualizar_relatorios', True)
+    
+    # Permissões para supervisores
+    atualizar_permissao('supervisor', 'importar_planilha', True)
+    atualizar_permissao('supervisor', 'cadastrar_pendencia', True)
+    atualizar_permissao('supervisor', 'editar_pendencia', True)
+    atualizar_permissao('supervisor', 'baixar_anexo', True)
+    atualizar_permissao('supervisor', 'aprovar_pendencia', True)
+    atualizar_permissao('supervisor', 'recusar_pendencia', True)
+    atualizar_permissao('supervisor', 'exportar_logs', True)
+    atualizar_permissao('supervisor', 'gerenciar_empresas', True)
+    atualizar_permissao('supervisor', 'visualizar_relatorios', True)
+    
+    # Permissões para clientes
+    atualizar_permissao('cliente', 'cadastrar_pendencia', False)
+    atualizar_permissao('cliente', 'editar_pendencia', False)
+    atualizar_permissao('cliente', 'importar_planilha', False)
+    atualizar_permissao('cliente', 'baixar_anexo', False)
+    atualizar_permissao('cliente', 'aprovar_pendencia', False)
+    atualizar_permissao('cliente', 'recusar_pendencia', False)
+    atualizar_permissao('cliente', 'exportar_logs', False)
+    atualizar_permissao('cliente', 'gerenciar_usuarios', False)
+    atualizar_permissao('cliente', 'gerenciar_empresas', False)
+    atualizar_permissao('cliente', 'visualizar_relatorios', True)
+
 from functools import wraps
 
 def permissao_funcionalidade(funcionalidade):
@@ -2828,4 +2862,5 @@ if __name__ == '__main__':
         db.create_all()
         criar_usuarios_iniciais()
         migrar_empresas_existentes()
+        configurar_permissoes_padrao()
     app.run(host='0.0.0.0', port=port, debug=True) 
