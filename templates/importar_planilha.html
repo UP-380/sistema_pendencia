@@ -8,38 +8,76 @@
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h2 class="card-title mb-0">Importar Pendências da Planilha</h2>
-                <div class="dropdown">
-                    <button class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                <div class="dropdown ms-auto">
+                    <button class="btn btn-light dropdown-toggle" data-bs-toggle="dropdown">
                         Baixar Planilha Modelo
                     </button>
-                    <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                        <li><a class="dropdown-item" href="{{ url_for('baixar_modelo', tipo='Cartão de Crédito Não Identificado') }}">Cartão de Crédito Não Identificado</a></li>
-                        <li><a class="dropdown-item" href="{{ url_for('baixar_modelo', tipo='Pagamento Não Identificado') }}">Pagamento Não Identificado</a></li>
-                        <li><a class="dropdown-item" href="{{ url_for('baixar_modelo', tipo='Recebimento Não Identificado') }}">Recebimento Não Identificado</a></li>
-                        <li><a class="dropdown-item" href="{{ url_for('baixar_modelo', tipo='Nota Fiscal Não Anexada') }}">Nota Fiscal Não Anexada</a></li>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <!-- TIPOS EXISTENTES -->
+                        <li><a class="dropdown-item" href="{{ url_for('download_modelo_pendencias', tipo='CARTAO_NAO_IDENTIFICADO') }}">Cartão de Crédito Não Identificado</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('download_modelo_pendencias', tipo='PAGAMENTO_NAO_IDENTIFICADO') }}">Pagamento Não Identificado</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('download_modelo_pendencias', tipo='RECEBIMENTO_NAO_IDENTIFICADO') }}">Recebimento Não Identificado</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('download_modelo_pendencias', tipo='NOTA_FISCAL_NAO_ANEXADA') }}">Nota Fiscal Não Anexada</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('download_modelo_pendencias', tipo='NOTA_FISCAL_NAO_IDENTIFICADA') }}">Nota Fiscal Não Identificada</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <!-- 3 NOVOS TIPOS -->
+                        <li><a class="dropdown-item" href="{{ url_for('download_modelo_pendencias', tipo='NATUREZA_ERRADA') }}">Natureza Errada</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('download_modelo_pendencias', tipo='COMPETENCIA_ERRADA') }}">Competência Errada</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('download_modelo_pendencias', tipo='DATA_BAIXA_ERRADA') }}">Data da Baixa Errada</a></li>
                     </ul>
                 </div>
             </div>
             <div class="card-body">
                 <form id="form-importar" method="POST" enctype="multipart/form-data">
+                    <!-- Seleção do tipo da planilha (obrigatório) -->
                     <div class="mb-3">
-                        <label for="empresa" class="form-label">Empresa</label>
-                        <select class="form-select" id="empresa" name="empresa" required>
-                            {% for emp in empresas %}
-                                <option value="{{ emp }}">{{ emp }}</option>
-                            {% endfor %}
+                        <label class="form-label">Tipo desta Planilha</label>
+                        <select class="form-select" name="tipo_import" id="tipo_import" required>
+                            <option value="">Selecione…</option>
+                            <option value="CARTAO_NAO_IDENTIFICADO">Cartão de Crédito Não Identificado</option>
+                            <option value="PAGAMENTO_NAO_IDENTIFICADO">Pagamento Não Identificado</option>
+                            <option value="RECEBIMENTO_NAO_IDENTIFICADO">Recebimento Não Identificado</option>
+                            <option value="NOTA_FISCAL_NAO_ANEXADA">Nota Fiscal Não Anexada</option>
+                            <option value="NOTA_FISCAL_NAO_IDENTIFICADA">Nota Fiscal Não Identificada</option>
+                            <option value="NATUREZA_ERRADA">Natureza Errada</option>
+                            <option value="COMPETENCIA_ERRADA">Competência Errada</option>
+                            <option value="DATA_BAIXA_ERRADA">Data da Baixa Errada</option>
                         </select>
+                        <div class="form-text">O arquivo enviado será validado de acordo com este tipo.</div>
                     </div>
+                    
+                    <!-- Empresa (contexto) -->
+                    {% if empresa_id_contexto %}
+                        <input type="hidden" name="empresa_id" value="{{ empresa_id_contexto }}">
+                        <div class="mb-3">
+                            <label class="form-label">Empresa</label>
+                            <input type="text" class="form-control" value="{{ empresas[0] }}" disabled>
+                            <div class="form-text">Empresa pré-selecionada pelo contexto.</div>
+                        </div>
+                    {% else %}
+                        <div class="mb-3">
+                            <label for="empresa" class="form-label">Empresa</label>
+                            <select class="form-select" id="empresa" name="empresa" required>
+                                {% for emp in empresas %}
+                                    <option value="{{ emp }}">{{ emp }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    {% endif %}
+                    
                     <div class="mb-3">
                         <label for="arquivo" class="form-label">Selecione o arquivo Excel (.xlsx)</label>
                         <input type="file" class="form-control" id="arquivo" name="arquivo" accept=".xlsx" required>
                     </div>
-                    <div class="mb-3">
-                        <a href="{{ url_for('baixar_modelo') }}" class="btn btn-outline-primary">
-                            <i class="bi bi-download"></i> Baixar Modelo de Pendências
-                        </a>
+                    
+                    <div class="alert alert-info">
+                        <h6><i class="bi bi-info-circle"></i> Instruções importantes:</h6>
+                        <ul class="mb-0">
+                            <li><strong>Datas:</strong> Use formato YYYY-MM-DD (ex: 2025-08-18) ou DD/MM/YYYY (ex: 18/08/2025)</li>
+                            <li><strong>Valores:</strong> Use ponto como separador decimal (ex: 1500.50)</li>
+                            <li><strong>Campos obrigatórios:</strong> Serão validados automaticamente conforme o tipo selecionado</li>
+                        </ul>
                     </div>
-                    <p>Preencha a planilha com as pendências, informando corretamente a empresa e o tipo de pendência para cada linha. Depois, faça o upload abaixo:</p>
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-primary">
                             <span id="spinner-importar" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>

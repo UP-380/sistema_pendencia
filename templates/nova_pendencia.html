@@ -28,26 +28,60 @@
                             {% endfor %}
                         </select>
                     </div>
-                    <div class="mb-3">
+                    <!-- Banco (visível apenas para tipos que precisam) -->
+                    <div class="mb-3" id="grp_banco" style="display:none;">
                         <label for="banco" class="form-label">Banco</label>
-                        <input type="text" class="form-control" id="banco" name="banco" required>
+                        <input type="text" class="form-control" id="banco" name="banco">
                     </div>
-                    <div class="mb-3">
-                        <label for="data" class="form-label">Data da Pendência</label>
-                        <input type="date" class="form-control" id="data" name="data" required>
+                    
+                    <!-- Data da Pendência -->
+                    <div class="mb-3" id="grp_data">
+                        <label for="data" class="form-label" id="lbl_data">Data da Pendência</label>
+                        <input type="date" class="form-control" id="data" name="data">
                         <div class="form-text">Data do lançamento/extrato. Para "Nota Fiscal Não Identificada", deixe em branco.</div>
                     </div>
-                    <div class="mb-3">
+                    
+                    <!-- Data Competência -->
+                    <div class="mb-3" id="grp_data_competencia" style="display:none;">
+                        <label for="data_competencia" class="form-label">Data Competência</label>
+                        <input type="date" class="form-control" id="data_competencia" name="data_competencia">
+                    </div>
+                    
+                    <!-- Data Baixa -->
+                    <div class="mb-3" id="grp_data_baixa" style="display:none;">
+                        <label for="data_baixa" class="form-label">Data da Baixa</label>
+                        <input type="date" class="form-control" id="data_baixa" name="data_baixa">
+                    </div>
+                    
+                    <!-- Fornecedor/Cliente -->
+                    <div class="mb-3" id="grp_fornecedor">
                         <label for="fornecedor_cliente" class="form-label">Fornecedor/Cliente</label>
-                        <input type="text" class="form-control" id="fornecedor_cliente" name="fornecedor_cliente" required>
+                        <input type="text" class="form-control" id="fornecedor_cliente" name="fornecedor_cliente">
                     </div>
-                    <div class="mb-3">
+                    
+                    <!-- Valor -->
+                    <div class="mb-3" id="grp_valor">
                         <label for="valor" class="form-label">Valor (R$)</label>
-                        <input type="number" step="0.01" class="form-control" id="valor" name="valor" required>
+                        <input type="number" step="0.01" class="form-control" id="valor" name="valor">
                     </div>
-                    <div class="mb-3">
+                    
+                    <!-- Código do Lançamento -->
+                    <div class="mb-3" id="grp_codigo">
+                        <label for="codigo_lancamento" class="form-label">Código do Lançamento</label>
+                        <input type="text" class="form-control" id="codigo_lancamento" name="codigo_lancamento">
+                    </div>
+                    
+                    <!-- Natureza do Sistema -->
+                    <div class="mb-3" id="grp_natureza_sistema" style="display:none;">
+                        <label for="natureza_sistema" class="form-label">Natureza Atual no Sistema</label>
+                        <input type="text" class="form-control" id="natureza_sistema" name="natureza_sistema" placeholder="Ex.: Serviços - 3.01.02">
+                        <div class="form-text">Natureza que está atualmente no ERP</div>
+                    </div>
+                    
+                    <!-- Observação -->
+                    <div class="mb-3" id="grp_obs">
                         <label for="observacao" class="form-label">Observação</label>
-                        <input type="text" class="form-control" id="observacao" name="observacao" value="DO QUE SE TRATA?">
+                        <textarea class="form-control" id="observacao" name="observacao" rows="2" placeholder="DO QUE SE TRATA?"></textarea>
                     </div>
                     <div class="mb-3">
                         <label for="email_cliente" class="form-label">E-mail do Cliente (opcional)</label>
@@ -71,26 +105,96 @@
     </div>
 </div>
 <script>
-document.getElementById('tipo_pendencia').addEventListener('change', function() {
-    var uploadDiv = document.getElementById('nota_fiscal_upload');
-    var dataField = document.getElementById('data');
-    var dataLabel = dataField.previousElementSibling;
+// Configuração de campos por tipo de pendência
+const tipoConfig = {
+            "Natureza Errada": {
+        show: ["grp_fornecedor", "grp_valor", "grp_codigo", "grp_obs", "grp_data", "grp_natureza_sistema"],
+        hide: ["grp_banco", "grp_data_competencia", "grp_data_baixa"],
+        required: ["fornecedor_cliente", "valor", "codigo_lancamento", "data"],
+        label_data: "Data do Lançamento ou Baixa"
+    },
+    "Competência Errada": {
+        show: ["grp_fornecedor", "grp_valor", "grp_codigo", "grp_obs", "grp_data_competencia"],
+        hide: ["grp_banco", "grp_data_baixa", "grp_data", "grp_natureza_sistema"],
+        required: ["fornecedor_cliente", "valor", "codigo_lancamento", "data_competencia"],
+        label_data: null
+    },
+    "Data da Baixa Errada": {
+        show: ["grp_fornecedor", "grp_valor", "grp_codigo", "grp_obs", "grp_banco", "grp_data_baixa"],
+        hide: ["grp_data", "grp_data_competencia", "grp_natureza_sistema"],
+        required: ["banco", "data_baixa", "fornecedor_cliente", "valor", "codigo_lancamento"],
+        label_data: null
+    },
+    "Nota Fiscal Não Identificada": {
+        show: ["grp_fornecedor", "grp_valor", "grp_obs"],
+        hide: ["grp_banco", "grp_data_competencia", "grp_data_baixa", "grp_codigo", "grp_natureza_sistema"],
+        required: ["fornecedor_cliente", "valor"],
+        label_data: null,
+        disable_data: true
+    }
+};
+
+function applyTipoConfig(tipo) {
+    const config = tipoConfig[tipo] || { show: [], hide: [], required: [] };
     
-    if (this.value === 'Nota Fiscal Não Anexada') {
-        uploadDiv.style.display = 'block';
-    } else {
-        uploadDiv.style.display = 'none';
+    // Mostrar campos
+    config.show.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.style.display = 'block';
+        }
+    });
+    
+    // Ocultar campos
+    config.hide.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.style.display = 'none';
+        }
+    });
+    
+    // Configurar campos obrigatórios
+    const allFields = ['fornecedor_cliente', 'valor', 'codigo_lancamento', 'data', 'data_competencia', 'data_baixa', 'banco'];
+    allFields.forEach(field => {
+        const element = document.getElementById(field);
+        if (element) {
+            element.required = config.required.includes(field);
+        }
+    });
+    
+    // Atualizar rótulo da data
+    const dataLabel = document.getElementById('lbl_data');
+    if (dataLabel && config.label_data) {
+        dataLabel.textContent = config.label_data;
     }
     
-    if (this.value === 'Nota Fiscal Não Identificada') {
+    // Desabilitar data para Nota Fiscal Não Identificada
+    const dataField = document.getElementById('data');
+    if (dataField && config.disable_data) {
         dataField.disabled = true;
-        dataField.required = false;
         dataField.value = '';
-        dataLabel.innerHTML = 'Data da Pendência <span class="text-muted">(não aplicável)</span>';
-    } else {
+        dataField.required = false;
+    } else if (dataField) {
         dataField.disabled = false;
-        dataField.required = true;
-        dataLabel.innerHTML = 'Data da Pendência';
+    }
+    
+    // Mostrar/ocultar upload de nota fiscal
+    const uploadDiv = document.getElementById('nota_fiscal_upload');
+    if (uploadDiv) {
+        uploadDiv.style.display = (tipo === 'Nota Fiscal Não Anexada') ? 'block' : 'none';
+    }
+}
+
+// Event listener para mudança de tipo
+document.getElementById('tipo_pendencia').addEventListener('change', function() {
+    applyTipoConfig(this.value);
+});
+
+// Aplicar configuração inicial
+document.addEventListener('DOMContentLoaded', function() {
+    const tipoSelect = document.getElementById('tipo_pendencia');
+    if (tipoSelect) {
+        applyTipoConfig(tipoSelect.value);
     }
 });
 </script>

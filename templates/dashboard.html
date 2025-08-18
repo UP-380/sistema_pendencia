@@ -70,11 +70,6 @@
 <!-- Tabelas de pendências em aberto -->
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1>Painel de Pendências</h1>
-    {% if session['usuario_tipo'] in ['master', 'supervisor', 'operador', 'adm'] %}
-    <a href="{{ url_for('nova_pendencia', empresa=empresa_filtro) }}" class="btn btn-primary">
-        <i class="bi bi-plus-circle"></i> Nova Pendência
-    </a>
-    {% endif %}
     {% if session['usuario_tipo'] == 'master' %}
     <a href="{{ url_for('importar_planilha') }}" class="btn btn-secondary">
         <i class="bi bi-upload"></i> Importar Planilha
@@ -88,15 +83,9 @@
             <table class="table table-hover">
                 <thead>
                     <tr>
-                        <th>Tipo</th>
-                        <th>Banco</th>
-                        <th>Data da Pendência</th>
-                        <th>Data de Abertura</th>
-                        <th>Fornecedor/Cliente</th>
-                        <th>Valor</th>
-                        <th>Observação</th>
-                        <th>Status</th>
-                        <th>Modificado por</th>
+                        {% for coluna in colunas_tipo %}
+                            <th>{{ todas_colunas[coluna] }}</th>
+                        {% endfor %}
                         <th>Anexo</th>
                         <th>Ações</th>
                     </tr>
@@ -104,19 +93,65 @@
                 <tbody>
                     {% for pendencia in pendencias %}
                     <tr>
-                        <td>{{ pendencia.tipo_pendencia }}</td>
-                        <td>{{ pendencia.banco }}</td>
-                        <td>
-                            {% if pendencia.data %}
-                                {{ pendencia.data.strftime('%d/%m/%Y') }}
-                            {% else %}
-                                <span class="text-muted">—</span>
-                            {% endif %}
-                        </td>
-                        <td>{{ pendencia.data_abertura.strftime('%d/%m/%Y %H:%M') }}</td>
-                        <td>{{ pendencia.fornecedor_cliente }}</td>
-                        <td>R$ {{ "%.2f"|format(pendencia.valor) }}</td>
-                        <td>{{ pendencia.observacao }}</td>
+                        {% for coluna in colunas_tipo %}
+                            <td>
+                                {% if coluna == 'tipo' %}
+                                    {{ pendencia.tipo_pendencia }}
+                                {% elif coluna == 'banco' %}
+                                    {{ pendencia.banco or '—' }}
+                                {% elif coluna == 'data' %}
+                                    {% if pendencia.data %}
+                                        {{ pendencia.data.strftime('%d/%m/%Y') }}
+                                    {% else %}
+                                        <span class="text-muted">—</span>
+                                    {% endif %}
+                                {% elif coluna == 'data_abertura' %}
+                                    {{ pendencia.data_abertura.strftime('%d/%m/%Y %H:%M') }}
+                                {% elif coluna == 'fornecedor_cliente' %}
+                                    {{ pendencia.fornecedor_cliente }}
+                                {% elif coluna == 'valor' %}
+                                    R$ {{ "%.2f"|format(pendencia.valor) }}
+                                {% elif coluna == 'codigo_lancamento' %}
+                                    {{ pendencia.codigo_lancamento or '—' }}
+                                {% elif coluna == 'data_competencia' %}
+                                    {% if pendencia.data_competencia %}
+                                        {{ pendencia.data_competencia.strftime('%d/%m/%Y') }}
+                                    {% else %}
+                                        <span class="text-muted">—</span>
+                                    {% endif %}
+                                {% elif coluna == 'data_baixa' %}
+                                    {% if pendencia.data_baixa %}
+                                        {{ pendencia.data_baixa.strftime('%d/%m/%Y') }}
+                                    {% else %}
+                                        <span class="text-muted">—</span>
+                                    {% endif %}
+                                {% elif coluna == 'observacao' %}
+                                    {{ pendencia.observacao }}
+                                {% elif coluna == 'status' %}
+                                    {% if pendencia.status == 'Pendente Cliente' %}
+                                        <span class="badge bg-warning">
+                                            <i class="bi bi-clock"></i> Pendente Cliente
+                                        </span>
+                                    {% elif pendencia.status == 'PENDENTE OPERADOR UP' %}
+                                        <span class="badge bg-info">
+                                            <i class="bi bi-person-gear"></i> Operador UP
+                                        </span>
+                                    {% elif pendencia.status == 'PENDENTE SUPERVISOR' %}
+                                        <span class="badge bg-danger">
+                                            <i class="bi bi-person-check"></i> Supervisor
+                                        </span>
+                                    {% elif pendencia.status == 'Resolvida' %}
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-check-circle"></i> Resolvida
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ pendencia.status }}</span>
+                                    {% endif %}
+                                {% elif coluna == 'modificado_por' %}
+                                    {% if pendencia.modificado_por == 'USUARIO' %}USUARIO{% endif %}
+                                {% endif %}
+                            </td>
+                        {% endfor %}
                         <td>
                             {% if pendencia.status == 'Pendente Cliente' %}
                                 <span class="badge bg-warning">
@@ -308,6 +343,60 @@
 {% endfor %}
 
 {% endblock %} 
+
+<script>
+// Configuração de colunas por tipo de pendência
+const tipoColumns = {
+            "Natureza Errada": ["tipo", "fornecedor_cliente", "valor", "codigo_lancamento", "data", "observacao", "status", "modificado_por"],
+            "Competência Errada": ["tipo", "fornecedor_cliente", "valor", "codigo_lancamento", "data_competencia", "observacao", "status", "modificado_por"],
+        "Data da Baixa Errada": ["tipo", "banco", "fornecedor_cliente", "valor", "codigo_lancamento", "data_baixa", "observacao", "status", "modificado_por"],
+    "Cartão de Crédito Não Identificado": ["tipo", "banco", "data", "fornecedor_cliente", "valor", "observacao", "status", "modificado_por"],
+    "Pagamento Não Identificado": ["tipo", "banco", "data", "fornecedor_cliente", "valor", "observacao", "status", "modificado_por"],
+    "Recebimento Não Identificado": ["tipo", "banco", "data", "fornecedor_cliente", "valor", "observacao", "status", "modificado_por"],
+    "Nota Fiscal Não Anexada": ["tipo", "banco", "data", "fornecedor_cliente", "valor", "observacao", "status", "modificado_por"],
+    "Nota Fiscal Não Identificada": ["tipo", "banco", "fornecedor_cliente", "valor", "observacao", "status", "modificado_por"]
+};
+
+const columnLabels = {
+    "tipo": "Tipo",
+    "banco": "Banco", 
+    "data": "Data da Pendência",
+    "data_abertura": "Data de Abertura",
+    "fornecedor_cliente": "Fornecedor/Cliente",
+    "valor": "Valor",
+    "codigo_lancamento": "Código",
+    "data_competencia": "Data Comp.",
+    "data_baixa": "Data Baixa",
+    "observacao": "Observação",
+    "status": "Status",
+    "modificado_por": "Modificado por"
+};
+
+// Função para atualizar as colunas da tabela
+function updateTableColumns(tipo) {
+    const columns = tipoColumns[tipo] || ["tipo", "banco", "data", "fornecedor_cliente", "valor", "observacao", "status", "modificado_por"];
+    const thead = document.querySelector('table thead tr');
+    const tbody = document.querySelector('table tbody');
+    
+    // Atualizar cabeçalho
+    let headerHTML = '';
+    columns.forEach(col => {
+        headerHTML += `<th>${columnLabels[col]}</th>`;
+    });
+    headerHTML += '<th>Anexo</th><th>Ações</th>';
+    thead.innerHTML = headerHTML;
+    
+    // Recarregar a página para atualizar os dados
+    const currentUrl = new URL(window.location);
+    currentUrl.searchParams.set('tipo_pendencia', tipo);
+    window.location.href = currentUrl.toString();
+}
+
+// Event listener para mudança de tipo
+document.getElementById('tipo_pendencia').addEventListener('change', function() {
+    updateTableColumns(this.value);
+});
+</script>
 
 {# MODAIS PARA OPERADOR RESPONDER PENDÊNCIA #}
 {% for pendencia in pendencias %}

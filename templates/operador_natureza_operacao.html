@@ -3,129 +3,129 @@
 
 {% block content %}
 <div class="container mt-4">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h3 class="mb-0">
-                            <i class="bi bi-pencil-square"></i> Informar Natureza de Operação
-                        </h3>
-                        <a href="{{ url_for('operador_pendencias') }}" class="btn btn-secondary">
-                            <i class="bi bi-arrow-left"></i> Voltar
-                        </a>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <!-- Detalhes da Pendência -->
-                    <div class="mb-4">
-                        <h5>Detalhes da Pendência #{{ pendencia.id }}</h5>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <p><strong>Empresa:</strong> {{ pendencia.empresa }}</p>
-                                <p><strong>Tipo:</strong> {{ pendencia.tipo_pendencia }}</p>
-                                <p><strong>Banco:</strong> {{ pendencia.banco }}</p>
-                                <p><strong>Data:</strong> {{ pendencia.data.strftime('%d/%m/%Y') }}</p>
-                            </div>
-                            <div class="col-md-6">
-                                <p><strong>Fornecedor/Cliente:</strong> {{ pendencia.fornecedor_cliente }}</p>
-                                <p><strong>Valor:</strong> <span class="text-primary fw-bold">R$ {{ "%.2f"|format(pendencia.valor) }}</span></p>
-                                <p><strong>Status:</strong> 
-                                    <span class="badge bg-warning">{{ pendencia.status }}</span>
-                                </p>
-                            </div>
-                        </div>
-                    </div>
+	<div class="row justify-content-center">
+		<div class="col-md-8">
+			<div class="card">
+				<div class="card-header">
+					<div class="d-flex justify-content-between align-items-center">
+						<h3 class="mb-0">
+							<i class="bi bi-pencil-square"></i> Informar Natureza de Operação
+						</h3>
+						<a href="{{ url_for('operador_pendencias') }}" class="btn btn-secondary">
+							<i class="bi bi-arrow-left"></i> Voltar
+						</a>
+					</div>
+				</div>
+				<div class="card-body">
+					<!-- Detalhes da Pendência -->
+					<div class="mb-4">
+						<h5>Detalhes da Pendência #{{ pendencia.id }}</h5>
+						<div class="row">
+							<div class="col-md-6">
+								<p><strong>Empresa:</strong> {{ pendencia.empresa }}</p>
+								<p><strong>Tipo:</strong> {{ pendencia.tipo_pendencia }}</p>
+								<p><strong>Banco:</strong> {{ pendencia.banco or '—' }}</p>
+								<p><strong>Data:</strong> {% if pendencia.data %}{{ pendencia.data.strftime('%d/%m/%Y') }}{% else %}{{ pendencia.data_abertura.strftime('%d/%m/%Y %H:%M') }}{% endif %}</p>
+							</div>
+							<div class="col-md-6">
+								<p><strong>Fornecedor/Cliente:</strong> {{ pendencia.fornecedor_cliente }}</p>
+								<p><strong>Valor:</strong> <span class="text-primary fw-bold">R$ {{ "%.2f"|format(pendencia.valor) }}</span></p>
+								<p><strong>Status:</strong> 
+									<span class="badge bg-warning">{{ pendencia.status }}</span>
+								</p>
+							</div>
+						</div>
+					</div>
 
-                    <!-- Motivo da Recusa do Supervisor (se aplicável) -->
-                    {% if pendencia.status == 'DEVOLVIDA AO OPERADOR' and pendencia.motivo_recusa_supervisor %}
-                    <div class="mb-4">
-                        <h5><i class="bi bi-exclamation-triangle text-warning"></i> Motivo da Recusa do Supervisor</h5>
-                        <div class="card border-warning">
-                            <div class="card-header bg-warning text-dark">
-                                <strong>Pendência Devolvida para Correção</strong>
-                            </div>
-                            <div class="card-body">
-                                <p class="mb-0"><strong>Motivo:</strong> {{ pendencia.motivo_recusa_supervisor }}</p>
-                                <small class="text-muted">
-                                    Devolvida em: {{ pendencia.modificado_por }}
-                                </small>
-                            </div>
-                        </div>
-                    </div>
-                    {% endif %}
+					<!-- Motivo da Recusa do Supervisor (se aplicável) -->
+					{% if pendencia.status == 'DEVOLVIDA AO OPERADOR' and pendencia.motivo_recusa_supervisor %}
+					<div class="mb-4">
+						<h5><i class="bi bi-exclamation-triangle text-warning"></i> Motivo da Recusa do Supervisor</h5>
+						<div class="card border-warning">
+							<div class="card-header bg-warning text-dark">
+								<strong>Pendência Devolvida para Correção</strong>
+							</div>
+							<div class="card-body">
+								<p class="mb-0"><strong>Motivo:</strong> {{ pendencia.motivo_recusa_supervisor }}</p>
+								<small class="text-muted">
+									Devolvida em: {{ pendencia.modificado_por }}
+								</small>
+							</div>
+						</div>
+					</div>
+					{% endif %}
 
-                    <!-- Resposta do Cliente -->
-                    {% if pendencia.resposta_cliente %}
-                    <div class="mb-4">
-                        <h5>Resposta do Cliente</h5>
-                        <div class="card bg-light">
-                            <div class="card-body">
-                                <p class="mb-0">{{ pendencia.resposta_cliente }}</p>
-                                <small class="text-muted">
-                                    Respondido em: {{ pendencia.data_resposta.strftime('%d/%m/%Y %H:%M') if pendencia.data_resposta else 'N/A' }}
-                                </small>
-                            </div>
-                        </div>
-                    </div>
-                    {% endif %}
+					<!-- Resposta do Cliente -->
+					{% if pendencia.resposta_cliente %}
+					<div class="mb-4">
+						<h5>Resposta do Cliente</h5>
+						<div class="card bg-light">
+							<div class="card-body">
+								<p class="mb-0">{{ pendencia.resposta_cliente }}</p>
+								<small class="text-muted">
+									Respondido em: {{ pendencia.data_resposta.strftime('%d/%m/%Y %H:%M') if pendencia.data_resposta else 'N/A' }}
+								</small>
+							</div>
+						</div>
+					</div>
+					{% endif %}
 
-                    <!-- Formulário Natureza de Operação -->
-                    <div class="mb-4">
-                        <h5>
-                            {% if pendencia.status == 'DEVOLVIDA AO OPERADOR' %}
-                                <i class="bi bi-arrow-clockwise text-warning"></i> Corrigir Natureza de Operação
-                            {% else %}
-                                Natureza de Operação
-                            {% endif %}
-                        </h5>
-                        <form method="POST">
-                            <div class="mb-3">
-                                <label for="natureza_operacao" class="form-label">
-                                    <strong>
-                                        {% if pendencia.status == 'DEVOLVIDA AO OPERADOR' %}
-                                            Corrija a Natureza de Operação:
-                                        {% else %}
-                                            Informe a Natureza de Operação:
-                                        {% endif %}
-                                    </strong>
-                                </label>
-                                <textarea 
-                                    class="form-control" 
-                                    id="natureza_operacao" 
-                                    name="natureza_operacao" 
-                                    rows="4" 
-                                    placeholder="{% if pendencia.status == 'DEVOLVIDA AO OPERADOR' %}Corrija a natureza da operação conforme solicitado pelo supervisor...{% else %}Ex: Qual operação o cliente informou no sistema Kamino? Descreva detalhadamente a natureza desta transação...{% endif %}"
-                                    required
-                                >{% if pendencia.natureza_operacao %}{{ pendencia.natureza_operacao }}{% endif %}</textarea>
-                                <div class="form-text">
-                                    <i class="bi bi-info-circle"></i> 
-                                    {% if pendencia.status == 'DEVOLVIDA AO OPERADOR' %}
-                                        Corrija a natureza da operação conforme o motivo da recusa informado pelo supervisor.
-                                    {% else %}
-                                        Descreva detalhadamente qual operação o cliente informou no sistema Kamino ou qual é a natureza desta transação.
-                                    {% endif %}
-                                </div>
-                            </div>
-                            
-                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                                <a href="{{ url_for('operador_pendencias') }}" class="btn btn-secondary me-md-2">
-                                    <i class="bi bi-x-circle"></i> Cancelar
-                                </a>
-                                <button type="submit" class="btn btn-{% if pendencia.status == 'DEVOLVIDA AO OPERADOR' %}warning{% else %}success{% endif %}">
-                                    <i class="bi bi-{% if pendencia.status == 'DEVOLVIDA AO OPERADOR' %}arrow-clockwise{% else %}check-circle{% endif %}"></i> 
-                                    {% if pendencia.status == 'DEVOLVIDA AO OPERADOR' %}
-                                        Corrigir e Reenviar
-                                    {% else %}
-                                        Enviar para Supervisor
-                                    {% endif %}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+					<!-- Formulário Natureza de Operação -->
+					<div class="mb-4">
+						<h5>
+							{% if pendencia.status == 'DEVOLVIDA AO OPERADOR' %}
+								<i class="bi bi-arrow-clockwise text-warning"></i> Corrigir Natureza de Operação
+							{% else %}
+								Natureza de Operação
+							{% endif %}
+						</h5>
+						<form method="POST">
+							<div class="mb-3">
+								<label for="natureza_operacao" class="form-label">
+									<strong>
+										{% if pendencia.status == 'DEVOLVIDA AO OPERADOR' %}
+											Corrija a Natureza de Operação:
+										{% else %}
+											Informe a Natureza de Operação:
+										{% endif %}
+									</strong>
+								</label>
+								<textarea 
+									class="form-control" 
+									id="natureza_operacao" 
+									name="natureza_operacao" 
+									rows="4" 
+									placeholder="{% if pendencia.status == 'DEVOLVIDA AO OPERADOR' %}Corrija a natureza da operação conforme solicitado pelo supervisor...{% else %}Ex: Qual operação o cliente informou no sistema Kamino? Descreva detalhadamente a natureza desta transação...{% endif %}"
+									required
+								>{% if pendencia.natureza_operacao %}{{ pendencia.natureza_operacao }}{% endif %}</textarea>
+								<div class="form-text">
+									<i class="bi bi-info-circle"></i> 
+									{% if pendencia.status == 'DEVOLVIDA AO OPERADOR' %}
+										Corrija a natureza da operação conforme o motivo da recusa informado pelo supervisor.
+									{% else %}
+										Descreva detalhadamente qual operação o cliente informou no sistema Kamino ou qual é a natureza desta transação.
+									{% endif %}
+								</div>
+							</div>
+							
+							<div class="d-grid gap-2 d-md-flex justify-content-md-end">
+								<a href="{{ url_for('operador_pendencias') }}" class="btn btn-secondary me-md-2">
+									<i class="bi bi-x-circle"></i> Cancelar
+								</a>
+								<button type="submit" class="btn btn-{% if pendencia.status == 'DEVOLVIDA AO OPERADOR' %}warning{% else %}success{% endif %}">
+									<i class="bi bi-{% if pendencia.status == 'DEVOLVIDA AO OPERADOR' %}arrow-clockwise{% else %}check-circle{% endif %}"></i> 
+									{% if pendencia.status == 'DEVOLVIDA AO OPERADOR' %}
+										Corrigir e Reenviar
+									{% else %}
+										Enviar para Supervisor
+									{% endif %}
+								</button>
+							</div>
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
 </div>
 {% endblock %} 

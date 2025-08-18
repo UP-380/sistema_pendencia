@@ -44,7 +44,7 @@
             <div class="card bg-danger text-white h-100 cursor-pointer text-center" onclick="filtrarPorPrazo('atrasadas')">
                 <div class="card-body">
                     <i class="bi bi-calendar-x fs-1"></i>
-                    <h4 class="mt-2">{{ pendencias|selectattr('data', '<', now - timedelta(days=7))|list|length }}</h4>
+                    <h4 class="mt-2">{{ pendencias|selectattr('data', 'ne', none)|selectattr('data', '<', now - timedelta(days=7))|list|length }}</h4>
                     <p class="mb-0">Atrasadas (&gt;7 dias)</p>
                 </div>
             </div>
@@ -298,7 +298,7 @@
                     </thead>
                     <tbody>
                         {% for pendencia in pendencias %}
-                        <tr class="{% if pendencia.valor >= 5000 %}table-warning{% endif %} {% if (now - pendencia.data).days > 7 %}table-danger{% endif %}">
+                        <tr class="{% if pendencia.valor >= 5000 %}table-warning{% endif %} {% if pendencia.data and (now - pendencia.data).days > 7 %}table-danger{% endif %}">
                             <td>
                                 <input type="checkbox" class="form-check-input selecao-pendencia" 
                                        value="{{ pendencia.id }}" onchange="atualizarContador()">
@@ -308,7 +308,7 @@
                                 {% if pendencia.valor >= 5000 %}
                                     <i class="bi bi-exclamation-triangle text-warning" title="Valor alto"></i>
                                 {% endif %}
-                                {% if (now - pendencia.data).days > 7 %}
+                                {% if pendencia.data and (now - pendencia.data).days > 7 %}
                                     <i class="bi bi-calendar-x text-danger" title="Atrasada"></i>
                                 {% endif %}
                             </td>
@@ -317,9 +317,13 @@
                             </td>
                             <td>{{ pendencia.tipo_pendencia }}</td>
                             <td>
-                                {{ pendencia.data.strftime('%d/%m/%Y') }}
-                                {% if (now - pendencia.data).days > 7 %}
-                                    <br><small class="text-danger">+{{ (now - pendencia.data).days }} dias</small>
+                                {% if pendencia.data %}
+                                    {{ pendencia.data.strftime('%d/%m/%Y') }}
+                                    {% if pendencia.data and (now - pendencia.data).days > 7 %}
+                                        <br><small class="text-danger">+{{ (now - pendencia.data).days }} dias</small>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted">—</span>
                                 {% endif %}
                             </td>
                             <td>
@@ -458,7 +462,7 @@
                                 </div>
                                 <div class="row mb-2">
                                     <div class="col-4"><strong>Data:</strong></div>
-                                    <div class="col-8">{{ pendencia.data.strftime('%d/%m/%Y') }}</div>
+                                    <div class="col-8">{% if pendencia.data %}{{ pendencia.data.strftime('%d/%m/%Y') }}{% else %}{{ pendencia.data_abertura.strftime('%d/%m/%Y %H:%M') }}{% endif %}</div>
                                 </div>
                                 <div class="row mb-2">
                                     <div class="col-4"><strong>Fornecedor:</strong></div>

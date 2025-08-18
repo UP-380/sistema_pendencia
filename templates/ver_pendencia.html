@@ -31,7 +31,7 @@
                         <dd class="col-sm-9">{{ pendencia.tipo_pendencia }}</dd>
                         
                         <dt class="col-sm-3">Banco:</dt>
-                        <dd class="col-sm-9">{{ pendencia.banco }}</dd>
+                        <dd class="col-sm-9">{{ pendencia.banco or '—' }}</dd>
                         
                         <dt class="col-sm-3">Data da Pendência:</dt>
                         <dd class="col-sm-9">
@@ -50,6 +50,26 @@
                         
                         <dt class="col-sm-3">Valor:</dt>
                         <dd class="col-sm-9">R$ {{ "%.2f"|format(pendencia.valor) }}</dd>
+                        
+                        {% if pendencia.codigo_lancamento %}
+                        <dt class="col-sm-3">Código do Lançamento:</dt>
+                        <dd class="col-sm-9">{{ pendencia.codigo_lancamento }}</dd>
+                        {% endif %}
+                        
+                        {% if pendencia.data_competencia %}
+                        <dt class="col-sm-3">Data Competência:</dt>
+                        <dd class="col-sm-9">{{ pendencia.data_competencia.strftime('%d/%m/%Y') }}</dd>
+                        {% endif %}
+                        
+                        {% if pendencia.data_baixa %}
+                        <dt class="col-sm-3">Data da Baixa:</dt>
+                        <dd class="col-sm-9">{{ pendencia.data_baixa.strftime('%d/%m/%Y') }}</dd>
+                        {% endif %}
+                        
+                        {% if pendencia.natureza_sistema %}
+                        <dt class="col-sm-3">Natureza no Sistema:</dt>
+                        <dd class="col-sm-9">{{ pendencia.natureza_sistema }}</dd>
+                        {% endif %}
                         
                         <dt class="col-sm-3">Status:</dt>
                         <dd class="col-sm-9">

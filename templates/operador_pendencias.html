@@ -209,14 +209,14 @@
                     </thead>
                     <tbody>
                         {% set hoje = now %}
-                        {% for pendencia in pendencias|sort(attribute='data')|reverse %}
-                        {% set dias = (now - pendencia.data).days %}
+                        {% for pendencia in pendencias|sort(attribute='data_abertura')|reverse %}
+                        {% set dias = (now - (pendencia.data or pendencia.data_abertura.date())).days if pendencia.data or pendencia.data_abertura else 0 %}
                         <tr {% if pendencia.valor >= 5000 or dias > 7 %}class="table-danger"{% endif %}>
                             <td><input type="checkbox" name="ids" value="{{ pendencia.id }}" class="checkPendencia"></td>
                             <td><strong>#{{ pendencia.id }}</strong></td>
                             <td>{{ pendencia.tipo_pendencia }}</td>
                             <td>{{ pendencia.banco }}</td>
-                            <td>{{ pendencia.data.strftime('%d/%m/%Y') }}</td>
+                            <td>{% if pendencia.data %}{{ pendencia.data.strftime('%d/%m/%Y') }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
                             <td>{{ pendencia.fornecedor_cliente }}</td>
                             <td><strong>R$ {{ "%.2f"|format(pendencia.valor) }}</strong>
                                 {% if pendencia.valor >= 5000 %}<span class="badge bg-danger ms-1">Alto</span>{% endif %}

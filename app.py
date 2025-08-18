@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session, send_file, Response
+from flask import Flask, render_template, request, redirect, url_for, flash, session, send_file, Response, make_response
 from flask_sqlalchemy import SQLAlchemy
 from flask_mail import Mail, Message
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -58,13 +58,222 @@ TIPOS_PENDENCIA = [
     'Cartão de Crédito Não Identificado',
     'Pagamento Não Identificado',
     'Recebimento Não Identificado',
-    'Nota Fiscal Não Anexada'
+    'Nota Fiscal Não Anexada',
+    'Natureza Errada',
+    'Competência Errada',
+    'Data Da Baixa Errada'
 ]
 
 # Função utilitária para data/hora local
 BRAZIL_TZ = pytz.timezone('America/Sao_Paulo')
 def now_brazil():
     return datetime.now(BRAZIL_TZ)
+
+# Regras de validação por tipo de pendência
+TIPO_RULES = {
+    "Natureza Errada": {
+        "required": ["fornecedor_cliente", "valor", "codigo_lancamento", "data"],
+        "forbidden": ["banco", "data_competencia", "data_baixa"],
+        "labels": {"data": "Data do Lançamento ou Baixa"},
+        "observacao_hint": "Natureza atual no ERP (obrigatório registrar)",
+        "columns": ["tipo", "fornecedor_cliente", "valor", "codigo_lancamento", "data", "observacao", "status", "modificado_por"],
+        "import_columns": ["empresa", "fornecedor", "valor", "codigo_lancamento", "data", "natureza_sistema", "observacao", "email_cliente"]
+    },
+    "Competência Errada": {
+        "required": ["fornecedor_cliente", "valor", "codigo_lancamento", "data_competencia"],
+        "forbidden": ["banco", "data_baixa"],
+        "labels": {"data_competencia": "Data Competência"},
+        "observacao_hint": "Informe: Data da competência errada",
+        "columns": ["tipo", "fornecedor_cliente", "valor", "codigo_lancamento", "data_competencia", "observacao", "status", "modificado_por"],
+        "import_columns": ["empresa", "fornecedor", "valor", "codigo_lancamento", "data_competencia", "observacao", "email_cliente"]
+    },
+    "Data da Baixa Errada": {
+        "required": ["banco", "data_baixa", "fornecedor_cliente", "valor", "codigo_lancamento"],
+        "forbidden": [],
+        "labels": {"data_baixa": "Data da Baixa"},
+        "observacao_hint": "Campo livre para contexto",
+        "columns": ["tipo", "banco", "data_baixa", "fornecedor_cliente", "valor", "codigo_lancamento", "observacao", "status", "modificado_por"],
+        "import_columns": ["empresa", "banco", "data_baixa", "fornecedor", "valor", "codigo_lancamento", "observacao", "email_cliente"]
+    },
+    "Cartão de Crédito Não Identificado": {
+        "columns": ["tipo", "banco", "data", "fornecedor_cliente", "valor", "observacao", "status", "modificado_por"],
+        "import_columns": ["empresa", "banco", "data", "valor", "observacao", "email_cliente"]
+    },
+    "Pagamento Não Identificado": {
+        "columns": ["tipo", "banco", "data", "fornecedor_cliente", "valor", "observacao", "status", "modificado_por"],
+        "import_columns": ["empresa", "banco", "data", "fornecedor", "valor", "observacao", "email_cliente"]
+    },
+    "Recebimento Não Identificado": {
+        "columns": ["tipo", "banco", "data", "fornecedor_cliente", "valor", "observacao", "status", "modificado_por"],
+        "import_columns": ["empresa", "banco", "data", "valor", "observacao", "email_cliente"]
+    },
+    "Nota Fiscal Não Anexada": {
+        "columns": ["tipo", "banco", "data", "fornecedor_cliente", "valor", "observacao", "status", "modificado_por"],
+        "import_columns": ["empresa", "fornecedor", "valor", "nota_fiscal", "observacao", "email_cliente"]
+    },
+    "Nota Fiscal Não Identificada": {
+        "columns": ["tipo", "banco", "fornecedor_cliente", "valor", "observacao", "status", "modificado_por"],
+        "import_columns": ["empresa", "fornecedor", "valor", "observacao", "email_cliente"]
+    }
+}
+
+# Mapeamento de tipos para importação
+TIPO_IMPORT_MAP = {
+    "NATUREZA_ERRADA": "Natureza Errada",
+    "COMPETENCIA_ERRADA": "Competência Errada", 
+    "DATA_BAIXA_ERRADA": "Data da Baixa Errada",
+    "CARTAO_NAO_IDENTIFICADO": "Cartão de Crédito Não Identificado",
+    "PAGAMENTO_NAO_IDENTIFICADO": "Pagamento Não Identificado",
+    "RECEBIMENTO_NAO_IDENTIFICADO": "Recebimento Não Identificado",
+    "NOTA_FISCAL_NAO_ANEXADA": "Nota Fiscal Não Anexada",
+    "NOTA_FISCAL_NAO_IDENTIFICADA": "Nota Fiscal Não Identificada"
+}
+
+def validar_por_tipo(payload):
+    """Valida campos obrigatórios e proibidos por tipo de pendência"""
+    tipo = payload.get("tipo_pendencia")
+    rule = TIPO_RULES.get(tipo)
+    if not rule:
+        return False, f"Tipo de pendência inválido: {tipo}"
+
+    # Verificar campos obrigatórios
+    for field in rule["required"]:
+        if not payload.get(field):
+            return False, f"Campo obrigatório ausente: {field} (tipo {tipo})"
+
+    # Verificar campos proibidos
+    for field in rule.get("forbidden", []):
+        if payload.get(field):
+            return False, f"Campo não deve ser preenchido para {tipo}: {field}"
+
+    # Coerência de valor
+    if payload.get("valor") is not None and float(payload["valor"]) <= 0:
+        return False, "Valor deve ser maior que zero."
+
+    return True, None
+
+def obter_colunas_por_tipo(tipo_pendencia):
+    """Retorna as colunas que devem ser exibidas para um tipo específico de pendência"""
+    rule = TIPO_RULES.get(tipo_pendencia)
+    if rule and "columns" in rule:
+        return rule["columns"]
+    # Fallback para tipos não configurados
+    return ["tipo", "banco", "data", "fornecedor_cliente", "valor", "observacao", "status", "modificado_por"]
+
+def obter_todas_colunas():
+    """Retorna todas as colunas disponíveis para o painel"""
+    return {
+        "tipo": "Tipo",
+        "banco": "Banco", 
+        "data": "Data da Pendência",
+        "data_abertura": "Data de Abertura",
+        "fornecedor_cliente": "Fornecedor/Cliente",
+        "valor": "Valor",
+        "codigo_lancamento": "Código",
+        "data_competencia": "Data Comp.",
+        "data_baixa": "Data Baixa",
+        "observacao": "Observação",
+        "status": "Status",
+        "modificado_por": "Modificado por"
+    }
+
+def pick(val_a, val_b):
+    """Usa id se vier, senão usa nome"""
+    return val_a or val_b
+
+def parse_date_or_none(s):
+    """Converte string para data ou retorna None - aceita múltiplos formatos"""
+    if not s or str(s).strip() == "" or str(s).strip().lower() == "nan":
+        return None
+    
+    s = str(s).strip()
+    
+    # Lista de formatos de data aceitos
+    date_formats = [
+        "%Y-%m-%d",      # 2025-08-18
+        "%d/%m/%Y",      # 18/08/2025
+        "%d-%m-%Y",      # 18-08-2025
+        "%Y/%m/%d",      # 2025/08/18
+        "%d/%m/%y",      # 18/08/25
+        "%d-%m-%y",      # 18-08-25
+    ]
+    
+    for fmt in date_formats:
+        try:
+            return datetime.strptime(s, fmt).date()
+        except ValueError:
+            continue
+    
+    return None
+
+def validar_row_por_tipo(tipo, row):
+    """Valida uma linha da planilha conforme o tipo de pendência"""
+    rule = TIPO_RULES.get(tipo)
+    if not rule:
+        return f"Tipo de pendência inválido: {tipo}"
+    
+    def has(field):
+        """Verifica se o campo tem valor válido"""
+        val = row.get(field, "")
+        return val not in [None, "", "NaN", "nan"]
+    
+    # Verificar campos obrigatórios
+    for field in rule.get("required", []):
+        field_name = field.replace("_cliente", "").replace("_or_id", "")
+        if not has(field) and not has(field_name) and not has(field_name + "_id"):
+            return f"Campo obrigatório ausente: {field}"
+    
+    # Verificar campos proibidos
+    for field in rule.get("forbidden", []):
+        if has(field):
+            return f"Campo proibido para {tipo}: {field}"
+    
+    # Validar valor
+    if has("valor"):
+        try:
+            valor = float(row["valor"])
+            if valor <= 0:
+                return "Valor deve ser maior que zero."
+        except (ValueError, TypeError):
+            return "Valor deve ser um número válido."
+    
+    # Validar datas específicas
+    if tipo == "COMPETÊNCIA ERRADA" and has("data_competencia"):
+        if not parse_date_or_none(row.get("data_competencia")):
+            return "Data Competência inválida. Use formato: YYYY-MM-DD, DD/MM/YYYY, DD-MM-YYYY"
+    
+    if tipo == "Data da Baixa Errada" and has("data_baixa"):
+        if not parse_date_or_none(row.get("data_baixa")):
+            return "Data da Baixa inválida. Use formato: YYYY-MM-DD, DD/MM/YYYY, DD-MM-YYYY"
+    
+    if tipo == "Natureza Errada" and has("data"):
+        if not parse_date_or_none(row.get("data")):
+            return "Data do Lançamento ou Baixa inválida. Use formato: YYYY-MM-DD, DD/MM/YYYY, DD-MM-YYYY"
+    
+    return None
+
+def label_tipo_planilha(tipo_import):
+    """Converte tipo de importação para rótulo humano"""
+    return TIPO_IMPORT_MAP.get(tipo_import, tipo_import)
+
+def usuario_tem_acesso(usuario_email, empresa_id):
+    """Verifica se o usuário tem acesso à empresa"""
+    # Implementação simplificada - você pode ajustar conforme sua lógica de permissões
+    usuario = Usuario.query.filter_by(email=usuario_email).first()
+    if not usuario:
+        return False
+    
+    # Se for admin, tem acesso a todas
+    if usuario.tipo == 'adm':
+        return True
+    
+    # Verificar se a empresa está na lista de empresas do usuário
+    empresas_usuario = obter_empresas_para_usuario()
+    empresa = Empresa.query.get(empresa_id)
+    if empresa and empresa.nome in empresas_usuario:
+        return True
+    
+    return False
 
 usuario_empresas = db.Table('usuario_empresas',
     db.Column('usuario_id', db.Integer, db.ForeignKey('usuario.id')),
@@ -79,7 +288,7 @@ class Pendencia(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     empresa = db.Column(db.String(50), nullable=False)
     tipo_pendencia = db.Column(db.String(30), nullable=False)
-    banco = db.Column(db.String(50), nullable=False)
+    banco = db.Column(db.String(50), nullable=True)
     data = db.Column(db.Date, nullable=True)  # Data da Pendência (informada pelo usuário)
     data_abertura = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)  # Data de Abertura (automática)
     fornecedor_cliente = db.Column(db.String(200), nullable=False)
@@ -95,6 +304,11 @@ class Pendencia(db.Model):
     natureza_operacao = db.Column(db.String(500))  # Campo para Natureza de Operação
     motivo_recusa = db.Column(db.String(500))  # Campo para motivo da recusa pelo operador
     motivo_recusa_supervisor = db.Column(db.String(500))  # Campo para motivo da recusa pelo supervisor
+    # Novos campos para tipos especializados
+    codigo_lancamento = db.Column(db.String(64), nullable=True)
+    data_competencia = db.Column(db.Date, nullable=True)
+    data_baixa = db.Column(db.Date, nullable=True)
+    natureza_sistema = db.Column(db.String(120), nullable=True)
 
 class Usuario(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -411,6 +625,10 @@ def dashboard():
     today_str = now_brazil().strftime('%Y-%m-%d')
     current_month = now_brazil().strftime('%Y-%m')
     
+    # Obter colunas específicas para o tipo selecionado
+    colunas_tipo = obter_colunas_por_tipo(tipo_filtro)
+    todas_colunas = obter_todas_colunas()
+    
     return render_template(
         'dashboard.html', 
         pendencias=pendencias, 
@@ -422,7 +640,9 @@ def dashboard():
         busca=busca,
         empresa_id=empresa_id,
         today_str=today_str,
-        current_month=current_month
+        current_month=current_month,
+        colunas_tipo=colunas_tipo,
+        todas_colunas=todas_colunas
     )
 
 @app.route('/nova', methods=['GET', 'POST'])
@@ -445,7 +665,28 @@ def nova_pendencia():
         try:
             empresa = request.form['empresa']
             tipo_pendencia = request.form['tipo_pendencia']
-            banco = request.form['banco']
+            banco = request.form.get('banco', '')
+            
+            # Preparar payload para validação
+            payload = {
+                'tipo_pendencia': tipo_pendencia,
+                'empresa': empresa,
+                'banco': banco,
+                'fornecedor_cliente': request.form.get('fornecedor_cliente', ''),
+                'valor': request.form.get('valor', ''),
+                'codigo_lancamento': request.form.get('codigo_lancamento', ''),
+                'data': request.form.get('data', ''),
+                'data_competencia': request.form.get('data_competencia', ''),
+                'data_baixa': request.form.get('data_baixa', ''),
+                'observacao': request.form.get('observacao', ''),
+                'natureza_sistema': request.form.get('natureza_sistema', '')
+            }
+            
+            # Validar por tipo
+            is_valid, error_msg = validar_por_tipo(payload)
+            if not is_valid:
+                flash(f'Erro de validação: {error_msg}', 'danger')
+                return redirect(url_for('nova_pendencia'))
             
             # Tratar Data da Pendência (pode ser NULL para "Nota Fiscal Não Identificada")
             data_pendencia = request.form.get('data')
@@ -454,10 +695,23 @@ def nova_pendencia():
             else:
                 data_value = datetime.strptime(data_pendencia, '%Y-%m-%d').date() if data_pendencia else None
             
+            # Tratar Data Competência
+            data_competencia_value = None
+            if request.form.get('data_competencia'):
+                data_competencia_value = datetime.strptime(request.form.get('data_competencia'), '%Y-%m-%d').date()
+            
+            # Tratar Data Baixa
+            data_baixa_value = None
+            if request.form.get('data_baixa'):
+                data_baixa_value = datetime.strptime(request.form.get('data_baixa'), '%Y-%m-%d').date()
+            
             fornecedor_cliente = request.form['fornecedor_cliente']
             valor = float(request.form['valor'])
             observacao = request.form.get('observacao') or 'DO QUE SE TRATA?'
             email_cliente = request.form.get('email_cliente')
+            codigo_lancamento = request.form.get('codigo_lancamento', '')
+            natureza_sistema = request.form.get('natureza_sistema', '')
+            
             nota_fiscal_arquivo = None
             if tipo_pendencia == 'Nota Fiscal Não Anexada' and 'nota_fiscal_arquivo' in request.files:
                 file = request.files['nota_fiscal_arquivo']
@@ -482,7 +736,12 @@ def nova_pendencia():
                 observacao=observacao,
                 email_cliente=email_cliente,
                 status='PENDENTE CLIENTE',
-                nota_fiscal_arquivo=nota_fiscal_arquivo
+                nota_fiscal_arquivo=nota_fiscal_arquivo,
+                # Novos campos especializados
+                codigo_lancamento=codigo_lancamento,
+                data_competencia=data_competencia_value,
+                data_baixa=data_baixa_value,
+                natureza_sistema=natureza_sistema
             )
             db.session.add(nova_p)
             db.session.commit()
@@ -618,6 +877,125 @@ def baixar_modelo():
     filename = f"modelo_{tipo.replace(' ', '_')}_{empresa.replace(' ', '_')}.xlsx"
     return send_file(output, as_attachment=True, download_name=filename, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
+@app.route("/import/modelo", methods=["GET"])
+@permissao_requerida('supervisor', 'adm')
+def download_modelo_pendencias():
+    tipo = request.args.get("tipo")
+    
+    # Configuração de colunas por tipo
+    modelos = {
+        "NATUREZA_ERRADA": ["empresa", "fornecedor", "valor", "codigo_lancamento", "data", "natureza_sistema", "observacao", "email_cliente"],
+        "COMPETENCIA_ERRADA": ["empresa", "fornecedor", "valor", "codigo_lancamento", "data_competencia", "observacao", "email_cliente"],
+        "DATA_BAIXA_ERRADA": ["empresa", "banco", "data_baixa", "fornecedor", "valor", "codigo_lancamento", "observacao", "email_cliente"],
+        # Tipos existentes
+        "CARTAO_NAO_IDENTIFICADO": ["empresa", "banco", "data", "valor", "observacao", "email_cliente"],
+        "PAGAMENTO_NAO_IDENTIFICADO": ["empresa", "banco", "data", "fornecedor", "valor", "observacao", "email_cliente"],
+        "RECEBIMENTO_NAO_IDENTIFICADO": ["empresa", "banco", "data", "valor", "observacao", "email_cliente"],
+        "NOTA_FISCAL_NAO_ANEXADA": ["empresa", "fornecedor", "valor", "nota_fiscal", "observacao", "email_cliente"],
+        "NOTA_FISCAL_NAO_IDENTIFICADA": ["empresa", "fornecedor", "valor", "observacao", "email_cliente"]
+    }
+    
+    cols = modelos.get(tipo)
+    if not cols:
+        flash("Tipo de modelo inválido.", "error")
+        return redirect(url_for('importar_planilha'))
+
+    # Gerar xlsx com dados de exemplo
+    import io
+    from datetime import datetime, date
+    
+    # Data de exemplo no formato correto
+    data_exemplo = date.today().strftime('%Y-%m-%d')
+    
+    # Dados de exemplo por tipo
+    dados_exemplo = {
+        "NATUREZA_ERRADA": {
+            "empresa": "ALIANZE",
+            "fornecedor": "FORNECEDOR EXEMPLO",
+            "valor": "1500.00",
+            "codigo_lancamento": "LX-2025-001",
+            "data": data_exemplo,
+            "natureza_sistema": "Serviços - 3.01.02",
+            "observacao": "Natureza atual no ERP",
+            "email_cliente": "cliente@exemplo.com"
+        },
+        "COMPETENCIA_ERRADA": {
+            "empresa": "ALIANZE",
+            "fornecedor": "FORNECEDOR EXEMPLO",
+            "valor": "2500.00",
+            "codigo_lancamento": "LX-2025-002",
+            "data_competencia": data_exemplo,
+            "observacao": "Data da competência errada",
+            "email_cliente": "cliente@exemplo.com"
+        },
+        "DATA_BAIXA_ERRADA": {
+            "empresa": "ALIANZE",
+            "banco": "BANCO DO BRASIL",
+            "data_baixa": data_exemplo,
+            "fornecedor": "FORNECEDOR EXEMPLO",
+            "valor": "3000.00",
+            "codigo_lancamento": "LX-2025-003",
+            "observacao": "Data da baixa incorreta",
+            "email_cliente": "cliente@exemplo.com"
+        },
+        "CARTAO_NAO_IDENTIFICADO": {
+            "empresa": "ALIANZE",
+            "banco": "NUBANK",
+            "data": data_exemplo,
+            "valor": "500.00",
+            "observacao": "Lançamento não identificado",
+            "email_cliente": "cliente@exemplo.com"
+        },
+        "PAGAMENTO_NAO_IDENTIFICADO": {
+            "empresa": "ALIANZE",
+            "banco": "ITAU",
+            "data": data_exemplo,
+            "fornecedor": "FORNECEDOR EXEMPLO",
+            "valor": "1200.00",
+            "observacao": "Pagamento não identificado",
+            "email_cliente": "cliente@exemplo.com"
+        },
+        "RECEBIMENTO_NAO_IDENTIFICADO": {
+            "empresa": "ALIANZE",
+            "banco": "SANTANDER",
+            "data": data_exemplo,
+            "valor": "800.00",
+            "observacao": "Recebimento não identificado",
+            "email_cliente": "cliente@exemplo.com"
+        },
+        "NOTA_FISCAL_NAO_ANEXADA": {
+            "empresa": "ALIANZE",
+            "fornecedor": "FORNECEDOR EXEMPLO",
+            "valor": "1800.00",
+            "nota_fiscal": "NF-001/2025",
+            "observacao": "Nota fiscal não anexada",
+            "email_cliente": "cliente@exemplo.com"
+        },
+        "NOTA_FISCAL_NAO_IDENTIFICADA": {
+            "empresa": "ALIANZE",
+            "fornecedor": "FORNECEDOR EXEMPLO",
+            "valor": "950.00",
+            "observacao": "Nota fiscal não identificada",
+            "email_cliente": "cliente@exemplo.com"
+        }
+    }
+    
+    # Criar DataFrame com dados de exemplo
+    dados = dados_exemplo.get(tipo, {})
+    df = pd.DataFrame([dados])
+    
+    # Manter apenas as colunas do tipo
+    df = df[cols]
+    
+    buf = io.BytesIO()
+    df.to_excel(buf, index=False)
+    buf.seek(0)
+
+    resp = make_response(buf.read())
+    resp.headers["Content-Type"] = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    resp.headers["Content-Disposition"] = f'attachment; filename=modelo_{tipo.lower()}.xlsx'
+    return resp
+
 @app.route('/importar', methods=['GET', 'POST'])
 @permissao_requerida('supervisor', 'adm')
 def importar_planilha():
@@ -626,6 +1004,14 @@ def importar_planilha():
         flash('Você não tem acesso a nenhuma empresa.', 'warning')
         return redirect(url_for('pre_dashboard'))
     
+    # Verificar se veio de uma empresa específica
+    empresa_contexto = request.args.get('empresa')
+    empresa_id_contexto = None
+    if empresa_contexto:
+        empresa_obj = Empresa.query.filter_by(nome=empresa_contexto).first()
+        if empresa_obj:
+            empresa_id_contexto = empresa_obj.id
+    
     preview = None
     erros = []
     if request.method == 'POST':
@@ -633,33 +1019,53 @@ def importar_planilha():
             # Segunda etapa: confirmar importação usando dados em sessão
             try:
                 df = pd.read_json(session['preview_data'])
+                tipo_import = session.get('tipo_import')
+                empresa_id_ctx = session.get('empresa_id_contexto')
+                ts_lote = datetime.utcnow()
+                
                 for idx, row in df.iterrows():
-                    empresa = row.get('EMPRESA', '').strip()
-                    tipo_pendencia = row.get('TIPO DE PENDÊNCIA', '').strip()
-                    banco = row.get('BANCO', '').strip()
-                    data = row.get('DATA DE COMPETÊNCIA')
-                    if pd.isnull(data):
-                        continue
-                    if isinstance(data, str):
-                        data = datetime.strptime(data, '%d/%m/%Y').date()
+                    # Processar linha conforme tipo
+                    r = {k: str(row.get(k, "")).strip() for k in df.columns}
+                    
+                    # Empresa
+                    if empresa_id_ctx:
+                        empresa = Empresa.query.get(empresa_id_ctx)
                     else:
-                        data = data.date() if hasattr(data, 'date') else data
-                    fornecedor_cliente = row.get('FORNECEDOR/CLIENTE', '').strip()
-                    valor = float(str(row.get('VALOR', '0')).replace('R$', '').replace('.', '').replace(',', '.'))
-                    observacao = row.get('OBSERVAÇÃO', 'DO QUE SE TRATA?')
-                    if not empresa or not tipo_pendencia:
+                        empresa = Empresa.query.filter_by(nome=r.get("empresa")).first()
+                    
+                    if not empresa or not usuario_tem_acesso(session.get('usuario_email'), empresa.id):
                         continue
+                    
+                    # Mapear campos
+                    fornecedor_nome = pick(r.get("fornecedor_id"), r.get("fornecedor"))
+                    banco_nome = pick(r.get("banco_id"), r.get("banco"))
+                    
+                    # Para tipos que não precisam de banco, definir como string vazia
+                    if label_tipo_planilha(tipo_import) in ["Natureza Errada", "Competência Errada"]:
+                        banco_nome = ""  # String vazia em vez de None
+                    
+                    # Criar pendência
                     nova_p = Pendencia(
-                        empresa=empresa,
-                        tipo_pendencia=tipo_pendencia,
-                        banco=banco,
-                        data=data,
-                        fornecedor_cliente=fornecedor_cliente,
-                        valor=valor,
-                        observacao=observacao
+                        empresa=empresa.nome,
+                        tipo_pendencia=label_tipo_planilha(tipo_import),
+                        fornecedor_cliente=fornecedor_nome or "",
+                        valor=float(r["valor"]) if r.get("valor") else 0.0,
+                        codigo_lancamento=r.get("codigo_lancamento") or "",
+                        natureza_sistema=r.get("natureza_sistema") or "",
+                        data=parse_date_or_none(r.get("data")),
+                        data_competencia=parse_date_or_none(r.get("data_competencia")),
+                        data_baixa=parse_date_or_none(r.get("data_baixa")),
+                        banco=banco_nome or "",
+                        observacao=r.get("observacao") or "",
+                        email_cliente=r.get("email_cliente") or "",
+                        status='PENDENTE CLIENTE',
+                        data_abertura=ts_lote
                     )
                     db.session.add(nova_p)
+                
                 db.session.commit()
+                
+                # Log de importação
                 imp = Importacao(
                     nome_arquivo=session['preview_filename'],
                     usuario=session.get('usuario_email', 'admin'),
@@ -669,31 +1075,95 @@ def importar_planilha():
                 )
                 db.session.add(imp)
                 db.session.commit()
+                
                 session.pop('preview_data', None)
                 session.pop('preview_filename', None)
+                session.pop('tipo_import', None)
+                session.pop('empresa_id_contexto', None)
+                
                 flash('Pendências importadas com sucesso!', 'success')
                 return redirect(url_for('dashboard'))
             except Exception as e:
                 erros.append(f'Erro ao importar: {e}')
         else:
             file = request.files.get('arquivo')
-            if file:
-                try:
-                    df = pd.read_excel(file)
+            tipo_import = request.form.get('tipo_import')
+            empresa_id_ctx = request.form.get('empresa_id', type=int)
+            
+            if not file or not tipo_import:
+                flash('Arquivo e tipo são obrigatórios.', 'error')
+                return render_template('importar_planilha.html', empresas=empresas_usuario, preview=preview, erros=erros, empresa_id_contexto=empresa_id_contexto)
+            
+            try:
+                # Ler xlsx
+                df = pd.read_excel(file, dtype=str).fillna("")
+                errors, rows_ok = [], []
+                ts_lote = datetime.utcnow()
+                
+                for i, row in df.iterrows():
+                    r = {k: str(row.get(k, "")).strip() for k in df.columns}
+                    msg = validar_row_por_tipo(label_tipo_planilha(tipo_import), r)
+                    if msg:
+                        errors.append({"linha": i+2, "erro": msg})
+                        continue
+                    
+                    # Empresa
+                    if empresa_id_ctx:
+                        empresa = Empresa.query.get(empresa_id_ctx)
+                    else:
+                        empresa = Empresa.query.filter_by(nome=r.get("empresa")).first()
+                    
+                    if not empresa or not usuario_tem_acesso(session.get('usuario_email'), empresa.id):
+                        errors.append({"linha": i+2, "erro": "Empresa inválida ou sem permissão"})
+                        continue
+                    
+                    # Mapear campos
+                    fornecedor_nome = pick(r.get("fornecedor_id"), r.get("fornecedor"))
+                    banco_nome = pick(r.get("banco_id"), r.get("banco"))
+                    
+                    # Para tipos que não precisam de banco, definir como string vazia
+                    if label_tipo_planilha(tipo_import) in ["NATUREZA ERRADA", "COMPETÊNCIA ERRADA"]:
+                        banco_nome = ""  # String vazia em vez de None
+                    
+                    p = Pendencia(
+                        empresa=empresa.nome,
+                        tipo_pendencia=label_tipo_planilha(tipo_import),
+                        fornecedor_cliente=fornecedor_nome or "",
+                        valor=float(r["valor"]) if r.get("valor") else 0.0,
+                        codigo_lancamento=r.get("codigo_lancamento") or "",
+                        natureza_sistema=r.get("natureza_sistema") or "",
+                        data=parse_date_or_none(r.get("data")),
+                        data_competencia=parse_date_or_none(r.get("data_competencia")),
+                        data_baixa=parse_date_or_none(r.get("data_baixa")),
+                        banco=banco_nome or "",
+                        observacao=r.get("observacao") or "",
+                        email_cliente=r.get("email_cliente") or "",
+                        status='PENDENTE CLIENTE',
+                        data_abertura=ts_lote
+                    )
+                    rows_ok.append(p)
+                
+                # Preview se houver erros
+                if errors:
                     preview = df.head(5).to_dict(orient='records')
-                    # Validação
-                    for idx, row in df.iterrows():
-                        if not row.get('EMPRESA') or not row.get('TIPO DE PENDÊNCIA') or not row.get('BANCO') or not row.get('DATA DE COMPETÊNCIA') or not row.get('FORNECEDOR/CLIENTE') or not row.get('VALOR'):
-                            erros.append(f"Linha {idx+2}: Dados obrigatórios ausentes.")
-                    if not erros:
-                        # Salva o DataFrame em sessão para confirmação posterior
-                        session['preview_data'] = df.to_json()
-                        session['preview_filename'] = file.filename
-                except Exception as e:
-                    erros.append(f'Erro ao processar arquivo: {e}')
-            else:
-                flash('Nenhum arquivo selecionado.', 'error')
-    return render_template('importar_planilha.html', empresas=empresas_usuario, preview=preview, erros=erros)
+                    erros = [f"Linha {e['linha']}: {e['erro']}" for e in errors]
+                else:
+                    # Salvar dados em sessão para confirmação
+                    session['preview_data'] = df.to_json()
+                    session['preview_filename'] = file.filename
+                    session['tipo_import'] = tipo_import
+                    session['empresa_id_contexto'] = empresa_id_ctx
+                    preview = df.head(5).to_dict(orient='records')
+                    
+            except Exception as e:
+                erros.append(f'Erro ao processar arquivo: {e}')
+    
+    return render_template('importar_planilha.html', 
+                         empresas=empresas_usuario, 
+                         preview=preview, 
+                         erros=erros, 
+                         empresa_id_contexto=empresa_id_contexto,
+                         tipos_importacao=TIPO_IMPORT_MAP.keys())
 
 @app.route('/historico_importacoes')
 @permissao_requerida('supervisor', 'adm')
@@ -907,7 +1377,7 @@ def notificar_teams_recusa_supervisor(pendencia):
         print(f"Erro ao notificar Teams: {e}")
 
 @app.route('/operador/pendencias')
-@permissao_requerida('operador', 'adm')
+@permissao_requerida('operador', 'adm', 'supervisor')
 def operador_pendencias():
     """Dashboard do operador - mostra pendências PENDENTE OPERADOR UP"""
     empresas_usuario = obter_empresas_para_usuario()
@@ -1015,7 +1485,7 @@ def operador_pendencias():
     )
 
 @app.route('/operador/natureza_operacao/<int:id>', methods=['GET', 'POST'])
-@permissao_requerida('operador', 'adm')
+@permissao_requerida('operador', 'adm', 'supervisor')
 def operador_natureza_operacao(id):
     """Operador informa a Natureza de Operação"""
     pendencia = Pendencia.query.get_or_404(id)
@@ -1077,7 +1547,7 @@ def operador_natureza_operacao(id):
     return render_template('operador_natureza_operacao.html', pendencia=pendencia)
 
 @app.route('/operador/recusar_resposta/<int:id>', methods=['POST'])
-@permissao_requerida('operador', 'adm')
+@permissao_requerida('operador', 'adm', 'supervisor')
 def operador_recusar_resposta(id):
     """Operador recusa a resposta do cliente e solicita complemento"""
     pendencia = Pendencia.query.get_or_404(id)
@@ -1125,14 +1595,11 @@ def operador_recusar_resposta(id):
     db.session.add(log_motivo)
     db.session.commit()
     
-    # Notificação Teams para cliente
-    notificar_teams_recusa_cliente(pendencia)
-    
     flash('Resposta recusada. Cliente foi notificado para complementar.', 'success')
     return redirect(url_for('operador_pendencias'))
 
 @app.route('/operador/lote_enviar_supervisor', methods=['POST'])
-@permissao_requerida('operador', 'adm')
+@permissao_requerida('operador', 'adm', 'supervisor')
 def operador_lote_enviar_supervisor():
     ids = request.form.getlist('ids')
     if not ids:
@@ -1891,126 +2358,99 @@ def aprovar_pendencia(id):
     flash('Pendência aprovada com sucesso!', 'success')
     return redirect(url_for('ver_pendencia', token=pendencia.token_acesso))
 
-@app.route("/relatorios/pendencias/mes", methods=["GET"])
+@app.route("/relatorios/mensal", methods=["GET"])
 @permissao_requerida('supervisor', 'adm', 'operador')
-def relatorio_pendencias_mes():
+def relatorio_mensal():
     """
     Relatório mensal de pendências - resolvidas vs pendentes por mês
+    Suporta filtro por empresa específica ou múltiplas empresas
     """
     from sqlalchemy import func
+    from dateutil.relativedelta import relativedelta
+    from datetime import date
+    
+    def month_bounds(ref_yyyy_mm: str):
+        """Retorna início e fim do mês baseado em YYYY-MM"""
+        base = datetime.strptime(ref_yyyy_mm, "%Y-%m")
+        ini = date(base.year, base.month, 1)
+        fim = (ini + relativedelta(months=1)) - relativedelta(days=1)
+        return ini, fim
+    
+    def empresas_permitidas_ids(user):
+        """Retorna lista de IDs das empresas às quais o usuário tem acesso"""
+        empresas_usuario = obter_empresas_para_usuario()
+        empresas_objs = Empresa.query.filter(Empresa.nome.in_(empresas_usuario)).all()
+        return [e.id for e in empresas_objs]
     
     # --- parâmetros ---
-    month_str = request.args.get("month")
-    if not month_str:
-        # Se não informado, usar o mês atual
-        current_date = now_brazil()
-        month_str = current_date.strftime("%Y-%m")
-    
+    ref = request.args.get("ref") or datetime.utcnow().strftime("%Y-%m")
     try:
-        # Converter YYYY-MM para primeiro dia do mês
-        year, month = map(int, month_str.split('-'))
-        start_date = datetime(year, month, 1).date()
-        # Último dia do mês
-        if month == 12:
-            end_date = datetime(year + 1, 1, 1).date() - timedelta(days=1)
-        else:
-            end_date = datetime(year, month + 1, 1).date() - timedelta(days=1)
+        dt_ini, dt_fim = month_bounds(ref)
     except ValueError:
-        flash('Formato de mês inválido. Use YYYY-MM.', 'danger')
+        flash('Parâmetro "ref" inválido. Use YYYY-MM.', 'danger')
         return redirect(url_for('dashboard'))
 
     empresa_id = request.args.get("empresa_id", type=int)
+    mult_empresas = request.args.getlist("empresas")  # usado no modo global (checkboxes)
+    permitidas = empresas_permitidas_ids(session.get('usuario_email', 'sistema'))
     fmt = request.args.get("format", "html")
+    base = request.args.get("base", "pendencia")  # "pendencia" | "abertura"
 
-    # --- empresa e permissão ---
-    empresa = None
+    # --- escopo por empresa ---
+    empresas_alvo = []
     if empresa_id:
-        empresa = Empresa.query.get_or_404(empresa_id)
-        empresas_usuario = obter_empresas_para_usuario()
-        if empresa.nome not in empresas_usuario:
+        if empresa_id not in permitidas:
             flash('Você não tem acesso a esta empresa.', 'danger')
             return redirect(url_for('dashboard'))
+        empresas_alvo = [empresa_id]
+    elif mult_empresas:
+        empresas_alvo = [int(x) for x in mult_empresas if int(x) in permitidas]
+    else:
+        # global: todas as permitidas
+        empresas_alvo = permitidas
 
-    # helper de filtro por empresa (tabela Pendencia guarda nome)
-    def q_empresa(query):
-        return query.filter(Pendencia.empresa == empresa.nome) if empresa else query
+    # map id -> nome (Pendencia.empresa é string)
+    emps = {e.id: e.nome for e in Empresa.query.filter(Empresa.id.in_(empresas_alvo)).all()}
+    if not emps:
+        flash('Nenhuma empresa selecionada ou permitida.', 'danger')
+        return redirect(url_for('dashboard'))
 
-    # --- resolvidas no mês (data_resposta) ---
-    resolvidas_q = q_empresa(
-        db.session.query(
-            Pendencia.status.label("status"),
-            func.count(Pendencia.id).label("qtde")
-        ).filter(
-            Pendencia.status == "RESOLVIDA",
-            func.date(Pendencia.data_resposta) >= start_date,
-            func.date(Pendencia.data_resposta) <= end_date
-        ).group_by(Pendencia.status)
+    # --- Base de cálculo do mês ---
+    if base == "abertura":
+        filtro_data = (func.date(Pendencia.data_abertura) >= dt_ini) & (func.date(Pendencia.data_abertura) <= dt_fim)
+    else:
+        filtro_data = (func.date(Pendencia.data) >= dt_ini) & (func.date(Pendencia.data) <= dt_fim)
+
+    q = Pendencia.query.filter(filtro_data, Pendencia.empresa.in_(list(emps.values())))
+
+    # --- agregados principais ---
+    por_status = (
+        q.with_entities(Pendencia.empresa, Pendencia.status, func.count(Pendencia.id))
+         .group_by(Pendencia.empresa, Pendencia.status).all()
     )
-    resolvidas_map = {r.status: r.qtde for r in resolvidas_q.all()}
-    total_resolvidas = sum(resolvidas_map.values()) if resolvidas_map else 0
-
-    # --- em pendência no mês (data) ---
-    pendentes_q = q_empresa(
-        db.session.query(
-            Pendencia.status.label("status"),
-            func.count(Pendencia.id).label("qtde")
-        ).filter(
-            Pendencia.status != "RESOLVIDA",
-            func.date(Pendencia.data) >= start_date,
-            func.date(Pendencia.data) <= end_date
-        ).group_by(Pendencia.status)
+    resolvidas_no_mes = (
+        db.session.query(Pendencia.empresa, func.count(Pendencia.id))
+        .filter(Pendencia.status == "RESOLVIDA",
+                func.date(Pendencia.data_resposta) >= dt_ini,
+                func.date(Pendencia.data_resposta) <= dt_fim,
+                Pendencia.empresa.in_(list(emps.values())))
+        .group_by(Pendencia.empresa).all()
     )
-    pendentes_por_status = {r.status: r.qtde for r in pendentes_q.all()}
-    total_pendentes = sum(pendentes_por_status.values())
 
-    # --- agrupamento por "na mão de quem" (map por status) ---
-    responsavel_map = {
-        "PENDENTE CLIENTE": "Cliente",
-        "PENDENTE COMPLEMENTO CLIENTE": "Cliente",
-        "PENDENTE OPERADOR UP": "Operador UP",
-        "PENDENTE SUPERVISOR UP": "Supervisor UP",
-        "RESOLVIDA": "--"
-    }
-    pendentes_por_responsavel = {}
-    for st, qt in pendentes_por_status.items():
-        resp = responsavel_map.get(st, "Indefinido")
-        pendentes_por_responsavel[resp] = pendentes_por_responsavel.get(resp, 0) + qt
+    # --- montar payload ---
+    agg_status = {}  # {empresa_nome: {status: qtde}}
+    for emp, st, qt in por_status:
+        agg_status.setdefault(emp, {})[st] = qt
 
-    # --- buscar pendências detalhadas do mês ---
-    from sqlalchemy import or_, and_
-    
-    pendencias_detalhadas = q_empresa(
-        Pendencia.query.filter(
-            or_(
-                and_(
-                    Pendencia.status == "RESOLVIDA",
-                    func.date(Pendencia.data_resposta) >= start_date,
-                    func.date(Pendencia.data_resposta) <= end_date
-                ),
-                and_(
-                    Pendencia.status != "RESOLVIDA",
-                    func.date(Pendencia.data) >= start_date,
-                    func.date(Pendencia.data) <= end_date
-                )
-            )
-        ).order_by(Pendencia.data_abertura.desc())
-    ).all()
+    agg_resolvidas = dict(resolvidas_no_mes)  # {empresa_nome: qtde}
 
-    # --- resposta comum ---
     payload = {
-        "month": month_str,
-        "start_date": start_date.isoformat(),
-        "end_date": end_date.isoformat(),
-        "empresa": (empresa.nome if empresa else None),
-        "totais": {
-            "resolvidas_no_mes": total_resolvidas,
-            "pendentes_no_mes": total_pendentes
-        },
-        "detalhes": {
-            "por_status_pendentes": pendentes_por_status,
-            "por_responsavel_pendentes": pendentes_por_responsavel,
-            "resolvidas": {"RESOLVIDA": total_resolvidas}
-        }
+        "ref": ref,
+        "base": base,
+        "intervalo": {"inicio": dt_ini.isoformat(), "fim": dt_fim.isoformat()},
+        "empresas": list(emps.values()),
+        "por_status": agg_status,
+        "resolvidas_no_mes": agg_resolvidas
     }
 
     # --- logging ---
@@ -2019,10 +2459,10 @@ def relatorio_pendencias_mes():
         usuario=session.get('usuario_email', 'sistema'),
         tipo_usuario=session.get('usuario_tipo', 'sistema'),
         data_hora=now_brazil(),
-        acao="report_monthly_summary",
-        campo_alterado="relatorio_pendencias_mes",
+        acao="view",
+        campo_alterado="relatorio_mensal",
         valor_anterior=None,
-        valor_novo=f"month={month_str}; empresa_id={empresa_id}"
+        valor_novo=f"ref={ref}; empresa_id={empresa_id}; empresas={','.join(map(str, empresas_alvo))}; base={base}"
     )
     db.session.add(log)
     db.session.commit()
@@ -2032,39 +2472,44 @@ def relatorio_pendencias_mes():
         return jsonify(payload)
 
     if fmt == "csv":
-        # CSV com três blocos: totais; por_status_pendentes; por_responsavel_pendentes
+        # CSV com dados agregados por empresa
         buf = io.StringIO()
         w = csv.writer(buf, lineterminator="\n")
-        w.writerow(["Relatório mensal de pendências", month_str, empresa.nome if empresa else "Todas"])
-        w.writerow([f"Período: {start_date.strftime('%d/%m/%Y')} a {end_date.strftime('%d/%m/%Y')}"])
+        w.writerow(["Relatório mensal de pendências", ref])
+        w.writerow([f"Período: {dt_ini.strftime('%d/%m/%Y')} a {dt_fim.strftime('%d/%m/%Y')}"])
+        w.writerow([f"Base: {'Data de Abertura' if base == 'abertura' else 'Data da Pendência'}"])
+        w.writerow([f"Empresas: {', '.join(emps.values())}"])
         w.writerow([])
-        w.writerow(["Totais"])
-        w.writerow(["resolvidas_no_mes", total_resolvidas])
-        w.writerow(["pendentes_no_mes", total_pendentes])
-        w.writerow([])
-        w.writerow(["Pendentes por status"])
-        w.writerow(["status", "quantidade"])
-        for st, qt in pendentes_por_status.items():
-            w.writerow([st, qt])
-        w.writerow([])
-        w.writerow(["Pendentes por responsável"])
-        w.writerow(["responsavel", "quantidade"])
-        for resp, qt in pendentes_por_responsavel.items():
-            w.writerow([resp, qt])
+        
+        # Por empresa
+        for empresa_nome in emps.values():
+            w.writerow([f"Empresa: {empresa_nome}"])
+            w.writerow(["Status", "Quantidade"])
+            if empresa_nome in agg_status:
+                for status, qtde in agg_status[empresa_nome].items():
+                    w.writerow([status, qtde])
+            w.writerow(["Resolvidas no mês", agg_resolvidas.get(empresa_nome, 0)])
+            w.writerow([])
 
         resp = Response(buf.getvalue(), mimetype='text/csv')
-        nome_arq = f"relatorio_pendencias_{month_str}_{empresa.nome if empresa else 'todas'}.csv"
+        nome_arq = f"relatorio_mensal_{ref}_{','.join(emps.values())}.csv"
         resp.headers["Content-Disposition"] = f"attachment; filename={nome_arq}"
         return resp
 
     # formato HTML (default)
-    return render_template("relatorio_pendencias_mes.html",
+    empresas_lista = Empresa.query.filter(Empresa.id.in_(permitidas)).all()
+    empresas_selecionadas = list(emps.keys())
+    empresa_bloqueada = (empresa_id is not None)
+    
+    return render_template("relatorio_mensal.html",
                            payload=payload,
-                           month_str=month_str,
-                           start_date=start_date,
-                           end_date=end_date,
-                           empresa=empresa,
-                           pendencias_detalhadas=pendencias_detalhadas)
+                           ref=ref,
+                           base=base,
+                           empresas_lista=empresas_lista,
+                           empresas_selecionadas=empresas_selecionadas,
+                           empresa_bloqueada=empresa_bloqueada,
+                           dt_ini=dt_ini,
+                           dt_fim=dt_fim)
 
 @app.route('/relatorio_operadores')
 @permissao_requerida('adm', 'supervisor')
