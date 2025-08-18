@@ -253,7 +253,7 @@
     <a href="{{ url_for('listar_pendencias', status='RESOLVIDA', empresa=empresa_filtro) }}" class="btn btn-outline-success">
         <i class="bi bi-check-circle"></i> Pendências Resolvidas
     </a>
-    <a href="{{ url_for('relatorio_pendencias_mes', month=current_month, empresa_id=empresa_id) }}" class="btn btn-outline-primary">
+    <a href="{{ url_for('relatorio_mensal', ref=current_month, empresa_id=empresa_id) }}" class="btn btn-outline-primary">
         <i class="bi bi-calendar-month"></i> Relatório Mensal
     </a>
 </div>
