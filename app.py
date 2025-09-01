@@ -35,6 +35,14 @@ iframe_clickup = """
 # Registra o iframe como variável global do Jinja2
 app.jinja_env.globals['iframe_clickup'] = iframe_clickup
 
+# Filtro personalizado para formatação de data/hora
+@app.template_filter('datetime_local')
+def datetime_local_filter(dt):
+    """Formata datetime para exibição local"""
+    if dt is None:
+        return ""
+    return dt.strftime('%d/%m/%Y %H:%M')
+
 
 # Configuração de e-mail
 app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
@@ -509,6 +517,33 @@ def enviar_email_cliente(pendencia):
     """
     mail.send(msg)
 
+def enviar_email_resposta_recusada(pendencia, motivo_recusa):
+    """Envia e-mail ao cliente informando que sua resposta foi recusada"""
+    if not pendencia.email_cliente:
+        return
+    
+    link = url_for('ver_pendencia', token=pendencia.token_acesso, _external=True)
+    msg = Message(
+        'Resposta Recusada - Pendência Financeira',
+        recipients=[pendencia.email_cliente]
+    )
+    msg.body = f"""
+    Olá,
+
+    Sua resposta para a pendência no valor de R$ {pendencia.valor:.2f} foi recusada.
+
+    Motivo da recusa: {motivo_recusa}
+
+    Por favor, acesse o link abaixo para ver sua resposta anterior e o motivo da recusa:
+    {link}
+
+    Ao reabrir o link, você verá sua resposta anterior e o motivo da recusa.
+
+    Obrigado,
+    Equipe UP380
+    """
+    mail.send(msg)
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -791,6 +826,28 @@ def nova_pendencia():
 @app.route('/pendencia/<token>', methods=['GET', 'POST'])
 def ver_pendencia(token):
     pendencia = Pendencia.query.filter_by(token_acesso=token).first_or_404()
+    
+    # Consulta da última resposta do cliente (apenas se status for PENDENTE CLIENTE e houver motivo_recusa)
+    ultima_resposta = None
+    historico_respostas = []
+    
+    if pendencia.status == 'PENDENTE CLIENTE' and (pendencia.motivo_recusa or pendencia.resposta_cliente):
+        # Busca a última resposta do cliente nos logs
+        ultima_resposta = (
+            LogAlteracao.query
+            .filter_by(pendencia_id=pendencia.id, campo_alterado="resposta_cliente")
+            .order_by(LogAlteracao.data_hora.desc())
+            .first()
+        )
+        
+        # Busca histórico completo de respostas
+        historico_respostas = (
+            LogAlteracao.query
+            .filter_by(pendencia_id=pendencia.id, campo_alterado="resposta_cliente")
+            .order_by(LogAlteracao.data_hora.desc())
+            .all()
+        )
+    
     if request.method == 'POST':
         # Verifica se é complemento de resposta ou resposta inicial
         if pendencia.status == 'PENDENTE COMPLEMENTO CLIENTE':
@@ -804,6 +861,7 @@ def ver_pendencia(token):
             valor_novo = 'PENDENTE OPERADOR UP'
         else:
             # Resposta inicial
+            resposta_anterior = pendencia.resposta_cliente
             pendencia.resposta_cliente = request.form['resposta']
             acao_log = 'Resposta do Cliente'
             valor_anterior = 'Pendente Cliente'
@@ -822,8 +880,8 @@ def ver_pendencia(token):
         pendencia.data_resposta = now_brazil()
         db.session.commit()
         
-        # Log da alteração
-        log = LogAlteracao(
+        # Log da alteração de status
+        log_status = LogAlteracao(
             pendencia_id=pendencia.id,
             usuario='Cliente',
             tipo_usuario='cliente',
@@ -833,7 +891,20 @@ def ver_pendencia(token):
             valor_anterior=valor_anterior,
             valor_novo=valor_novo
         )
-        db.session.add(log)
+        db.session.add(log_status)
+        
+        # Log da resposta do cliente
+        log_resposta = LogAlteracao(
+            pendencia_id=pendencia.id,
+            usuario='Cliente',
+            tipo_usuario='cliente',
+            data_hora=now_brazil(),
+            acao='update',
+            campo_alterado='resposta_cliente',
+            valor_anterior=resposta_anterior or '',
+            valor_novo=pendencia.resposta_cliente
+        )
+        db.session.add(log_resposta)
         db.session.commit()
         
         # Notificação Teams
@@ -848,7 +919,12 @@ def ver_pendencia(token):
         tipo_pendencia = request.form.get('tipo_pendencia', pendencia.tipo_pendencia)
         busca = request.form.get('busca', '')
         return redirect(url_for('dashboard', empresa=empresa, tipo_pendencia=tipo_pendencia, busca=busca))
-    return render_template('ver_pendencia.html', pendencia=pendencia)
+    
+    return render_template('ver_pendencia.html', 
+                         pendencia=pendencia,
+                         motivo_recusa=pendencia.motivo_recusa,
+                         ultima_resposta=ultima_resposta,
+                         historico_respostas=historico_respostas)
 
 @app.route('/resolver/<int:id>')
 @permissao_requerida('supervisor', 'adm')
@@ -2332,6 +2408,12 @@ def recusar_resposta_cliente(id):
     )
     db.session.add(log_motivo)
     db.session.commit()
+    
+    # Enviar e-mail ao cliente informando sobre a recusa
+    try:
+        enviar_email_resposta_recusada(pendencia, motivo_recusa)
+    except Exception as e:
+        print(f"Erro ao enviar e-mail de recusa: {e}")
     
     flash('Resposta do cliente recusada! Pendência devolvida ao cliente.', 'warning')
     return redirect(url_for('ver_pendencia', token=pendencia.token_acesso))
