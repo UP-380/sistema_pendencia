@@ -676,6 +676,21 @@ def dashboard():
     colunas_tipo = obter_colunas_por_tipo(tipo_filtro)
     todas_colunas = obter_todas_colunas()
     
+    # Buscar respostas anteriores para pendências com status PENDENTE COMPLEMENTO CLIENTE
+    respostas_anteriores = {}
+    if session.get('usuario_tipo') == 'cliente':
+        for pendencia in pendencias:
+            if pendencia.status == 'PENDENTE COMPLEMENTO CLIENTE':
+                # Busca a última resposta do cliente nos logs
+                ultima_resposta = (
+                    LogAlteracao.query
+                    .filter_by(pendencia_id=pendencia.id, campo_alterado="resposta_cliente")
+                    .order_by(LogAlteracao.data_hora.desc())
+                    .first()
+                )
+                if ultima_resposta:
+                    respostas_anteriores[pendencia.id] = ultima_resposta
+    
     return render_template(
         'dashboard.html', 
         pendencias=pendencias, 
@@ -689,7 +704,8 @@ def dashboard():
         today_str=today_str,
         current_month=current_month,
         colunas_tipo=colunas_tipo,
-        todas_colunas=todas_colunas
+        todas_colunas=todas_colunas,
+        respostas_anteriores=respostas_anteriores
     )
 
 @app.route('/nova', methods=['GET', 'POST'])

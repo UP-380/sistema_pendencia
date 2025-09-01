@@ -317,6 +317,25 @@
                             <strong>O operador solicitou complemento:</strong><br>
                             <span>{{ pendencia.motivo_recusa }}</span>
                         </div>
+                        
+                        {% if respostas_anteriores.get(pendencia.id) %}
+                        <div class="card mb-3" style="border-radius:12px;">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <div>
+                                    <i class="bi bi-chat-left-quote me-1"></i>
+                                    Sua resposta anterior
+                                    <small class="text-muted">enviada em {{ respostas_anteriores[pendencia.id].data_hora|datetime_local }}</small>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="usarComoBase({{ pendencia.id }})">
+                                    <i class="bi bi-arrow-clockwise"></i> Usar como base
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <pre class="mb-0" style="white-space:pre-wrap; font-family:inherit; max-height: 150px; overflow-y: auto;">{{ respostas_anteriores[pendencia.id].valor_novo | e }}</pre>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
                         <div class="mb-3">
                             <label for="resposta{{ pendencia.id }}" class="form-label">Complemento da Resposta</label>
                             <textarea class="form-control" id="resposta{{ pendencia.id }}" name="resposta" rows="4" required placeholder="Adicione as informações solicitadas pelo operador..."></textarea>
@@ -396,6 +415,19 @@ function updateTableColumns(tipo) {
 document.getElementById('tipo_pendencia').addEventListener('change', function() {
     updateTableColumns(this.value);
 });
+
+// Função para usar resposta anterior como base
+function usarComoBase(pendenciaId) {
+    const modal = document.getElementById('modalComplementar' + pendenciaId);
+    const respostaAnterior = modal.querySelector('pre').textContent;
+    const textarea = document.getElementById('resposta' + pendenciaId);
+    
+    if (textarea) {
+        textarea.value = respostaAnterior;
+        textarea.focus();
+        textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+    }
+}
 </script>
 
 {# MODAIS PARA OPERADOR RESPONDER PENDÊNCIA #}
