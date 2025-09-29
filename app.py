@@ -866,6 +866,9 @@ def ver_pendencia(token):
     
     if request.method == 'POST':
         # Verifica se é complemento de resposta ou resposta inicial
+        # Inicializar variável resposta_anterior
+        resposta_anterior = pendencia.resposta_cliente or ''
+        
         if pendencia.status == 'PENDENTE COMPLEMENTO CLIENTE':
             # Complemento de resposta
             resposta_atual = pendencia.resposta_cliente or ''
@@ -877,7 +880,6 @@ def ver_pendencia(token):
             valor_novo = 'PENDENTE OPERADOR UP'
         else:
             # Resposta inicial
-            resposta_anterior = pendencia.resposta_cliente
             pendencia.resposta_cliente = request.form['resposta']
             acao_log = 'Resposta do Cliente'
             valor_anterior = 'Pendente Cliente'
