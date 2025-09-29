@@ -126,9 +126,9 @@ const tipoConfig = {
         label_data: null
     },
     "Nota Fiscal Não Anexada": {
-        show: ["grp_fornecedor", "grp_valor", "grp_obs"],
-        hide: ["grp_banco", "grp_data", "grp_data_competencia", "grp_data_baixa", "grp_codigo", "grp_natureza_sistema"],
-        required: ["fornecedor_cliente", "valor"],
+        show: ["grp_fornecedor", "grp_valor", "grp_obs", "grp_data"],
+        hide: ["grp_banco", "grp_data_competencia", "grp_data_baixa", "grp_codigo", "grp_natureza_sistema"],
+        required: ["fornecedor_cliente", "valor", "data"],
         label_data: null
     },
     "Natureza Errada": {
@@ -150,11 +150,10 @@ const tipoConfig = {
         label_data: null
     },
     "Nota Fiscal Não Identificada": {
-        show: ["grp_fornecedor", "grp_valor", "grp_obs"],
-        hide: ["grp_banco", "grp_data", "grp_data_competencia", "grp_data_baixa", "grp_codigo", "grp_natureza_sistema"],
-        required: ["fornecedor_cliente", "valor"],
-        label_data: null,
-        disable_data: true
+        show: ["grp_fornecedor", "grp_valor", "grp_obs", "grp_data"],
+        hide: ["grp_banco", "grp_data_competencia", "grp_data_baixa", "grp_codigo", "grp_natureza_sistema"],
+        required: ["fornecedor_cliente", "valor", "data"],
+        label_data: null
     }
 };
 
@@ -192,13 +191,9 @@ function applyTipoConfig(tipo) {
         dataLabel.textContent = config.label_data;
     }
     
-    // Desabilitar data para Nota Fiscal Não Identificada
+    // Habilitar campo data
     const dataField = document.getElementById('data');
-    if (dataField && config.disable_data) {
-        dataField.disabled = true;
-        dataField.value = '';
-        dataField.required = false;
-    } else if (dataField) {
+    if (dataField) {
         dataField.disabled = false;
     }
     
