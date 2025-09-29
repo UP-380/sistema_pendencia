@@ -123,10 +123,10 @@ TIPO_RULES = {
         "import_columns": ["empresa", "banco", "data", "valor", "observacao", "email_cliente"]
     },
     "Nota Fiscal Não Anexada": {
-        "required": ["fornecedor_cliente", "valor"],
-        "forbidden": [],
-        "columns": ["tipo", "banco", "data", "fornecedor_cliente", "valor", "observacao", "status", "modificado_por"],
-        "import_columns": ["empresa", "fornecedor", "valor", "nota_fiscal", "observacao", "email_cliente"]
+    "required": ["fornecedor_cliente", "valor", "data"],  # ADICIONAR "data" aqui
+    "forbidden": [],
+    "columns": ["tipo", "banco", "data", "fornecedor_cliente", "valor", "observacao", "status", "modificado_por"],
+    "import_columns": ["empresa", "fornecedor", "valor", "nota_fiscal", "observacao", "email_cliente"]
     },
     "Nota Fiscal Não Identificada": {
         "required": ["fornecedor_cliente", "valor"],
