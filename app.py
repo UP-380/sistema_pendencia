@@ -203,7 +203,7 @@ def pick(val_a, val_b):
 
 def parse_date_or_none(s):
     """Converte string para data ou retorna None - aceita múltiplos formatos"""
-    if not s or str(s).strip() == "" or str(s).strip().lower() == "nan":
+    if not s or str(s).strip() == "" or str(s).strip().lower() in ["nan", "none", "null"]:
         return None
     
     s = str(s).strip()
@@ -216,6 +216,8 @@ def parse_date_or_none(s):
         "%Y/%m/%d",      # 2025/08/18
         "%d/%m/%y",      # 18/08/25
         "%d-%m-%y",      # 18-08-25
+        "%d.%m.%Y",      # 18.08.2025
+        "%d.%m.%y",      # 18.08.25
     ]
     
     for fmt in date_formats:
@@ -223,6 +225,17 @@ def parse_date_or_none(s):
             return datetime.strptime(s, fmt).date()
         except ValueError:
             continue
+    
+    # Tentar converter se for um número (Excel às vezes retorna números)
+    try:
+        if s.replace('.', '').replace('-', '').isdigit():
+            # Pode ser um timestamp do Excel
+            if '.' in str(s):
+                # Timestamp do Excel
+                excel_date = datetime(1900, 1, 1) + timedelta(days=float(s) - 2)
+                return excel_date.date()
+    except (ValueError, TypeError):
+        pass
     
     return None
 
@@ -235,13 +248,34 @@ def validar_row_por_tipo(tipo, row):
     def has(field):
         """Verifica se o campo tem valor válido"""
         val = row.get(field, "")
-        return val not in [None, "", "NaN", "nan"]
+        return val not in [None, "", "NaN", "nan", "None", "null", "NULL", "undefined", "N/A", "n/a"]
+    
+    def get_field_value(field):
+        """Obtém valor do campo com fallbacks"""
+        # Tentar campo original
+        val = row.get(field, "")
+        if val not in [None, "", "NaN", "nan", "None", "null", "NULL", "undefined", "N/A", "n/a"]:
+            return val
+        
+        # Tentar variações do nome
+        field_variations = [
+            field.replace("_cliente", ""),
+            field.replace("_or_id", ""),
+            field + "_id"
+        ]
+        
+        for variation in field_variations:
+            val = row.get(variation, "")
+            if val not in [None, "", "NaN", "nan", "None", "null", "NULL", "undefined", "N/A", "n/a"]:
+                return val
+        
+        return ""
     
     # Verificar campos obrigatórios
     for field in rule.get("required", []):
-        field_name = field.replace("_cliente", "").replace("_or_id", "")
-        if not has(field) and not has(field_name) and not has(field_name + "_id"):
-            return f"Campo obrigatório ausente: {field}"
+        field_value = get_field_value(field)
+        if not field_value:
+            return f"Campo obrigatório ausente ou vazio: {field}"
     
     # Verificar campos proibidos
     for field in rule.get("forbidden", []):
@@ -258,7 +292,7 @@ def validar_row_por_tipo(tipo, row):
             return "Valor deve ser um número válido."
     
     # Validar datas específicas
-    if tipo == "COMPETÊNCIA ERRADA" and has("data_competencia"):
+    if tipo == "Competência Errada" and has("data_competencia"):
         if not parse_date_or_none(row.get("data_competencia")):
             return "Data Competência inválida. Use formato: YYYY-MM-DD, DD/MM/YYYY, DD-MM-YYYY"
     
@@ -269,6 +303,23 @@ def validar_row_por_tipo(tipo, row):
     if tipo == "Natureza Errada" and has("data"):
         if not parse_date_or_none(row.get("data")):
             return "Data do Lançamento ou Baixa inválida. Use formato: YYYY-MM-DD, DD/MM/YYYY, DD-MM-YYYY"
+    
+    # Validar campos de data obrigatórios para outros tipos
+    if tipo == "Recebimento Não Identificado" and has("data"):
+        if not parse_date_or_none(row.get("data")):
+            return "Data inválida para Recebimento Não Identificado. Use formato: YYYY-MM-DD, DD/MM/YYYY, DD-MM-YYYY"
+    
+    if tipo == "Pagamento Não Identificado" and has("data"):
+        if not parse_date_or_none(row.get("data")):
+            return "Data inválida para Pagamento Não Identificado. Use formato: YYYY-MM-DD, DD/MM/YYYY, DD-MM-YYYY"
+    
+    if tipo == "Cartão de Crédito Não Identificado" and has("data"):
+        if not parse_date_or_none(row.get("data")):
+            return "Data inválida para Cartão de Crédito Não Identificado. Use formato: YYYY-MM-DD, DD/MM/YYYY, DD-MM-YYYY"
+    
+    if tipo == "Nota Fiscal Não Anexada" and has("data"):
+        if not parse_date_or_none(row.get("data")):
+            return "Data inválida para Nota Fiscal Não Anexada. Use formato: YYYY-MM-DD, DD/MM/YYYY, DD-MM-YYYY"
     
     return None
 
@@ -1231,17 +1282,53 @@ def importar_planilha():
                     if label_tipo_planilha(tipo_import) in ["NATUREZA ERRADA", "COMPETÊNCIA ERRADA"]:
                         banco_nome = ""  # String vazia em vez de None
                     
+                    # Garantir que campos obrigatórios não sejam nulos
+                    tipo_pendencia = label_tipo_planilha(tipo_import)
+                    rule = TIPO_RULES.get(tipo_pendencia, {})
+                    
+                    # Tratar campos de data obrigatórios
+                    data_value = parse_date_or_none(r.get("data"))
+                    data_competencia_value = parse_date_or_none(r.get("data_competencia"))
+                    data_baixa_value = parse_date_or_none(r.get("data_baixa"))
+                    
+                    # Se data é obrigatória mas está None, usar data atual como fallback
+                    if "data" in rule.get("required", []) and not data_value:
+                        data_value = datetime.now().date()
+                    
+                    # Se data_competencia é obrigatória mas está None, usar data atual como fallback
+                    if "data_competencia" in rule.get("required", []) and not data_competencia_value:
+                        data_competencia_value = datetime.now().date()
+                    
+                    # Se data_baixa é obrigatória mas está None, usar data atual como fallback
+                    if "data_baixa" in rule.get("required", []) and not data_baixa_value:
+                        data_baixa_value = datetime.now().date()
+                    
+                    # Garantir que fornecedor_cliente não seja vazio se obrigatório
+                    fornecedor_final = fornecedor_nome or ""
+                    if "fornecedor_cliente" in rule.get("required", []) and not fornecedor_final:
+                        fornecedor_final = "FORNECEDOR NÃO INFORMADO"
+                    
+                    # Garantir que banco não seja vazio se obrigatório
+                    banco_final = banco_nome or ""
+                    if "banco" in rule.get("required", []) and not banco_final:
+                        banco_final = "BANCO NÃO INFORMADO"
+                    
+                    # Garantir que codigo_lancamento não seja vazio se obrigatório
+                    codigo_final = r.get("codigo_lancamento") or ""
+                    if "codigo_lancamento" in rule.get("required", []) and not codigo_final:
+                        codigo_final = "CÓDIGO NÃO INFORMADO"
+                    
                     p = Pendencia(
                         empresa=empresa.nome,
-                        tipo_pendencia=label_tipo_planilha(tipo_import),
-                        fornecedor_cliente=fornecedor_nome or "",
+                        tipo_pendencia=tipo_pendencia,
+                        fornecedor_cliente=fornecedor_final,
                         valor=float(r["valor"]) if r.get("valor") else 0.0,
-                        codigo_lancamento=r.get("codigo_lancamento") or "",
+                        codigo_lancamento=codigo_final,
                         natureza_sistema=r.get("natureza_sistema") or "",
-                        data=parse_date_or_none(r.get("data")),
-                        data_competencia=parse_date_or_none(r.get("data_competencia")),
-                        data_baixa=parse_date_or_none(r.get("data_baixa")),
-                        banco=banco_nome or "",
+                        data=data_value,
+                        data_competencia=data_competencia_value,
+                        data_baixa=data_baixa_value,
+                        banco=banco_final,
                         observacao=r.get("observacao") or "",
                         email_cliente=r.get("email_cliente") or "",
                         status='PENDENTE CLIENTE',
