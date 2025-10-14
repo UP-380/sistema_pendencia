@@ -43,6 +43,19 @@ def datetime_local_filter(dt):
         return ""
     return dt.strftime('%d/%m/%Y %H:%M')
 
+# Filtro personalizado para exibir nome do tipo de usuário
+@app.template_filter('nome_tipo_usuario')
+def nome_tipo_usuario_filter(tipo):
+    """Retorna o nome amigável do tipo de usuário"""
+    nomes = {
+        'adm': 'Administrador',
+        'supervisor': 'Supervisor',
+        'operador': 'Operador',
+        'cliente': 'Cliente',
+        'cliente_supervisor': 'Cliente Supervisor'
+    }
+    return nomes.get(tipo, tipo.capitalize())
+
 
 # Configuração de e-mail
 app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
@@ -631,7 +644,7 @@ def permissao_requerida(*tipos):
     return decorator
 
 @app.route('/empresas')
-@permissao_requerida('supervisor', 'adm', 'operador', 'cliente')
+@permissao_requerida('supervisor', 'adm', 'operador', 'cliente', 'cliente_supervisor')
 def pre_dashboard():
     if session.get('usuario_tipo') == 'adm':
         empresas = Empresa.query.all()
@@ -686,7 +699,7 @@ def pre_dashboard():
     )
 
 @app.route('/dashboard', methods=['GET'])
-@permissao_requerida('supervisor', 'adm', 'operador', 'cliente')
+@permissao_requerida('supervisor', 'adm', 'operador', 'cliente', 'cliente_supervisor')
 def dashboard():
     empresas_usuario = obter_empresas_para_usuario()
     if not empresas_usuario:
@@ -709,11 +722,11 @@ def dashboard():
     if busca:
         query = query.filter(
             db.or_(Pendencia.fornecedor_cliente.ilike(f'%{busca}%'),
-                    Pendencia.banco.ilike(f'%{busca}%'),
+                Pendencia.banco.ilike(f'%{busca}%'),
                     Pendencia.observacao.ilike(f'%{busca}%'),
                     Pendencia.resposta_cliente.ilike(f'%{busca}%'),
                     Pendencia.natureza_operacao.ilike(f'%{busca}%'))
-        )
+            )
     
     pendencias = query.order_by(Pendencia.data.desc()).all()
     
@@ -1286,22 +1299,31 @@ def importar_planilha():
                     tipo_pendencia = label_tipo_planilha(tipo_import)
                     rule = TIPO_RULES.get(tipo_pendencia, {})
                     
+                    # DEBUG: Log dos dados da linha
+                    print(f"DEBUG - Linha {i+2}: tipo={tipo_pendencia}, data_raw={r.get('data')}, required={rule.get('required', [])}")
+                    
                     # Tratar campos de data obrigatórios
                     data_value = parse_date_or_none(r.get("data"))
                     data_competencia_value = parse_date_or_none(r.get("data_competencia"))
                     data_baixa_value = parse_date_or_none(r.get("data_baixa"))
                     
+                    # DEBUG: Log dos valores parseados
+                    print(f"DEBUG - data_value={data_value}, data_competencia_value={data_competencia_value}, data_baixa_value={data_baixa_value}")
+                    
                     # Se data é obrigatória mas está None, usar data atual como fallback
                     if "data" in rule.get("required", []) and not data_value:
                         data_value = datetime.now().date()
+                        print(f"DEBUG - Aplicando fallback para data: {data_value}")
                     
                     # Se data_competencia é obrigatória mas está None, usar data atual como fallback
                     if "data_competencia" in rule.get("required", []) and not data_competencia_value:
                         data_competencia_value = datetime.now().date()
+                        print(f"DEBUG - Aplicando fallback para data_competencia: {data_competencia_value}")
                     
                     # Se data_baixa é obrigatória mas está None, usar data atual como fallback
                     if "data_baixa" in rule.get("required", []) and not data_baixa_value:
                         data_baixa_value = datetime.now().date()
+                        print(f"DEBUG - Aplicando fallback para data_baixa: {data_baixa_value}")
                     
                     # Garantir que fornecedor_cliente não seja vazio se obrigatório
                     fornecedor_final = fornecedor_nome or ""
@@ -1317,6 +1339,24 @@ def importar_planilha():
                     codigo_final = r.get("codigo_lancamento") or ""
                     if "codigo_lancamento" in rule.get("required", []) and not codigo_final:
                         codigo_final = "CÓDIGO NÃO INFORMADO"
+                    
+                    # VALIDAÇÃO FINAL: Garantir que campos obrigatórios não sejam None
+                    # Para tipos que requerem data, garantir que nunca seja None
+                    if tipo_pendencia in ["Recebimento Não Identificado", "Pagamento Não Identificado", "Cartão de Crédito Não Identificado", "Nota Fiscal Não Anexada", "Natureza Errada"]:
+                        if data_value is None:
+                            data_value = datetime.now().date()
+                            print(f"DEBUG - FORÇANDO data para {tipo_pendencia}: {data_value}")
+                    
+                    if "data_competencia" in rule.get("required", []) and data_competencia_value is None:
+                        data_competencia_value = datetime.now().date()
+                        print(f"DEBUG - VALIDAÇÃO FINAL: data_competencia estava None, aplicando fallback: {data_competencia_value}")
+                    
+                    if "data_baixa" in rule.get("required", []) and data_baixa_value is None:
+                        data_baixa_value = datetime.now().date()
+                        print(f"DEBUG - VALIDAÇÃO FINAL: data_baixa estava None, aplicando fallback: {data_baixa_value}")
+                    
+                    # DEBUG: Log final dos valores
+                    print(f"DEBUG - VALORES FINAIS: data={data_value}, data_competencia={data_competencia_value}, data_baixa={data_baixa_value}")
                     
                     p = Pendencia(
                         empresa=empresa.nome,
@@ -2063,7 +2103,7 @@ def supervisor_recusar_devolver_operador(id):
     return redirect(url_for('supervisor_pendencias'))
 
 @app.route('/editar_observacao/<int:id>', methods=['GET', 'POST'])
-@permissao_requerida('supervisor', 'adm', 'cliente')
+@permissao_requerida('supervisor', 'adm', 'cliente', 'cliente_supervisor')
 def editar_observacao(id):
     pendencia = Pendencia.query.get_or_404(id)
     if request.method == 'POST':
@@ -2100,7 +2140,7 @@ def editar_observacao(id):
     return render_template('editar_observacao.html', pendencia=pendencia)
 
 @app.route('/resolvidas', methods=['GET'])
-@permissao_requerida('supervisor', 'adm')
+@permissao_requerida('supervisor', 'adm', 'cliente_supervisor')
 def dashboard_resolvidas():
     empresas_usuario = obter_empresas_para_usuario()
     if not empresas_usuario:
@@ -2134,7 +2174,7 @@ def dashboard_resolvidas():
     )
 
 @app.route('/pendencias')
-@permissao_requerida('supervisor', 'adm', 'operador')
+@permissao_requerida('supervisor', 'adm', 'operador', 'cliente_supervisor')
 def listar_pendencias():
     """
     Rota genérica para listar pendências com filtros
@@ -2199,14 +2239,14 @@ def listar_pendencias():
     )
 
 @app.route('/logs/<int:pendencia_id>')
-@permissao_requerida('supervisor', 'adm')
+@permissao_requerida('supervisor', 'adm', 'cliente_supervisor')
 def ver_logs_pendencia(pendencia_id):
     logs = LogAlteracao.query.filter_by(pendencia_id=pendencia_id).order_by(LogAlteracao.data_hora.desc()).all()
     pendencia = Pendencia.query.get_or_404(pendencia_id)
     return render_template('logs_pendencia.html', logs=logs, pendencia=pendencia)
 
 @app.route('/exportar_logs/<int:pendencia_id>')
-@permissao_requerida('supervisor', 'adm')
+@permissao_requerida('supervisor', 'adm', 'cliente_supervisor')
 def exportar_logs(pendencia_id):
     logs = LogAlteracao.query.filter_by(pendencia_id=pendencia_id).order_by(LogAlteracao.data_hora.desc()).all()
     def generate():
@@ -2235,13 +2275,13 @@ def exportar_logs(pendencia_id):
     return Response(generate(), mimetype='text/csv', headers=headers)
 
 @app.route('/logs_recentes')
-@permissao_requerida('supervisor', 'adm')
+@permissao_requerida('supervisor', 'adm', 'cliente_supervisor')
 def logs_recentes():
     logs = LogAlteracao.query.order_by(LogAlteracao.data_hora.desc()).limit(50).all()
     return render_template('logs_recentes.html', logs=logs)
 
 @app.route('/exportar_logs_csv')
-@permissao_requerida('supervisor', 'adm')
+@permissao_requerida('supervisor', 'adm', 'cliente_supervisor')
 def exportar_logs_csv():
     logs = LogAlteracao.query.order_by(LogAlteracao.data_hora.desc()).limit(50).all()
     def generate():
@@ -2558,7 +2598,7 @@ def aprovar_pendencia(id):
     return redirect(url_for('ver_pendencia', token=pendencia.token_acesso))
 
 @app.route("/relatorios/mensal", methods=["GET"])
-@permissao_requerida('supervisor', 'adm', 'operador')
+@permissao_requerida('supervisor', 'adm', 'operador', 'cliente_supervisor')
 def relatorio_mensal():
     """
     Relatório mensal de pendências - resolvidas vs pendentes por mês
@@ -2711,7 +2751,7 @@ def relatorio_mensal():
                            dt_fim=dt_fim)
 
 @app.route('/relatorio_operadores')
-@permissao_requerida('adm', 'supervisor')
+@permissao_requerida('adm', 'supervisor', 'cliente_supervisor')
 def relatorio_operadores():
     from sqlalchemy.sql import func
     # Buscar todos os operadores
@@ -3004,7 +3044,19 @@ def configurar_permissoes_padrao():
     atualizar_permissao('cliente', 'exportar_logs', False)
     atualizar_permissao('cliente', 'gerenciar_usuarios', False)
     atualizar_permissao('cliente', 'gerenciar_empresas', False)
-    atualizar_permissao('cliente', 'visualizar_relatorios', True)
+    atualizar_permissao('cliente', 'visualizar_relatorios', False)
+    
+    # Permissões para cliente_supervisor (novo tipo)
+    atualizar_permissao('cliente_supervisor', 'cadastrar_pendencia', False)
+    atualizar_permissao('cliente_supervisor', 'editar_pendencia', False)
+    atualizar_permissao('cliente_supervisor', 'importar_planilha', False)
+    atualizar_permissao('cliente_supervisor', 'baixar_anexo', True)
+    atualizar_permissao('cliente_supervisor', 'aprovar_pendencia', False)
+    atualizar_permissao('cliente_supervisor', 'recusar_pendencia', False)
+    atualizar_permissao('cliente_supervisor', 'exportar_logs', True)
+    atualizar_permissao('cliente_supervisor', 'gerenciar_usuarios', False)
+    atualizar_permissao('cliente_supervisor', 'gerenciar_empresas', False)
+    atualizar_permissao('cliente_supervisor', 'visualizar_relatorios', True)
 
 from functools import wraps
 
@@ -3023,7 +3075,7 @@ def permissao_funcionalidade(funcionalidade):
 @app.route('/gerenciar_permissoes', methods=['GET', 'POST'])
 @permissao_requerida('adm')
 def gerenciar_permissoes():
-    TIPOS_USUARIO = ['supervisor', 'operador', 'cliente']
+    TIPOS_USUARIO = ['supervisor', 'operador', 'cliente', 'cliente_supervisor']
     FUNCIONALIDADES = [
         ('cadastrar_pendencia', 'Cadastrar Pendência'),
         ('editar_pendencia', 'Editar Pendência'),

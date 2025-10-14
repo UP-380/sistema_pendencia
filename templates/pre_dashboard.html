@@ -3,6 +3,24 @@
 {% block title %}Empresas - UP380{% endblock %}
 
 {% block content %}
+<style>
+.btn-empresa-text {
+    white-space: nowrap !important;
+    font-size: 0.875rem !important;
+    padding: 0.375rem 0.5rem !important;
+    line-height: 1.2 !important;
+    min-width: fit-content !important;
+    overflow: visible !important;
+    text-overflow: unset !important;
+}
+
+/* Garantir que o texto "Ver Pendências" apareça completo */
+.btn-empresa-text span,
+.btn-empresa-text i + * {
+    white-space: nowrap !important;
+    display: inline-block !important;
+}
+</style>
 <h1 class="mb-4 d-flex justify-content-between align-items-center">Empresas - Pendências em Aberto
     {% if session['usuario_tipo'] != 'cliente' %}
     <span>
@@ -45,32 +63,32 @@
             <div class="mt-3">
                 {% if session['usuario_tipo'] == 'cliente' %}
                 <!-- Apenas o botão Ver Pendências para cliente -->
-                <a href="{{ url_for('dashboard', empresa=empresa.nome) }}" class="btn btn-primary btn-sm w-100">
-                    <i class="bi bi-arrow-right-circle"></i> Ver Pendências
+                <a href="{{ url_for('dashboard', empresa=empresa.nome) }}" class="btn btn-primary btn-empresa-text w-100">
+                    <i class="bi bi-arrow-right-circle"></i> Ver Pend.
                 </a>
                 {% else %}
                 <!-- Botões completos para outros usuários -->
                 <div class="row g-2">
                     <div class="col-6">
-                        <a href="{{ url_for('dashboard', empresa=empresa.nome) }}" class="btn btn-primary btn-sm w-100">
-                            <i class="bi bi-arrow-right-circle"></i> Ver Pendências
+                        <a href="{{ url_for('dashboard', empresa=empresa.nome) }}" class="btn btn-primary btn-empresa-text w-100">
+                            <i class="bi bi-arrow-right-circle"></i> Ver Pend.
                         </a>
                     </div>
                     {% if session['usuario_tipo'] in ['adm', 'operador', 'supervisor'] %}
                     <div class="col-6">
-                        <a href="{{ url_for('nova_pendencia', empresa=empresa.nome) }}" class="btn btn-success btn-sm w-100">
+                        <a href="{{ url_for('nova_pendencia', empresa=empresa.nome) }}" class="btn btn-success btn-empresa-text w-100">
                             <i class="bi bi-plus-circle"></i> Nova Pendência
                         </a>
                     </div>
                     {% endif %}
                     {% if session['usuario_tipo'] in ['adm', 'supervisor'] %}
                     <div class="col-6">
-                        <a href="{{ url_for('listar_pendencias', status='RESOLVIDA', empresa=empresa.nome) }}" class="btn btn-outline-success btn-sm w-100">
+                        <a href="{{ url_for('listar_pendencias', status='RESOLVIDA', empresa=empresa.nome) }}" class="btn btn-outline-success btn-empresa-text w-100">
                             <i class="bi bi-check-circle"></i> Resolvidas
                         </a>
                     </div>
                     <div class="col-6">
-                        <a href="{{ url_for('relatorio_mensal', ref=current_month, empresa_id=empresa.id) }}" class="btn btn-outline-primary btn-sm w-100">
+                        <a href="{{ url_for('relatorio_mensal', ref=current_month, empresa_id=empresa.id) }}" class="btn btn-outline-primary btn-empresa-text w-100">
                             <i class="bi bi-calendar-month"></i> Relatório Mensal
                         </a>
                     </div>

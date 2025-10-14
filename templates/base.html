@@ -61,7 +61,7 @@
                     </li>
                     {% endif %}
                     
-                    {% if session.get('usuario_tipo') in ['adm', 'supervisor', 'operador'] %}
+                    {% if session.get('usuario_tipo') in ['adm', 'supervisor', 'operador', 'cliente_supervisor'] %}
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('relatorio_mensal', ref=current_month) }}">
                             <i class="bi bi-calendar-month"></i> Relatório Mensal
@@ -95,7 +95,7 @@
                 <div class="d-flex align-items-center">
                     {% if session.get('usuario_email') %}
                     <span class="navbar-text me-3">
-                        <i class="bi bi-person-circle"></i> {{ session['usuario_email'] }} ({{ session['usuario_tipo']|capitalize }})
+                        <i class="bi bi-person-circle"></i> {{ session['usuario_email'] }} ({{ session['usuario_tipo']|nome_tipo_usuario }})
                     </span>
                     <a href="{{ url_for('logout') }}" class="btn btn-outline-light btn-sm btn-logout">
                         <i class="bi bi-box-arrow-right"></i> Sair

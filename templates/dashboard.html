@@ -212,16 +212,16 @@
                                    onclick="return confirm('Deseja marcar esta pendência como resolvida?')">
                                     <i class="bi bi-check-circle"></i> Resolver
                                 </a>
-                            {% endif %}
+                                {% endif %}
                             
-                            {# CLIENTE: Responder Pendência #}
-                            {% if session['usuario_tipo'] == 'cliente' and pendencia.status == 'PENDENTE CLIENTE' %}
+                            {# CLIENTE/CLIENTE SUPERVISOR: Responder Pendência #}
+                            {% if session['usuario_tipo'] in ['cliente', 'cliente_supervisor'] and pendencia.status == 'PENDENTE CLIENTE' %}
                                 <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalResponder{{ pendencia.id }}">
                                     <i class="bi bi-chat-dots"></i> Responder
                                 </button>
                             {% endif %}
-                            {# CLIENTE: Complementar Resposta #}
-                            {% if session['usuario_tipo'] == 'cliente' and pendencia.status == 'PENDENTE COMPLEMENTO CLIENTE' %}
+                            {# CLIENTE/CLIENTE SUPERVISOR: Complementar Resposta #}
+                            {% if session['usuario_tipo'] in ['cliente', 'cliente_supervisor'] and pendencia.status == 'PENDENTE COMPLEMENTO CLIENTE' %}
                                 <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#modalComplementar{{ pendencia.id }}">
                                     <i class="bi bi-chat-dots"></i> Responder Novamente
                                 </button>
@@ -260,7 +260,7 @@
 
 {# MODAIS DE RESPOSTA DO CLIENTE - DEVEM FICAR DENTRO DO BLOCO CONTENT #}
 {% for pendencia in pendencias %}
-    {% if session['usuario_tipo'] == 'cliente' and pendencia.status == 'PENDENTE CLIENTE' %}
+    {% if session['usuario_tipo'] in ['cliente', 'cliente_supervisor'] and pendencia.status == 'PENDENTE CLIENTE' %}
     <div class="modal fade" id="modalResponder{{ pendencia.id }}" tabindex="-1" aria-labelledby="modalResponderLabel{{ pendencia.id }}" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -298,7 +298,7 @@
         </div>
     </div>
     {% endif %}
-    {% if session['usuario_tipo'] == 'cliente' and pendencia.status == 'PENDENTE COMPLEMENTO CLIENTE' %}
+    {% if session['usuario_tipo'] in ['cliente', 'cliente_supervisor'] and pendencia.status == 'PENDENTE COMPLEMENTO CLIENTE' %}
     <div class="modal fade" id="modalComplementar{{ pendencia.id }}" tabindex="-1" aria-labelledby="modalComplementarLabel{{ pendencia.id }}" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">

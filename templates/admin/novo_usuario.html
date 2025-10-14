@@ -13,15 +13,16 @@
     </div>
     <div class="mb-3">
         <label for="tipo">Tipo de Usuário:</label>
-        <select name="tipo" id="tipo" required>
+        <select name="tipo" id="tipo" required class="form-select" onchange="toggleEmpresas()">
             <option value="master">Master (ADM)</option>
             <option value="supervisor">Supervisor</option>
             <option value="operador">Operador</option>
             <option value="cliente">Cliente</option>
+            <option value="cliente_supervisor">Cliente Supervisor</option>
         </select>
     </div>
     <div class="mb-3" id="empresas_div" style="display: none;">
-        <label class="form-label">Empresas Permitidas (Operador/Cliente)</label>
+        <label class="form-label">Empresas Permitidas (Operador/Cliente/Cliente Supervisor)</label>
         {% for empresa in empresas %}
         <div class="form-check">
             <input class="form-check-input" type="checkbox" name="empresas_permitidas" value="{{ empresa.id }}" id="empresa_{{ loop.index }}">
@@ -35,7 +36,7 @@
 function toggleEmpresas() {
     var tipo = document.getElementById('tipo').value;
     var empresasDiv = document.getElementById('empresas_div');
-    if (tipo === 'operador' || tipo === 'cliente') {
+    if (tipo === 'operador' || tipo === 'cliente' || tipo === 'cliente_supervisor') {
         empresasDiv.style.display = 'block';
     } else {
         empresasDiv.style.display = 'none';
