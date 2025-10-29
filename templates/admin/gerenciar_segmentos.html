@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Gerenciar Segmentos{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>
+            <i class="bi bi-grid-3x3-gap me-2" style="color: #1976d2;"></i>
+            Gerenciar Segmentos
+        </h2>
+        <a href="{{ url_for('novo_segmento') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-2"></i>
+            Novo Segmento
+        </a>
+    </div>
+
+    {% if segmentos %}
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>Nome do Segmento</th>
+                    <th class="text-center">Total de Empresas</th>
+                    <th class="text-center">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for segmento in segmentos %}
+                <tr>
+                    <td>
+                        <strong>{{ segmento.nome }}</strong>
+                        <!-- Ícone por segmento -->
+                        {% if segmento.nome == 'FUNERÁRIA' %}
+                            <i class="bi bi-heart-pulse ms-2" style="color: #1976d2;"></i>
+                        {% elif segmento.nome == 'PROTEÇÃO VEICULAR' %}
+                            <i class="bi bi-shield-check ms-2" style="color: #1976d2;"></i>
+                        {% elif segmento.nome == 'FARMÁCIA' %}
+                            <i class="bi bi-capsule ms-2" style="color: #1976d2;"></i>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        <span class="badge bg-primary rounded-pill">
+                            {{ segmento.total_empresas }} empresa{{ 's' if segmento.total_empresas != 1 else '' }}
+                        </span>
+                    </td>
+                    <td class="text-center">
+                        <div class="btn-group" role="group">
+                            <a href="{{ url_for('empresas_por_segmento', id=segmento.id) }}" 
+                               class="btn btn-sm btn-outline-info" 
+                               title="Ver empresas">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a href="{{ url_for('editar_segmento', id=segmento.id) }}" 
+                               class="btn btn-sm btn-outline-primary" 
+                               title="Editar">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            {% if segmento.total_empresas == 0 %}
+                            <form action="{{ url_for('deletar_segmento', id=segmento.id) }}" 
+                                  method="post" 
+                                  style="display:inline;" 
+                                  onsubmit="return confirm('Tem certeza que deseja excluir este segmento?');">
+                                <button type="submit" 
+                                        class="btn btn-sm btn-outline-danger" 
+                                        title="Excluir">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                            {% else %}
+                            <button class="btn btn-sm btn-outline-danger" 
+                                    disabled 
+                                    title="Não é possível excluir segmentos com empresas vinculadas">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info" role="alert">
+        <i class="bi bi-info-circle me-2"></i>
+        Nenhum segmento cadastrado. Clique em "Novo Segmento" para adicionar.
+    </div>
+    {% endif %}
+
+    <div class="mt-4">
+        <a href="{{ url_for('listar_segmentos') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-2"></i>
+            Voltar para Segmentos
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+

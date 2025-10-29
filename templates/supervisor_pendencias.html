@@ -290,7 +290,7 @@
                             <th>Data</th>
                             <th>Fornecedor/Cliente</th>
                             <th>Valor</th>
-                            <th>Natureza de Operação</th>
+                            <th style="max-width: 150px; width: 150px;">Natureza de Operação</th>
                             <th>Anexo</th>
                             <th>Status</th>
                             <th width="200">Ações</th>
@@ -337,9 +337,9 @@
                                     <br><small class="text-warning">Valor alto</small>
                                 {% endif %}
                             </td>
-                            <td>
+                            <td style="max-width: 150px;">
                                 {% if pendencia.natureza_operacao %}
-                                    <div class="text-truncate" style="max-width: 200px;" title="{{ pendencia.natureza_operacao }}">
+                                    <div class="text-truncate" title="{{ pendencia.natureza_operacao }}">
                                         {{ pendencia.natureza_operacao }}
                                     </div>
                                 {% else %}
@@ -431,7 +431,7 @@
 <!-- Modais para cada pendência -->
 {% for pendencia in pendencias %}
 <div class="modal fade" id="modalPendencia{{ pendencia.id }}" tabindex="-1">
-    <div class="modal-dialog modal-xl">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title">
@@ -439,78 +439,78 @@
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
                 <div class="row">
                     <!-- Informações da Pendência -->
-                    <div class="col-md-6">
-                        <div class="card h-100">
-                            <div class="card-header">
-                                <h6 class="mb-0"><i class="bi bi-info-circle"></i> Informações da Pendência</h6>
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header py-2">
+                                <h6 class="mb-0 small"><i class="bi bi-info-circle"></i> Informações da Pendência</h6>
                             </div>
-                            <div class="card-body">
-                                <div class="row mb-2">
+                            <div class="card-body py-2">
+                                <div class="row mb-1 small">
                                     <div class="col-4"><strong>Empresa:</strong></div>
                                     <div class="col-8">{{ pendencia.empresa }}</div>
                                 </div>
-                                <div class="row mb-2">
+                                <div class="row mb-1 small">
                                     <div class="col-4"><strong>Tipo:</strong></div>
                                     <div class="col-8">{{ pendencia.tipo_pendencia }}</div>
                                 </div>
-                                <div class="row mb-2">
+                                <div class="row mb-1 small">
                                     <div class="col-4"><strong>Banco:</strong></div>
                                     <div class="col-8">{{ pendencia.banco }}</div>
                                 </div>
-                                <div class="row mb-2">
+                                <div class="row mb-1 small">
                                     <div class="col-4"><strong>Data:</strong></div>
                                     <div class="col-8">{% if pendencia.data %}{{ pendencia.data.strftime('%d/%m/%Y') }}{% else %}{{ pendencia.data_abertura.strftime('%d/%m/%Y %H:%M') }}{% endif %}</div>
                                 </div>
-                                <div class="row mb-2">
+                                <div class="row mb-1 small">
                                     <div class="col-4"><strong>Fornecedor:</strong></div>
                                     <div class="col-8">{{ pendencia.fornecedor_cliente }}</div>
                                 </div>
-                                <div class="row mb-2">
-                                    <div class="col-4"><strong>Valor:</strong></div>
+                                <div class="row mb-1">
+                                    <div class="col-4 small"><strong>Valor:</strong></div>
                                     <div class="col-8">
-                                        <span class="text-primary fw-bold fs-5">R$ {{ "%.2f"|format(pendencia.valor) }}</span>
+                                        <span class="text-primary fw-bold">R$ {{ "%.2f"|format(pendencia.valor) }}</span>
                                     </div>
                                 </div>
-                                <div class="row mb-2">
+                                <div class="row mb-1 small">
                                     <div class="col-4"><strong>Observação:</strong></div>
-                                    <div class="col-8">{{ pendencia.observacao }}</div>
+                                    <div class="col-8" style="word-wrap: break-word; max-height: 80px; overflow-y: auto;">{{ pendencia.observacao }}</div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Resposta do Cliente e Natureza -->
-                    <div class="col-md-6">
+                    <div class="col-12 mt-3">
                         <!-- Resposta do Cliente -->
-                        <div class="card mb-3">
-                            <div class="card-header bg-success text-white">
-                                <h6 class="mb-0"><i class="bi bi-chat-dots"></i> Resposta do Cliente</h6>
+                        <div class="card mb-2">
+                            <div class="card-header bg-success text-white py-2">
+                                <h6 class="mb-0 small"><i class="bi bi-chat-dots"></i> Resposta do Cliente</h6>
                             </div>
-                            <div class="card-body">
+                            <div class="card-body py-2" style="max-height: 120px; overflow-y: auto;">
                                 {% if pendencia.resposta_cliente %}
-                                    <p class="mb-2">{{ pendencia.resposta_cliente }}</p>
+                                    <p class="mb-1 small" style="word-wrap: break-word; white-space: pre-wrap;">{{ pendencia.resposta_cliente }}</p>
                                     <small class="text-muted">
                                         <i class="bi bi-clock"></i> Respondido em: {{ pendencia.data_resposta.strftime('%d/%m/%Y %H:%M') if pendencia.data_resposta else 'N/A' }}
                                     </small>
                                 {% else %}
-                                    <p class="text-muted mb-0">Nenhuma resposta do cliente.</p>
+                                    <p class="text-muted mb-0 small">Nenhuma resposta do cliente.</p>
                                 {% endif %}
                             </div>
                         </div>
 
                         <!-- Natureza de Operação -->
-                        <div class="card">
-                            <div class="card-header bg-info text-white">
-                                <h6 class="mb-0"><i class="bi bi-gear"></i> Natureza de Operação</h6>
+                        <div class="card mb-2">
+                            <div class="card-header bg-info text-white py-2">
+                                <h6 class="mb-0 small"><i class="bi bi-gear"></i> Natureza de Operação</h6>
                             </div>
-                            <div class="card-body">
+                            <div class="card-body py-2" style="max-height: 120px; overflow-y: auto;">
                                 {% if pendencia.natureza_operacao %}
-                                    <p class="mb-0">{{ pendencia.natureza_operacao }}</p>
+                                    <p class="mb-0 small" style="word-wrap: break-word; white-space: pre-wrap;">{{ pendencia.natureza_operacao }}</p>
                                 {% else %}
-                                    <p class="text-muted mb-0">Natureza de operação não informada.</p>
+                                    <p class="text-muted mb-0 small">Natureza de operação não informada.</p>
                                 {% endif %}
                             </div>
                         </div>

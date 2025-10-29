@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}{{ segmento.nome }} - Empresas{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb" style="background: rgba(27, 54, 93, 0.05); padding: 0.75rem 1.5rem; border-radius: 0.8rem;">
+            <li class="breadcrumb-item">
+                <a href="{{ url_for('listar_segmentos') }}" style="color: #1976d2; text-decoration: none; font-weight: 600;">
+                    <i class="bi bi-grid-3x3-gap me-1"></i>
+                    Segmentos
+                </a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">
+                <strong>{{ segmento.nome }}</strong>
+            </li>
+        </ol>
+    </nav>
+
+    <!-- Título -->
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <h2 class="mb-0">
+            <!-- Ícone por segmento -->
+            {% if segmento.nome == 'FUNERÁRIA' %}
+                <i class="bi bi-heart-pulse me-2" style="color: #1976d2;"></i>
+            {% elif segmento.nome == 'PROTEÇÃO VEICULAR' %}
+                <i class="bi bi-shield-check me-2" style="color: #1976d2;"></i>
+            {% elif segmento.nome == 'FARMÁCIA' %}
+                <i class="bi bi-capsule me-2" style="color: #1976d2;"></i>
+            {% endif %}
+            {{ segmento.nome }}
+        </h2>
+        
+        <a href="{{ url_for('listar_segmentos') }}" class="btn btn-outline-primary">
+            <i class="bi bi-arrow-left me-2"></i>
+            Voltar aos Segmentos
+        </a>
+    </div>
+
+    <!-- Cards de Empresas -->
+    <div class="row g-3">
+        {% for empresa in empresas_info %}
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+            <div class="card h-100 shadow-sm" 
+                 style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                        border: none;
+                        border-radius: 1.2rem;
+                        transition: all 0.3s ease;">
+                
+                <div class="card-body p-3 d-flex flex-column">
+                    <!-- Header -->
+                    <div class="d-flex align-items-start justify-content-between mb-3">
+                        <h6 class="mb-0 fw-bold text-white">{{ empresa.nome }}</h6>
+                        <i class="bi bi-building fs-4 text-white" style="opacity: 0.8;"></i>
+                    </div>
+
+                    <!-- Estatísticas -->
+                    <div class="mb-3">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-clock-history me-2 text-white" style="opacity: 0.8;"></i>
+                            <span class="text-white small">
+                                <strong>{{ empresa.abertas or 0 }}</strong> em aberto
+                            </span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-check-circle me-2 text-white" style="opacity: 0.8;"></i>
+                            <span class="text-white small">
+                                <strong>{{ empresa.resolvidas or 0 }}</strong> resolvidas
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Botões -->
+                    <div class="mt-auto d-grid gap-2">
+                        <!-- Ver Pendências -->
+                        <a href="{{ url_for('dashboard', empresa=empresa.nome) }}" 
+                           class="btn btn-light btn-sm">
+                            <i class="bi bi-arrow-right-circle me-1"></i>
+                            Ver Pendências
+                        </a>
+
+                        <!-- Ver Resolvidas -->
+                        <a href="{{ url_for('dashboard_resolvidas', empresa=empresa.nome) }}" 
+                           class="btn btn-outline-light btn-sm">
+                            <i class="bi bi-check2-circle me-1"></i>
+                            Ver Resolvidas
+                        </a>
+
+                        <!-- Relatório Mensal (apenas para certos tipos) -->
+                        {% if current_user_tipo in ['adm', 'supervisor', 'operador', 'cliente_supervisor'] %}
+                        <a href="{{ url_for('relatorio_mensal', ref=current_month, empresa_id=empresa.id) }}" 
+                           class="btn btn-outline-light btn-sm">
+                            <i class="bi bi-calendar-month me-1"></i>
+                            Relatório Mensal
+                        </a>
+                        {% endif %}
+
+                        <!-- Nova Pendência (apenas admin/operador/supervisor) -->
+                        {% if current_user_tipo in ['adm', 'operador', 'supervisor'] %}
+                        <a href="{{ url_for('nova_pendencia', empresa=empresa.nome) }}" 
+                           class="btn btn-warning btn-sm">
+                            <i class="bi bi-plus-circle me-1"></i>
+                            Nova Pendência
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Mensagem se não houver empresas -->
+    {% if not empresas_info %}
+    <div class="alert alert-info" role="alert">
+        <i class="bi bi-info-circle me-2"></i>
+        Nenhuma empresa disponível neste segmento para o seu usuário.
+    </div>
+    {% endif %}
+</div>
+
+<!-- CSS Adicional -->
+<style>
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25) !important;
+    }
+    
+    .btn-light:hover {
+        background: white !important;
+        transform: scale(1.02);
+    }
+    
+    .btn-outline-light:hover {
+        background: rgba(255, 255, 255, 0.2) !important;
+        border-color: white !important;
+    }
+</style>
+{% endblock %}
+
+

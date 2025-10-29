@@ -28,10 +28,10 @@
                             {% endfor %}
                         </select>
                     </div>
-                    <!-- Banco (visível apenas para tipos que precisam) -->
-                    <div class="mb-3" id="grp_banco" style="display:none;">
+                    <!-- Banco (sempre visível) -->
+                    <div class="mb-3" id="grp_banco">
                         <label for="banco" class="form-label">Banco</label>
-                        <input type="text" class="form-control" id="banco" name="banco">
+                        <input type="text" class="form-control" id="banco" name="banco" placeholder="Ex: Banco do Brasil, Itaú, Bradesco...">
                     </div>
                     
                     <!-- Data da Pendência -->
@@ -61,8 +61,8 @@
                     
                     <!-- Valor -->
                     <div class="mb-3" id="grp_valor">
-                        <label for="valor" class="form-label">Valor (R$)</label>
-                        <input type="number" step="0.01" class="form-control" id="valor" name="valor">
+                        <label for="valor" class="form-label">Valor</label>
+                        <input type="text" class="form-control" id="valor" name="valor" placeholder="R$ 0,00" oninput="formatarMoeda(this)">
                     </div>
                     
                     <!-- Código do Lançamento -->
@@ -108,51 +108,57 @@
 // Configuração de campos por tipo de pendência
 const tipoConfig = {
     "Cartão de Crédito Não Identificado": {
-        show: ["grp_banco", "grp_data", "grp_fornecedor", "grp_valor", "grp_obs"],
+        show: ["grp_data", "grp_fornecedor", "grp_valor", "grp_obs"],
         hide: ["grp_data_competencia", "grp_data_baixa", "grp_codigo", "grp_natureza_sistema"],
         required: ["banco", "data", "fornecedor_cliente", "valor"],
         label_data: null
     },
     "Pagamento Não Identificado": {
-        show: ["grp_banco", "grp_data", "grp_fornecedor", "grp_valor", "grp_obs"],
+        show: ["grp_data", "grp_fornecedor", "grp_valor", "grp_obs"],
         hide: ["grp_data_competencia", "grp_data_baixa", "grp_codigo", "grp_natureza_sistema"],
         required: ["banco", "data", "fornecedor_cliente", "valor"],
         label_data: null
     },
     "Recebimento Não Identificado": {
-        show: ["grp_banco", "grp_data", "grp_fornecedor", "grp_valor", "grp_obs"],
+        show: ["grp_data", "grp_fornecedor", "grp_valor", "grp_obs"],
         hide: ["grp_data_competencia", "grp_data_baixa", "grp_codigo", "grp_natureza_sistema"],
         required: ["banco", "data", "fornecedor_cliente", "valor"],
         label_data: null
     },
-    "Nota Fiscal Não Anexada": {
+    "Documento Não Anexado": {
         show: ["grp_fornecedor", "grp_valor", "grp_obs", "grp_data"],
-        hide: ["grp_banco", "grp_data_competencia", "grp_data_baixa", "grp_codigo", "grp_natureza_sistema"],
+        hide: ["grp_data_competencia", "grp_data_baixa", "grp_codigo", "grp_natureza_sistema"],
+        required: ["fornecedor_cliente", "valor", "data"],
+        label_data: null
+    },
+    "Lançamento Não Encontrado em Extrato": {
+        show: ["grp_data", "grp_fornecedor", "grp_valor", "grp_codigo", "grp_obs"],
+        hide: ["grp_data_competencia", "grp_data_baixa", "grp_natureza_sistema"],
+        required: ["banco", "data", "fornecedor_cliente", "valor"],
+        label_data: null
+    },
+    "Lançamento Não Encontrado em Sistema": {
+        show: ["grp_fornecedor", "grp_valor", "grp_data", "grp_codigo", "grp_obs"],
+        hide: ["grp_data_competencia", "grp_data_baixa", "grp_natureza_sistema"],
         required: ["fornecedor_cliente", "valor", "data"],
         label_data: null
     },
     "Natureza Errada": {
         show: ["grp_fornecedor", "grp_valor", "grp_codigo", "grp_obs", "grp_data", "grp_natureza_sistema"],
-        hide: ["grp_banco", "grp_data_competencia", "grp_data_baixa"],
+        hide: ["grp_data_competencia", "grp_data_baixa"],
         required: ["fornecedor_cliente", "valor", "codigo_lancamento", "data"],
         label_data: "Data do Lançamento ou Baixa"
     },
     "Competência Errada": {
         show: ["grp_fornecedor", "grp_valor", "grp_codigo", "grp_obs", "grp_data_competencia"],
-        hide: ["grp_banco", "grp_data_baixa", "grp_data", "grp_natureza_sistema"],
+        hide: ["grp_data_baixa", "grp_data", "grp_natureza_sistema"],
         required: ["fornecedor_cliente", "valor", "codigo_lancamento", "data_competencia"],
         label_data: null
     },
     "Data da Baixa Errada": {
-        show: ["grp_fornecedor", "grp_valor", "grp_codigo", "grp_obs", "grp_banco", "grp_data_baixa"],
+        show: ["grp_fornecedor", "grp_valor", "grp_codigo", "grp_obs", "grp_data_baixa"],
         hide: ["grp_data", "grp_data_competencia", "grp_natureza_sistema"],
         required: ["banco", "data_baixa", "fornecedor_cliente", "valor", "codigo_lancamento"],
-        label_data: null
-    },
-    "Nota Fiscal Não Identificada": {
-        show: ["grp_fornecedor", "grp_valor", "grp_obs", "grp_data"],
-        hide: ["grp_banco", "grp_data_competencia", "grp_data_baixa", "grp_codigo", "grp_natureza_sistema"],
-        required: ["fornecedor_cliente", "valor", "data"],
         label_data: null
     }
 };
@@ -206,15 +212,32 @@ function applyTipoConfig(tipo) {
 
 // Event listener para mudança de tipo
 document.getElementById('tipo_pendencia').addEventListener('change', function() {
+    console.log('Tipo selecionado:', this.value);
     applyTipoConfig(this.value);
 });
 
 // Aplicar configuração inicial
 document.addEventListener('DOMContentLoaded', function() {
     const tipoSelect = document.getElementById('tipo_pendencia');
-    if (tipoSelect) {
+    if (tipoSelect && tipoSelect.value) {
+        console.log('Tipo inicial:', tipoSelect.value);
         applyTipoConfig(tipoSelect.value);
     }
 });
+
+// Função para formatação de moeda BRL
+function formatarMoeda(input) {
+    let valor = input.value.replace(/\D/g, '');
+    if (!valor) {
+        input.value = 'R$ 0,00';
+        return;
+    }
+    let numero = parseInt(valor) / 100;
+    input.value = numero.toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+        minimumFractionDigits: 2
+    });
+}
 </script>
 {% endblock %} 

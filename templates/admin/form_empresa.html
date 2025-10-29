@@ -1,15 +1,169 @@
 {% extends "base.html" %}
-{% block title %}{{ title }}{% endblock %}
+
+{% block title %}{{ 'Editar' if empresa else 'Nova' }} Empresa - UP380{% endblock %}
+
 {% block content %}
-<div class="container">
-    <h2>{{ title }}</h2>
-    <form method="POST">
-        <div class="mb-3">
-            <label for="nome" class="form-label">Nome da Empresa</label>
-            <input type="text" class="form-control" id="nome" name="nome" value="{{ empresa.nome if empresa else '' }}" required>
+<div class="container mt-4">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('pre_dashboard') }}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('gerenciar_empresas') }}">Gerenciar Empresas</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ 'Editar' if empresa else 'Nova' }} Empresa</li>
+        </ol>
+    </nav>
+
+    <h1 class="mb-4">
+        <i class="bi bi-building me-2"></i>
+        {{ 'Editar Empresa' if empresa else 'Nova Empresa' }}
+    </h1>
+    
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-pencil me-2"></i>
+                        Dados da Empresa
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <!-- Campo Nome -->
+                        <div class="mb-3">
+                            <label for="nome" class="form-label">
+                                Nome da Empresa <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="nome" 
+                                   name="nome" 
+                                   value="{{ empresa.nome if empresa else '' }}" 
+                                   required
+                                   placeholder="Ex: ALIANZE, AUTOBRAS, PLANO PAI, etc.">
+                            <div class="form-text">
+                                Nome único da empresa no sistema
+                            </div>
+                        </div>
+                        
+                        <!-- Campo Segmento -->
+                        <div class="mb-4">
+                            <label for="segmento_id" class="form-label">
+                                <i class="bi bi-grid-3x3-gap me-1"></i>
+                                Segmento
+                            </label>
+                            <select class="form-select" id="segmento_id" name="segmento_id">
+                                <option value="">-- Sem Segmento --</option>
+                                {% for segmento in segmentos %}
+                                <option value="{{ segmento.id }}" 
+                                        {% if empresa and empresa.segmento_id == segmento.id %}selected{% endif %}>
+                                    {{ segmento.nome }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">
+                                Selecione o segmento ao qual esta empresa pertence (opcional)
+                            </div>
+                        </div>
+                        
+                        <hr class="my-4">
+                        
+                        <!-- Botões -->
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle me-2"></i>
+                                {{ 'Salvar Alterações' if empresa else 'Criar Empresa' }}
+                            </button>
+                            <a href="{{ url_for('gerenciar_empresas') }}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle me-2"></i>
+                                Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
-        <button type="submit" class="btn btn-success">Salvar</button>
-        <a href="{{ url_for('gerenciar_empresas') }}" class="btn btn-secondary">Cancelar</a>
-    </form>
+        
+        <div class="col-lg-4">
+            {% if empresa %}
+            <!-- Card de Informações -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Informações
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-2">
+                        <strong>ID:</strong> 
+                        <span class="badge bg-secondary">{{ empresa.id }}</span>
+                    </p>
+                    <p class="mb-2">
+                        <strong>Segmento Atual:</strong><br>
+                        {% if empresa.segmento %}
+                        <span class="badge bg-primary mt-1">
+                            <i class="bi bi-grid-3x3-gap me-1"></i>
+                            {{ empresa.segmento.nome }}
+                        </span>
+                        {% else %}
+                        <span class="badge bg-secondary mt-1">
+                            <i class="bi bi-dash-circle me-1"></i>
+                            Sem Segmento
+                        </span>
+                        {% endif %}
+                    </p>
+                    <p class="mb-0">
+                        <strong>Usuários Vinculados:</strong> 
+                        <span class="badge bg-info">{{ empresa.usuarios|length }}</span>
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Card de Ajuda -->
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h6 class="mb-0">
+                        <i class="bi bi-lightbulb me-2"></i>
+                        Sobre Segmentos
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="small mb-2">
+                        <strong>O que são segmentos?</strong><br>
+                        Agrupamentos de empresas por área de atuação (Funerária, Proteção Veicular, Farmácia).
+                    </p>
+                    <p class="small mb-0">
+                        <strong>Por que vincular?</strong><br>
+                        Facilita a navegação e organização das empresas no sistema.
+                    </p>
+                </div>
+            </div>
+            {% else %}
+            <!-- Card de Ajuda para Nova Empresa -->
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Criando Nova Empresa
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="small mb-2">
+                        <strong>Nome da Empresa:</strong><br>
+                        Use o nome oficial e único da empresa.
+                    </p>
+                    <p class="small mb-2">
+                        <strong>Segmento:</strong><br>
+                        Se souber a área de atuação, selecione o segmento. Caso contrário, deixe "Sem Segmento" e vincule depois.
+                    </p>
+                    <p class="small mb-0">
+                        <strong>Integração Automática:</strong><br>
+                        A empresa será automaticamente disponibilizada em todo o sistema.
+                    </p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
 </div>
-{% endblock %} 
+{% endblock %}

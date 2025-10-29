@@ -14,7 +14,7 @@
     <div class="mb-3">
         <label for="tipo">Tipo de Usuário:</label>
         <select name="tipo" class="form-control" id="tipo" onchange="toggleEmpresas()" required>
-            <option value="master" {% if usuario.tipo == 'master' %}selected{% endif %}>Master (ADM)</option>
+            <option value="adm" {% if usuario.tipo == 'adm' %}selected{% endif %}>Administrador</option>
             <option value="supervisor" {% if usuario.tipo == 'supervisor' %}selected{% endif %}>Supervisor</option>
             <option value="operador" {% if usuario.tipo == 'operador' %}selected{% endif %}>Operador</option>
             <option value="cliente" {% if usuario.tipo == 'cliente' %}selected{% endif %}>Cliente</option>
@@ -64,7 +64,7 @@
 function toggleEmpresas() {
     var tipo = document.getElementById('tipo').value;
     var empresasDiv = document.getElementById('empresas_div');
-    if (tipo === 'master') {
+    if (tipo === 'adm') {
         empresasDiv.style.display = 'none';
     } else {
         empresasDiv.style.display = 'block';

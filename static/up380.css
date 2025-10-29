@@ -11,14 +11,49 @@
   --up380-vermelho: #C82333;
 }
 
+/* ============================================
+   REGRAS GLOBAIS DE ALINHAMENTO
+   ============================================ */
+
+* {
+  box-sizing: border-box;
+}
+
 body, .card, .table, .form-control, .btn, .navbar, .breadcrumb {
   color: var(--up380-preto) !important;
   background-color: var(--up380-branco) !important;
   font-family: 'Inter', Arial, sans-serif;
 }
 
+/* Alinhamento vertical global para flex containers */
+.d-flex {
+  align-items: center;
+}
+
+/* Altura consistente para elementos de formulário */
+.form-control,
+.form-select,
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="date"],
+input[type="number"],
+select,
+textarea {
+  min-height: 38px !important;
+  display: flex;
+  align-items: center;
+}
+
+/* ============================================
+   NAVBAR - ALINHAMENTO PERFEITO
+   ============================================ */
+
 .navbar {
   background: var(--up380-azul) !important;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
 }
 
 .navbar-brand {
@@ -26,22 +61,102 @@ body, .card, .table, .form-control, .btn, .navbar, .breadcrumb {
   font-size: 1.7rem;
   letter-spacing: 2px;
   color: var(--up380-verde) !important;
+  display: flex;
+  align-items: center;
+  height: 40px;
+  line-height: 1;
 }
 
-.navbar-nav .nav-link.active, .navbar-nav .nav-link:hover {
+.navbar-brand img {
+  height: 40px;
+  width: auto;
+  vertical-align: middle;
+}
+
+.navbar-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.navbar-nav .nav-item {
+  display: flex;
+  align-items: center;
+  margin: 0;
+}
+
+.navbar-nav .nav-link {
+  display: flex;
+  align-items: center;
+  height: 40px;
+  padding: 0 15px;
+  line-height: 1;
+  color: #e0e0e0 !important;
+}
+
+.navbar-nav .nav-link i {
+  font-size: 1rem;
+  margin-right: 0.5rem;
+  vertical-align: middle;
+}
+
+.navbar-nav .nav-link.active,
+.navbar-nav .nav-link:hover {
   color: var(--up380-verde) !important;
 }
+
+.navbar-text {
+  display: flex;
+  align-items: center;
+  height: 40px;
+  line-height: 1;
+  margin: 0 0.5rem;
+}
+
+.navbar .dropdown-menu {
+  margin-top: 0.5rem;
+}
+
+.navbar .dropdown-toggle {
+  display: flex;
+  align-items: center;
+  height: 40px;
+}
+
+/* ============================================
+   CARDS - ALTURAS CONSISTENTES
+   ============================================ */
 
 .card {
   border-radius: 1rem;
   box-shadow: 0 2px 8px rgba(27,54,93,0.07);
   border: none;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
 }
 
 .card-header {
   background: var(--up380-azul-claro);
   color: var(--up380-branco);
   border-radius: 1rem 1rem 0 0;
+  display: flex;
+  align-items: center;
+  min-height: 50px;
+  padding: 1rem 1.5rem;
+}
+
+.card-footer {
+  display: flex;
+  align-items: center;
+  padding: 1rem 1.5rem;
 }
 
 .btn-primary, .btn-primary:focus {
@@ -83,13 +198,70 @@ body, .card, .table, .form-control, .btn, .navbar, .breadcrumb {
   background: var(--up380-azul);
 }
 
+/* ============================================
+   TABELAS - ALINHAMENTO VERTICAL
+   ============================================ */
+
+.table {
+  margin-bottom: 0;
+}
+
 .table thead {
   background: var(--up380-azul-claro);
   color: var(--up380-branco);
 }
 
+.table thead th {
+  vertical-align: middle;
+  padding: 12px 15px;
+  font-weight: 600;
+  line-height: 1.5;
+  border: none;
+}
+
+.table tbody td {
+  vertical-align: middle;
+  padding: 12px 15px;
+  line-height: 1.5;
+  border-top: 1px solid #dee2e6;
+}
+
 .table-striped > tbody > tr:nth-of-type(odd) {
   background-color: #eaf1fb;
+}
+
+.table-hover tbody tr {
+  transition: background-color 0.2s ease;
+}
+
+/* ============================================
+   FORMULÁRIOS - LABELS E INPUTS ALINHADOS
+   ============================================ */
+
+.form-label {
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  line-height: 1.5;
+  display: flex;
+  align-items: center;
+  color: var(--up380-preto);
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.input-group {
+  display: flex;
+  align-items: stretch;
+}
+
+.input-group-text {
+  display: flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 8px 12px;
+  line-height: 1;
 }
 
 .badge.bg-warning {
@@ -163,12 +335,27 @@ body, .card, .table, .form-control, .btn, .navbar, .breadcrumb {
   transition: background 0.2s;
 }
 
+/* ============================================
+   BADGES - ALINHAMENTO COM TEXTO
+   ============================================ */
+
 .badge {
   font-size: 1rem;
   padding: 0.5em 1em;
   border-radius: 0.7em;
   font-weight: 600;
   letter-spacing: 0.03em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.badge i {
+  font-size: 0.875em;
+  line-height: 1;
 }
 
 .toast {
@@ -208,13 +395,43 @@ input:focus, select:focus, textarea:focus {
   box-shadow: 0 0 0 2px #b3d8fd;
 }
 
-.btn, .btn-sm, .btn-lg {
+/* ============================================
+   BOTÕES - TAMANHOS CONSISTENTES
+   ============================================ */
+
+.btn {
   border-radius: 0.7rem;
   font-weight: 600;
   letter-spacing: 0.03em;
   transition: box-shadow 0.2s, background 0.2s;
   box-shadow: 0 2px 8px rgba(27,54,93,0.07);
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  gap: 8px;
+  line-height: 1;
 }
+
+.btn i {
+  font-size: 1rem;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.btn-sm {
+  min-height: 32px;
+  padding: 6px 12px;
+  font-size: 0.875rem;
+}
+
+.btn-lg {
+  min-height: 48px;
+  padding: 12px 24px;
+  font-size: 1.125rem;
+}
+
 .btn:active {
   box-shadow: 0 1px 2px rgba(27,54,93,0.10);
 }
@@ -365,4 +582,176 @@ input:focus, select:focus, textarea:focus {
 #navbar-logo.logo-interactive {
     transform: scale(1.15) rotate(10deg);
     filter: drop-shadow(0 0 10px rgba(0, 212, 255, 0.8));
-} 
+}
+
+/* ============================================
+   SISTEMA DE SEGMENTOS - CARDS MODERNOS
+   ============================================ */
+
+/* Cards de Segmentos */
+.segmento-card {
+    background: linear-gradient(135deg, #1976d2 0%, #2196f3 100%);
+    border: none;
+    border-radius: 1.2rem;
+    transition: all 0.3s ease;
+    overflow: hidden;
+    position: relative;
+}
+
+.segmento-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 50% 0%, rgba(255,255,255,0.15), transparent 70%);
+    pointer-events: none;
+}
+
+.segmento-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Cards de Empresas */
+.empresa-card {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border: none;
+    border-radius: 1.2rem;
+    transition: all 0.3s ease;
+}
+
+.empresa-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25) !important;
+}
+
+/* Badges translúcidos */
+.badge-glass {
+    background: rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(10px);
+    color: white;
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    border-radius: 0.8rem;
+    font-weight: 600;
+}
+
+/* Breadcrumbs estilizados */
+.breadcrumb {
+    background: rgba(27, 54, 93, 0.05);
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.8rem;
+    border: 1px solid rgba(27, 54, 93, 0.1);
+}
+
+.breadcrumb-item a {
+    color: #1976d2;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.3s ease;
+}
+
+.breadcrumb-item a:hover {
+    color: #2196f3;
+}
+
+.breadcrumb-item.active {
+    font-weight: 700;
+    color: #1B365D;
+}
+
+/* Animações */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+/* Ícones flutuantes */
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+.icon-float {
+    animation: float 3s ease-in-out infinite;
+}
+
+/* Responsividade para segmentos */
+@media (max-width: 768px) {
+    .segmento-card,
+    .empresa-card {
+        margin-bottom: 1rem;
+    }
+    
+    .breadcrumb {
+        font-size: 0.9rem;
+        padding: 0.5rem 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .segmento-card h4 {
+        font-size: 1.2rem;
+    }
+    
+    .empresa-card h6 {
+        font-size: 0.95rem;
+    }
+}
+
+/* Botões com efeito glass */
+.btn-glass {
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    transition: all 0.3s ease;
+}
+
+.btn-glass:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.05);
+}
+
+/* Efeito de pulso nas badges de alerta */
+.badge-pulse {
+    animation: pulse-badge 2s infinite;
+}
+
+@keyframes pulse-badge {
+    0% {
+        box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(255, 255, 255, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 2px rgba(255, 255, 255, 0);
+    }
+}
+
+/* Hover effects nos cards */
+.card-hover {
+    transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15) !important;
+}

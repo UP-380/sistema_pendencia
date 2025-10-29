@@ -13,14 +13,17 @@
                         Baixar Planilha Modelo
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
-                        <!-- TIPOS EXISTENTES -->
+                        <!-- TIPOS ATUALIZADOS -->
                         <li><a class="dropdown-item" href="{{ url_for('download_modelo_pendencias', tipo='CARTAO_NAO_IDENTIFICADO') }}">Cartão de Crédito Não Identificado</a></li>
                         <li><a class="dropdown-item" href="{{ url_for('download_modelo_pendencias', tipo='PAGAMENTO_NAO_IDENTIFICADO') }}">Pagamento Não Identificado</a></li>
                         <li><a class="dropdown-item" href="{{ url_for('download_modelo_pendencias', tipo='RECEBIMENTO_NAO_IDENTIFICADO') }}">Recebimento Não Identificado</a></li>
-                        <li><a class="dropdown-item" href="{{ url_for('download_modelo_pendencias', tipo='NOTA_FISCAL_NAO_ANEXADA') }}">Nota Fiscal Não Anexada</a></li>
-                        <li><a class="dropdown-item" href="{{ url_for('download_modelo_pendencias', tipo='NOTA_FISCAL_NAO_IDENTIFICADA') }}">Nota Fiscal Não Identificada</a></li>
                         <li><hr class="dropdown-divider"></li>
-                        <!-- 3 NOVOS TIPOS -->
+                        <!-- NOVOS TIPOS CONSOLIDADOS -->
+                        <li><a class="dropdown-item" href="{{ url_for('download_modelo_pendencias', tipo='DOCUMENTO_NAO_ANEXADO') }}">Documento Não Anexado</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('download_modelo_pendencias', tipo='LANCAMENTO_NAO_ENCONTRADO_EXTRATO') }}">Lançamento Não Encontrado em Extrato</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('download_modelo_pendencias', tipo='LANCAMENTO_NAO_ENCONTRADO_SISTEMA') }}">Lançamento Não Encontrado em Sistema</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <!-- TIPOS ESPECIALIZADOS -->
                         <li><a class="dropdown-item" href="{{ url_for('download_modelo_pendencias', tipo='NATUREZA_ERRADA') }}">Natureza Errada</a></li>
                         <li><a class="dropdown-item" href="{{ url_for('download_modelo_pendencias', tipo='COMPETENCIA_ERRADA') }}">Competência Errada</a></li>
                         <li><a class="dropdown-item" href="{{ url_for('download_modelo_pendencias', tipo='DATA_BAIXA_ERRADA') }}">Data da Baixa Errada</a></li>
@@ -34,14 +37,21 @@
                         <label class="form-label">Tipo desta Planilha</label>
                         <select class="form-select" name="tipo_import" id="tipo_import" required>
                             <option value="">Selecione…</option>
-                            <option value="CARTAO_NAO_IDENTIFICADO">Cartão de Crédito Não Identificado</option>
-                            <option value="PAGAMENTO_NAO_IDENTIFICADO">Pagamento Não Identificado</option>
-                            <option value="RECEBIMENTO_NAO_IDENTIFICADO">Recebimento Não Identificado</option>
-                            <option value="NOTA_FISCAL_NAO_ANEXADA">Nota Fiscal Não Anexada</option>
-                            <option value="NOTA_FISCAL_NAO_IDENTIFICADA">Nota Fiscal Não Identificada</option>
-                            <option value="NATUREZA_ERRADA">Natureza Errada</option>
-                            <option value="COMPETENCIA_ERRADA">Competência Errada</option>
-                            <option value="DATA_BAIXA_ERRADA">Data da Baixa Errada</option>
+                            <optgroup label="Tipos Básicos">
+                                <option value="CARTAO_NAO_IDENTIFICADO">Cartão de Crédito Não Identificado</option>
+                                <option value="PAGAMENTO_NAO_IDENTIFICADO">Pagamento Não Identificado</option>
+                                <option value="RECEBIMENTO_NAO_IDENTIFICADO">Recebimento Não Identificado</option>
+                            </optgroup>
+                            <optgroup label="Novos Tipos Consolidados">
+                                <option value="DOCUMENTO_NAO_ANEXADO">Documento Não Anexado</option>
+                                <option value="LANCAMENTO_NAO_ENCONTRADO_EXTRATO">Lançamento Não Encontrado em Extrato</option>
+                                <option value="LANCAMENTO_NAO_ENCONTRADO_SISTEMA">Lançamento Não Encontrado em Sistema</option>
+                            </optgroup>
+                            <optgroup label="Tipos Especializados">
+                                <option value="NATUREZA_ERRADA">Natureza Errada</option>
+                                <option value="COMPETENCIA_ERRADA">Competência Errada</option>
+                                <option value="DATA_BAIXA_ERRADA">Data da Baixa Errada</option>
+                            </optgroup>
                         </select>
                         <div class="form-text">O arquivo enviado será validado de acordo com este tipo.</div>
                     </div>

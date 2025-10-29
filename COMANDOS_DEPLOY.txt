@@ -1,0 +1,120 @@
+=============================================================
+COMANDOS PARA DEPLOY - COPIE E COLE UM POR VEZ
+=============================================================
+
+═══════════════════════════════════════════════════════════
+PARTE 1: NO WINDOWS (PowerShell)
+═══════════════════════════════════════════════════════════
+
+cd "C:\Users\Luiz Marcelo\Desktop\PLANILHA DE PENDENCIAS"
+
+git status
+
+git add .
+
+git status
+
+git commit -m "feat: Sistema de segmentos, planilhas modelo e melhorias frontend"
+
+git push origin main
+
+
+═══════════════════════════════════════════════════════════
+PARTE 2: NA VPS (SSH) - BACKUP
+═══════════════════════════════════════════════════════════
+
+ssh seu_usuario@seu_ip
+
+cd ~/sistema_pendencia
+
+mkdir -p backups
+
+docker cp sistema_pendencia-web-1:/app/instance/pendencias.db ./backups/pendencias_backup_$(date +%Y%m%d_%H%M%S).db
+
+ls -lh backups/
+
+
+═══════════════════════════════════════════════════════════
+PARTE 3: NA VPS - ATUALIZAR CÓDIGO
+═══════════════════════════════════════════════════════════
+
+git fetch origin
+
+git pull origin main
+
+ls -lh migra*.py
+
+ls -lh modelo_*.xlsx
+
+
+═══════════════════════════════════════════════════════════
+PARTE 4: NA VPS - PARAR E MIGRAR
+═══════════════════════════════════════════════════════════
+
+docker-compose down
+
+docker-compose run --rm web python migracao_producao_completa.py
+
+docker-compose run --rm web python migracao_consolidar_documentos.py
+
+
+═══════════════════════════════════════════════════════════
+PARTE 5: NA VPS - SUBIR APLICAÇÃO
+═══════════════════════════════════════════════════════════
+
+docker-compose up -d --build
+
+docker-compose ps
+
+docker-compose logs --tail=50 web
+
+
+═══════════════════════════════════════════════════════════
+COMANDOS ÚTEIS - SE PRECISAR
+═══════════════════════════════════════════════════════════
+
+# Ver logs em tempo real
+docker-compose logs -f web
+
+# Reiniciar apenas o container web
+docker-compose restart web
+
+# Ver status
+docker-compose ps
+
+# Verificar espaço
+df -h
+
+# Listar backups
+ls -lh backups/
+
+# Restaurar backup (SE NECESSÁRIO)
+docker-compose down
+docker cp ./backups/pendencias_backup_XXXXXXXX_XXXXXX.db sistema_pendencia-web-1:/app/instance/pendencias.db
+docker-compose up -d
+
+
+═══════════════════════════════════════════════════════════
+VALIDAÇÃO DENTRO DO CONTAINER
+═══════════════════════════════════════════════════════════
+
+docker exec -it sistema_pendencia-web-1 bash
+
+python
+
+from app import db, Pendencia, Empresa, Segmento
+print(f"Pendências: {Pendencia.query.count()}")
+print(f"Segmentos: {Segmento.query.count()}")
+print(f"Empresas: {Empresa.query.count()}")
+for seg in Segmento.query.all():
+    print(f"{seg.nome}: {len(seg.empresas)} empresas")
+exit()
+
+exit
+
+
+═══════════════════════════════════════════════════════════
+FIM
+═══════════════════════════════════════════════════════════
+
+

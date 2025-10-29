@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}Segmentos - Sistema UP380{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb" style="background: rgba(27, 54, 93, 0.05); padding: 0.75rem 1.5rem; border-radius: 0.8rem;">
+            <li class="breadcrumb-item active" aria-current="page">
+                <i class="bi bi-grid-3x3-gap me-2"></i>
+                <strong>Segmentos</strong>
+            </li>
+        </ol>
+    </nav>
+
+    <!-- Título -->
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <h2 class="mb-0">
+            <i class="bi bi-grid-3x3-gap me-2" style="color: #1976d2;"></i>
+            Segmentos
+        </h2>
+    </div>
+
+    <!-- Cards de Segmentos -->
+    <div class="row g-4">
+        {% for segmento in segmentos %}
+        <div class="col-12 col-sm-6 col-md-4">
+            <a href="{{ url_for('empresas_por_segmento', id=segmento.id) }}" 
+               class="text-decoration-none" 
+               style="display: block;">
+                <div class="card h-100 shadow-sm" 
+                     style="background: linear-gradient(135deg, #1976d2 0%, #2196f3 100%);
+                            border: none;
+                            border-radius: 1.2rem;
+                            transition: all 0.3s ease;
+                            overflow: hidden;">
+                    
+                    <!-- Efeito de brilho -->
+                    <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; 
+                                background: radial-gradient(circle at 50% 0%, rgba(255,255,255,0.15), transparent 70%);
+                                pointer-events: none;"></div>
+                    
+                    <div class="card-body p-4" style="position: relative; z-index: 1;">
+                        <!-- Ícone e Nome -->
+                        <div class="d-flex align-items-start justify-content-between mb-3">
+                            <h4 class="mb-0 fw-bold text-white">{{ segmento.nome }}</h4>
+                            
+                            <!-- Ícones por segmento -->
+                            {% if segmento.nome == 'FUNERÁRIA' %}
+                                <i class="bi bi-heart-pulse fs-1 text-white" style="opacity: 0.9;"></i>
+                            {% elif segmento.nome == 'PROTEÇÃO VEICULAR' %}
+                                <i class="bi bi-shield-check fs-1 text-white" style="opacity: 0.9;"></i>
+                            {% elif segmento.nome == 'FARMÁCIA' %}
+                                <i class="bi bi-capsule fs-1 text-white" style="opacity: 0.9;"></i>
+                            {% else %}
+                                <i class="bi bi-building fs-1 text-white" style="opacity: 0.9;"></i>
+                            {% endif %}
+                        </div>
+
+                        <!-- Estatísticas -->
+                        <div class="mt-3">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="bi bi-building me-2 text-white" style="opacity: 0.8;"></i>
+                                <span class="text-white" style="opacity: 0.9;">
+                                    <strong>{{ segmento.total_empresas }}</strong> empresa{{ 's' if segmento.total_empresas != 1 else '' }}
+                                </span>
+                            </div>
+                            
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-clock-history me-2 text-white" style="opacity: 0.8;"></i>
+                                <span class="text-white" style="opacity: 0.9;">
+                                    <strong>{{ segmento.total_abertas or 0 }}</strong> pendência{{ 's' if segmento.total_abertas != 1 else '' }} em aberto
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Badge de pendências (se houver) -->
+                        {% if segmento.total_abertas and segmento.total_abertas > 0 %}
+                        <div class="mt-3">
+                            <span class="badge" 
+                                  style="background: rgba(255, 255, 255, 0.25);
+                                         backdrop-filter: blur(10px);
+                                         color: white;
+                                         padding: 0.5rem 1rem;
+                                         font-size: 0.9rem;
+                                         border-radius: 0.8rem;
+                                         font-weight: 600;">
+                                <i class="bi bi-exclamation-triangle me-1"></i>
+                                Requer atenção
+                            </span>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Footer do Card -->
+                    <div class="card-footer border-0 text-center py-3" 
+                         style="background: rgba(0,0,0,0.15);">
+                        <span class="text-white fw-semibold">
+                            <i class="bi bi-arrow-right-circle me-2"></i>
+                            Ver Empresas
+                        </span>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Mensagem se não houver segmentos -->
+    {% if not segmentos %}
+    <div class="alert alert-info" role="alert">
+        <i class="bi bi-info-circle me-2"></i>
+        Nenhum segmento disponível para o seu usuário.
+    </div>
+    {% endif %}
+</div>
+
+<!-- CSS Adicional -->
+<style>
+    .card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3) !important;
+    }
+    
+    .card:active {
+        transform: translateY(-4px);
+    }
+    
+    /* Animação de entrada */
+    .col-12 {
+        animation: fadeInUp 0.6s ease-out;
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+{% endblock %}
+
+

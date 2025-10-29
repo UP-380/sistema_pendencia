@@ -10,18 +10,18 @@
     padding: 0.375rem 0.5rem !important;
     line-height: 1.2 !important;
     min-width: fit-content !important;
-    overflow: visible !important;
-    text-overflow: unset !important;
 }
 
-/* Garantir que o texto "Ver Pendências" apareça completo */
-.btn-empresa-text span,
-.btn-empresa-text i + * {
-    white-space: nowrap !important;
-    display: inline-block !important;
+.filtro-datas {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    margin-bottom: 2rem;
 }
 </style>
-<h1 class="mb-4 d-flex justify-content-between align-items-center">Empresas - Pendências em Aberto
+
+<h1 class="mb-4 d-flex justify-content-between align-items-center">
+    Empresas - Pendências em Aberto
     {% if session['usuario_tipo'] != 'cliente' %}
     <span>
         <a href="{{ url_for('dashboard') }}" class="btn btn-outline-primary me-2">
@@ -33,22 +33,65 @@
     </span>
     {% endif %}
 </h1>
+
 {% if session['usuario_tipo'] != 'cliente' %}
+<!-- Filtros de Data -->
+<div class="filtro-datas">
+    <h5 class="mb-3"><i class="bi bi-calendar-range me-2"></i>Filtrar Pendências por Data</h5>
+    <form method="GET" action="{{ url_for('pre_dashboard') }}" class="row g-3">
+        <div class="col-md-3">
+            <label class="form-label">Data Abertura - Início</label>
+            <input type="date" name="data_abertura_inicio" class="form-control" value="{{ data_abertura_inicio }}">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Data Abertura - Fim</label>
+            <input type="date" name="data_abertura_fim" class="form-control" value="{{ data_abertura_fim }}">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Data Resolução - Início</label>
+            <input type="date" name="data_resolucao_inicio" class="form-control" value="{{ data_resolucao_inicio }}">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Data Resolução - Fim</label>
+            <input type="date" name="data_resolucao_fim" class="form-control" value="{{ data_resolucao_fim }}">
+        </div>
+        <div class="col-12">
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-filter me-2"></i>Aplicar Filtros
+            </button>
+            <a href="{{ url_for('pre_dashboard') }}" class="btn btn-secondary">
+                <i class="bi bi-x-circle me-2"></i>Limpar Filtros
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Gráficos -->
 <div class="row mb-4">
-    <div class="col-md-6 mb-4">
+    <div class="col-md-6">
         <div class="card card-resumo h-100 p-3">
-            <h5 class="mb-3">Proporção por Tipo de Pendência</h5>
-            <canvas id="graficoTipoPendencia" style="max-width:100%;max-height:220px;"></canvas>
+            <h5 class="mb-3"><i class="bi bi-pie-chart me-2"></i>Quantidade por Tipo de Pendência</h5>
+            <canvas id="graficoTipo" width="400" height="300"></canvas>
         </div>
     </div>
-    <div class="col-md-6 mb-4">
+    <div class="col-md-6">
         <div class="card card-resumo h-100 p-3">
-            <h5 class="mb-3">Proporção por Status</h5>
-            <canvas id="graficoStatusPendencia" style="max-width:100%;max-height:220px;"></canvas>
+            <h5 class="mb-3"><i class="bi bi-bar-chart me-2"></i>Pendências Abertas vs Resolvidas</h5>
+            <canvas id="graficoStatus" width="400" height="300"></canvas>
+            <div class="text-center mt-3">
+                <span class="badge bg-warning text-dark me-2" style="font-size: 1rem;">
+                    <i class="bi bi-clock me-1"></i>Abertas: {{ abertas_count }}
+                </span>
+                <span class="badge bg-success" style="font-size: 1rem;">
+                    <i class="bi bi-check-circle me-1"></i>Resolvidas: {{ resolvidas_count }}
+                </span>
+            </div>
         </div>
     </div>
 </div>
 {% endif %}
+
+<!-- Lista de Empresas -->
 <div class="row">
     {% for empresa in empresas_info %}
     <div class="col-md-6 col-lg-4 mb-4">
@@ -62,12 +105,10 @@
             </div>
             <div class="mt-3">
                 {% if session['usuario_tipo'] == 'cliente' %}
-                <!-- Apenas o botão Ver Pendências para cliente -->
                 <a href="{{ url_for('dashboard', empresa=empresa.nome) }}" class="btn btn-primary btn-empresa-text w-100">
                     <i class="bi bi-arrow-right-circle"></i> Ver Pend.
                 </a>
                 {% else %}
-                <!-- Botões completos para outros usuários -->
                 <div class="row g-2">
                     <div class="col-6">
                         <a href="{{ url_for('dashboard', empresa=empresa.nome) }}" class="btn btn-primary btn-empresa-text w-100">
@@ -102,44 +143,9 @@
 </div>
 
 {% if session['usuario_tipo'] != 'cliente' %}
-<!-- Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-// Dados para os gráficos (renderizados pelo backend via Jinja)
-const tipos = {{ tipos_pendencia|tojson }};
-const tipoCounts = {{ tipo_counts|tojson }};
-const statusLabels = {{ status_labels|tojson }};
-const statusCounts = {{ status_counts|tojson }};
-// Gráfico de Pizza - Tipo de Pendência
-new Chart(document.getElementById('graficoTipoPendencia'), {
-    type: 'pie',
-    data: {
-        labels: tipos,
-        datasets: [{
-            data: tipoCounts,
-            backgroundColor: ['#0076D7', '#FF3D71', '#00C48C'],
-        }]
-    },
-    options: {
-        plugins: { legend: { position: 'bottom' } }
-    }
-});
-// Gráfico de Barras - Status
-new Chart(document.getElementById('graficoStatusPendencia'), {
-    type: 'bar',
-    data: {
-        labels: statusLabels,
-        datasets: [{
-            label: 'Qtd',
-            data: statusCounts,
-            backgroundColor: ['#FFC107', '#17A2B8', '#DC3545', '#28A745']
-        }]
-    },
-    options: {
-        plugins: { legend: { display: false } },
-        scales: { y: { beginAtZero: true } }
-    }
-});
-</script>
+<!-- Scripts para gráficos -->
+<script src="{{ url_for('static', filename='chart.min.js') }}"></script>
+<script src="{{ url_for('static', filename='graficos.js') }}"></script>
 {% endif %}
-{% endblock %} 
+
+{% endblock %}

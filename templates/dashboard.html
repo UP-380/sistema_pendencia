@@ -3,6 +3,27 @@
 {% block title %}Painel Principal - UP380{% endblock %}
 
 {% block content %}
+<!-- Breadcrumb -->
+{% if segmento_nome and segmento_id %}
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb" style="background: rgba(27, 54, 93, 0.05); padding: 0.75rem 1.5rem; border-radius: 0.8rem;">
+        <li class="breadcrumb-item">
+            <a href="{{ url_for('listar_segmentos') }}" style="color: #1976d2; text-decoration: none; font-weight: 600;">
+                <i class="bi bi-grid-3x3-gap me-1"></i>
+                Segmentos
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ url_for('empresas_por_segmento', id=segmento_id) }}" style="color: #1976d2; text-decoration: none; font-weight: 600;">
+                {{ segmento_nome }}
+            </a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">
+            <strong>{{ empresa_filtro }}</strong>
+        </li>
+    </ol>
+</nav>
+{% else %}
 <nav aria-label="breadcrumb" class="mb-3">
   <ol class="breadcrumb">
     <li class="breadcrumb-item"><a href="{{ url_for('pre_dashboard') }}">Empresas</a></li>
@@ -10,6 +31,7 @@
     <li class="breadcrumb-item active" aria-current="page">Painel de Pendências</li>
   </ol>
 </nav>
+{% endif %}
 
 <div class="row mb-4">
     {% for tipo in tipos_pendencia %}

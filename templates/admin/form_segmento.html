@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Editar' if segmento else 'Novo' }} Segmento{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-grid-3x3-gap me-2"></i>
+                        {{ 'Editar' if segmento else 'Novo' }} Segmento
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="mb-4">
+                            <label for="nome" class="form-label">
+                                <i class="bi bi-tag me-1"></i>
+                                Nome do Segmento <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" 
+                                   class="form-control form-control-lg" 
+                                   id="nome" 
+                                   name="nome" 
+                                   value="{{ segmento.nome if segmento else '' }}" 
+                                   placeholder="Ex: PROTEÇÃO VEICULAR, FUNERÁRIA, FARMÁCIA" 
+                                   required 
+                                   autofocus>
+                            <div class="form-text">
+                                <i class="bi bi-info-circle me-1"></i>
+                                O nome será automaticamente convertido para maiúsculas.
+                            </div>
+                        </div>
+
+                        {% if segmento %}
+                        <div class="alert alert-info" role="alert">
+                            <i class="bi bi-building me-2"></i>
+                            Este segmento possui <strong>{{ segmento.empresas|length if segmento.empresas else 0 }}</strong> empresa(s) vinculada(s).
+                        </div>
+                        {% endif %}
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-between mt-4">
+                            <a href="{{ url_for('gerenciar_segmentos') }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-2"></i>
+                                Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="bi bi-check-circle me-2"></i>
+                                {{ 'Atualizar' if segmento else 'Criar' }} Segmento
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Informações adicionais -->
+            <div class="mt-4 p-3 bg-light rounded">
+                <h6 class="fw-bold">
+                    <i class="bi bi-lightbulb me-2"></i>
+                    Dicas:
+                </h6>
+                <ul class="mb-0 small">
+                    <li>Segmentos agrupam empresas relacionadas por área de negócio</li>
+                    <li>Use nomes claros e objetivos para facilitar a navegação</li>
+                    <li>Após criar o segmento, vincule empresas através do gerenciamento de empresas</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
