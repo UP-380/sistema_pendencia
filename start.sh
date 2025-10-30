@@ -20,7 +20,14 @@ if [ -f "migrate_data_abertura.py" ]; then
 fi
 
 echo "✅ Migrações concluídas!"
-echo "🌐 Iniciando aplicação Flask..."
+echo "🌐 Iniciando aplicação Flask com Gunicorn..."
 
-# Iniciar a aplicação Flask
-exec python app.py
+# Iniciar a aplicação Flask com Gunicorn (produção)
+exec gunicorn --bind 0.0.0.0:5000 \
+              --workers 4 \
+              --threads 2 \
+              --timeout 120 \
+              --access-logfile - \
+              --error-logfile - \
+              --log-level info \
+              app:app
