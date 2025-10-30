@@ -1,0 +1,47 @@
+# ========================================
+# CONFIGURAÇÃO PARA DESENVOLVIMENTO LOCAL
+# ========================================
+
+# PASSO 1: Criar arquivo .env na raiz do projeto
+# Copie o conteúdo abaixo e salve como: .env
+
+SECRET_KEY=desenvolvimento-local-key-123456789
+FLASK_ENV=development
+FLASK_APP=app.py
+SESSION_COOKIE_SECURE=False
+
+# ========================================
+# PASSO 2: Instalar dependências
+# ========================================
+
+pip install -r requirements.txt
+
+
+# ========================================
+# PASSO 3: Criar banco de dados local
+# ========================================
+
+# No PowerShell:
+mkdir instance
+python -c "from app import db, app; app.app_context().push(); db.create_all(); print('Banco criado!')"
+
+
+# ========================================
+# PASSO 4: Rodar localmente
+# ========================================
+
+python app.py
+
+# Acesse: http://localhost:5000
+
+
+# ========================================
+# OBSERVAÇÕES
+# ========================================
+
+# - O banco local ficará em: instance/pendencias.db
+# - Esse banco é diferente do de produção
+# - Use usuário/senha padrão para teste
+# - Porta local: 5000
+# - Porta produção (VPS): 80
+
