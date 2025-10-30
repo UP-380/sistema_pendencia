@@ -32,7 +32,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # Configurações de segurança de sessão
 app.config['SESSION_COOKIE_SECURE'] = os.getenv('SESSION_COOKIE_SECURE', 'False') == 'True'  # True em produção com HTTPS
 app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_SAMESITE'] = 'Strict'
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Alterado de 'Strict' para permitir redirects de login
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=2)
 
 # Configurações de upload seguro
@@ -792,14 +792,29 @@ def login():
         email = request.form['email']
         senha = request.form['senha']
         usuario = Usuario.query.filter_by(email=email).first()
-        if usuario and check_password_hash(usuario.senha_hash, senha):
-            session['usuario_id'] = usuario.id
-            session['usuario_email'] = usuario.email
-            session['usuario_tipo'] = usuario.tipo
-            # Redirecionar para a tela de segmentos após login
-            return redirect(url_for('listar_segmentos'))
-        else:
-            flash('E-mail ou senha inválidos.', 'danger')
+        
+        if usuario:
+            # Tenta ambos os campos (senha_hash e senha) para compatibilidade
+            senha_valida = False
+            if hasattr(usuario, 'senha_hash'):
+                senha_valida = check_password_hash(usuario.senha_hash, senha)
+            elif hasattr(usuario, 'senha'):
+                senha_valida = check_password_hash(usuario.senha, senha)
+            
+            if senha_valida:
+                # Configurar sessão permanente
+                session.permanent = True
+                session['usuario_id'] = usuario.id
+                session['usuario_email'] = usuario.email
+                session['usuario_tipo'] = usuario.tipo
+                
+                # Log de debug (remover em produção após validar)
+                print(f"[LOGIN OK] Usuário: {usuario.email} | Tipo: {usuario.tipo}")
+                
+                # Redirecionar para a tela de segmentos após login
+                return redirect(url_for('listar_segmentos'))
+        
+        flash('E-mail ou senha inválidos.', 'danger')
     return render_template('login.html')
 
 @app.route('/logout')
