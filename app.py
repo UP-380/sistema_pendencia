@@ -2,8 +2,6 @@ from flask import Flask, render_template, request, redirect, url_for, flash, ses
 from flask_sqlalchemy import SQLAlchemy
 from flask_mail import Mail, Message
 # from flask_wtf.csrf import CSRFProtect  # DESABILITADO TEMPORARIAMENTE
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
 from flask_talisman import Talisman
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
@@ -35,18 +33,13 @@ app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Alterado de 'Strict' para permitir redirects de login
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=2)
 
-# Configurações de upload seguro
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max
+# Configurações de upload seguro - SEM LIMITES
+app.config['MAX_CONTENT_LENGTH'] = None  # SEM LIMITE de tamanho
 app.config['UPLOAD_EXTENSIONS'] = {'.pdf', '.jpg', '.jpeg', '.png', '.xlsx', '.xls'}
 
 # Inicializa extensões de segurança
 # csrf = CSRFProtect(app)  # DESABILITADO TEMPORARIAMENTE
-limiter = Limiter(
-    app=app,
-    key_func=get_remote_address,
-    default_limits=["200 per day", "50 per hour"],
-    storage_uri="memory://"
-)
+# Limiter removido para permitir acesso ilimitado
 
 # Configuração do Talisman (segurança de headers)
 # Nota: force_https=False para desenvolvimento local. Em produção, defina como True
