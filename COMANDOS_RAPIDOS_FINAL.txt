@@ -1,0 +1,142 @@
+# ========================================
+# COMANDOS RÁPIDOS - DEPLOY FINAL
+# ========================================
+
+# ========================================
+# 1. NO WINDOWS (COPIE TUDO DE UMA VEZ)
+# ========================================
+
+cd "C:\Users\Luiz Marcelo\Desktop\PLANILHA DE PENDENCIAS"
+git add nginx.conf app.py DEPLOY_FINAL_CORRIGIDO.md COMANDOS_RAPIDOS_FINAL.txt
+git commit -m "fix: Corrige nginx HTTP + cookies funcionais"
+git push origin main
+
+
+# ========================================
+# 2. NA VPS - COMANDO ÚNICO (TUDO DE UMA VEZ)
+# ========================================
+
+cd ~/sistema_pendencia && \
+mkdir -p backups && \
+cp instance/pendencias.db backups/pendencias_backup_$(date +%Y%m%d_%H%M%S).db && \
+echo "✓ Backup criado" && \
+git pull origin main && \
+echo "✓ Código atualizado" && \
+docker-compose down && \
+echo "✓ Containers parados" && \
+docker-compose build --no-cache && \
+echo "✓ Build concluído" && \
+docker-compose up -d && \
+echo "✓ Containers iniciados" && \
+sleep 15 && \
+echo "=== STATUS ===" && \
+docker-compose ps && \
+echo -e "\n=== BANCO DE DADOS ===" && \
+docker exec -it sistema_pendencia-web-1 python3 << 'EOF'
+from app import db, Pendencia, Usuario
+print(f"Pendências: {Pendencia.query.count()}")
+print(f"Usuários: {Usuario.query.count()}")
+EOF
+echo -e "\n=== CONFIGURAÇÃO ===" && \
+docker exec sistema_pendencia-web-1 python3 -c "from app import app; print('SESSION_COOKIE_SAMESITE:', app.config.get('SESSION_COOKIE_SAMESITE')); print('SESSION_COOKIE_SECURE:', app.config.get('SESSION_COOKIE_SECURE'))" && \
+echo -e "\n=== TESTE LOCAL ===" && \
+curl -I http://localhost && \
+echo -e "\n✅ PRONTO! Limpe o cache do navegador e teste!"
+
+
+# ========================================
+# 3. SE PREFERIR BLOCO POR BLOCO
+# ========================================
+
+# Bloco 1: Backup
+cd ~/sistema_pendencia
+mkdir -p backups
+cp instance/pendencias.db backups/pendencias_backup_$(date +%Y%m%d_%H%M%S).db
+ls -lh backups/ | tail -1
+
+# Bloco 2: Atualizar
+git pull origin main
+git log -1 --oneline
+
+# Bloco 3: Rebuild
+docker-compose down
+docker-compose build --no-cache
+docker-compose up -d
+sleep 15
+
+# Bloco 4: Verificar
+docker-compose ps
+docker-compose logs nginx --tail=20
+docker-compose logs web --tail=20
+
+# Bloco 5: Testar banco
+docker exec -it sistema_pendencia-web-1 python3 << 'EOF'
+from app import db, Pendencia, Usuario
+print(f"Pendências: {Pendencia.query.count()}")
+print(f"Usuários: {Usuario.query.count()}")
+EOF
+
+# Bloco 6: Ver configuração
+docker exec sistema_pendencia-web-1 python3 -c "from app import app; print('SameSite:', app.config.get('SESSION_COOKIE_SAMESITE')); print('Secure:', app.config.get('SESSION_COOKIE_SECURE'))"
+
+
+# ========================================
+# 4. COMANDOS DE VERIFICAÇÃO
+# ========================================
+
+# Ver se containers estão rodando
+docker-compose ps
+
+# Ver logs em tempo real (Ctrl+C para sair)
+docker-compose logs -f
+
+# Ver últimos logs do web
+docker-compose logs web --tail=50
+
+# Ver últimos logs do nginx
+docker-compose logs nginx --tail=30
+
+# Testar conexão local
+curl -I http://localhost
+
+# Ver configuração do nginx
+cat nginx.conf | head -35
+
+
+# ========================================
+# 5. SE PRECISAR REVERTER
+# ========================================
+
+# Restaurar banco de backup
+cd ~/sistema_pendencia
+docker-compose down
+cp backups/pendencias_backup_XXXXXXXX_XXXXXX.db instance/pendencias.db
+docker-compose up -d
+
+
+# ========================================
+# 6. MONITORAMENTO
+# ========================================
+
+# Ver uso de recursos
+docker stats --no-stream
+
+# Ver processos dentro do container
+docker exec sistema_pendencia-web-1 ps aux
+
+# Ver todas as pendências
+docker exec sistema_pendencia-web-1 python3 -c "from app import Pendencia; print(f'Total: {Pendencia.query.count()}')"
+
+
+# ========================================
+# 7. LIMPEZA (SE NECESSÁRIO)
+# ========================================
+
+# Limpar tudo do Docker (CUIDADO!)
+docker system prune -af
+docker builder prune -af
+
+# Rebuild completo
+docker-compose build --no-cache --pull
+docker-compose up -d
+
