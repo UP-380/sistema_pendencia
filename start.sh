@@ -20,12 +20,12 @@ if [ -f "migrate_data_abertura.py" ]; then
 fi
 
 echo "✅ Migrações concluídas!"
-echo "🌐 Iniciando aplicação Flask com Gunicorn..."
+echo "🌐 Iniciando Gunicorn com 1 worker + sticky sessions..."
 
-# Iniciar a aplicação Flask com Gunicorn (produção)
+# Iniciar com 1 worker e múltiplas threads (sessão funcionará)
 exec gunicorn --bind 0.0.0.0:5000 \
-              --workers 4 \
-              --threads 2 \
+              --workers 1 \
+              --threads 8 \
               --timeout 120 \
               --access-logfile - \
               --error-logfile - \
