@@ -17,7 +17,7 @@ class Config:
     SESSION_COOKIE_SECURE = False # Para garantir que funcione em HTTP e HTTPS
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
-    SESSION_COOKIE_NAME = 'pendencia_session' # Evitar conflito com outros apps
+    SESSION_COOKIE_NAME = 'p_session' # Nome curto e unico para evitar conflitos
     PERMANENT_SESSION_LIFETIME = timedelta(hours=2)
     
     # Upload Seguro
