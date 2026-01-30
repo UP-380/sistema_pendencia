@@ -12,6 +12,7 @@ services:
       - ./instance:/app/instance
       - ./logs:/app/logs
       - ./static:/app/static
+      - ./pendencias.db:/app/pendencias.db # PERSISTÊNCIA DO BANCO DE DADOS
     restart: unless-stopped
 
   nginx:
