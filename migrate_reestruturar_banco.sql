@@ -24,6 +24,26 @@ ALTER TABLE pendencia ADD COLUMN tipo_credito_debito VARCHAR(10);
 -- 1.2.B. Adicionar campo ativo em usuario (Correction for missing column)
 ALTER TABLE usuario ADD COLUMN ativo BOOLEAN DEFAULT 1;
 
+-- 1.2.C. Adicionar campo segmento_id em empresa
+ALTER TABLE empresa ADD COLUMN segmento_id INTEGER REFERENCES segmento(id);
+
+-- 1.2.D. Adicionar campo data_abertura em pendencia
+ALTER TABLE pendencia ADD COLUMN data_abertura DATETIME;
+
+-- 1.2.E. Criar tabela permissao_usuario_tipo se nao existir
+CREATE TABLE IF NOT EXISTS permissao_usuario_tipo (
+    id INTEGER PRIMARY KEY,
+    tipo_usuario VARCHAR(20) NOT NULL,
+    funcionalidade VARCHAR(50) NOT NULL,
+    permitido BOOLEAN DEFAULT 1
+);
+
+-- 1.2.F. Garantir tabela segmento
+CREATE TABLE IF NOT EXISTS segmento (
+    id INTEGER PRIMARY KEY,
+    nome VARCHAR(100) UNIQUE NOT NULL
+);
+
 -- 1.2. Criar índices de performance
 -- Índices simples para filtros comuns
 CREATE INDEX IF NOT EXISTS idx_pendencia_empresa ON pendencia(empresa);
