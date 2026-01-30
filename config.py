@@ -7,7 +7,9 @@ class Config:
     SECRET_KEY = os.getenv('SECRET_KEY', 'chave_secreta_fixa_para_desenvolvimento_local_up380')
     
     # Banco de Dados
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///pendencias.db'
+    # Banco de Dados (Caminho Absoluto para evitar erro de split brain app vs root)
+    basedir = os.path.abspath(os.path.dirname(__file__))
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'pendencias.db')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # Segurança de Sessão
