@@ -13,7 +13,8 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # Segurança de Sessão
-    SESSION_COOKIE_SECURE = False # Localhost sem HTTPS
+    # Segurança de Sessão
+    SESSION_COOKIE_SECURE = False # Importante: False se usando ProxyFix/HTTP interno
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
     PERMANENT_SESSION_LIFETIME = timedelta(hours=2)
