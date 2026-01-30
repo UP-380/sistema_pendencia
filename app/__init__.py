@@ -1,6 +1,6 @@
 from flask import Flask
 from config import Config
-from app.extensions import db, mail, migrate
+from app.extensions import db, mail, migrate, csrf
 from app.utils.filters import datetime_local_filter, nome_tipo_usuario_filter
 from flask_cors import CORS
 
@@ -12,6 +12,7 @@ def create_app(config_class=Config):
     db.init_app(app)
     mail.init_app(app)
     migrate.init_app(app, db)
+    csrf.init_app(app)
     
     # Enable CORS for development (Vite runs on 5173)
     CORS(app, resources={r"/api/*": {"origins": "*"}}, supports_credentials=True)
@@ -32,10 +33,9 @@ def create_app(config_class=Config):
     # Register global context processors (if any needed besides blueprints)
     # main_bp already registers logic-specific ones.
 
-    from flask_wtf.csrf import CSRFProtect
     from flask_talisman import Talisman
     
-    CSRFProtect(app)
+    # CSRFProtect already initialized via extensions
     
     csp = {
         'default-src': "'self'",
