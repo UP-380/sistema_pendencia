@@ -17,6 +17,7 @@ class Config:
     SESSION_COOKIE_SECURE = True # Agora deve funcionar com o fix do Nginx
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
+    SESSION_COOKIE_NAME = 'pendencia_session' # Evitar conflito com outros apps
     PERMANENT_SESSION_LIFETIME = timedelta(hours=2)
     
     # Upload Seguro

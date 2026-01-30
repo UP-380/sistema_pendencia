@@ -7,6 +7,11 @@ from flask_cors import CORS
 def create_app(config_class=Config):
     app = Flask(__name__, template_folder='../templates', static_folder='../static')
     app.config.from_object(config_class)
+    
+    # Debug Secret Key
+    import hashlib
+    key_hash = hashlib.sha256(app.config['SECRET_KEY'].encode()).hexdigest()[:8]
+    print(f"DEBUG: App startup. Secret Key Hash: {key_hash}")
 
     # Initialize Flask extensions
     db.init_app(app)
