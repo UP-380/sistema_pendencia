@@ -1,11 +1,12 @@
 from functools import wraps
-from flask import session, redirect, url_for, flash
+from flask import session, redirect, url_for, flash, request
 
 def permissao_requerida(*tipos):
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
             print(f"DEBUG: Verificando permissao para rota {f.__name__}. Session keys: {list(session.keys())}")
+            print(f"DEBUG: Cookies recebidos: {request.cookies}")
             if 'usuario_id' not in session:
                 print("DEBUG: usuario_id nao encontrado na sessao. Redirecionando para login.")
                 return redirect(url_for('auth.login'))

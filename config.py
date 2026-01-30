@@ -14,7 +14,7 @@ class Config:
     
     # Segurança de Sessão
     # Segurança de Sessão
-    SESSION_COOKIE_SECURE = False # Importante: False se usando ProxyFix/HTTP interno
+    SESSION_COOKIE_SECURE = True # Agora deve funcionar com o fix do Nginx
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
     PERMANENT_SESSION_LIFETIME = timedelta(hours=2)
