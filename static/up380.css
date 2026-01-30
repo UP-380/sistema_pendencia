@@ -292,6 +292,7 @@ textarea {
   border: 1px solid var(--up380-vermelho);
 }
 
+/* Cards de resumo - tamanho original */
 .card-resumo {
   background: var(--up380-branco);
   border-radius: 1.2rem;
@@ -492,6 +493,7 @@ input:focus, select:focus, textarea:focus {
     padding: 0.5rem 0.75rem;
   }
 }
+
 
 ::-webkit-scrollbar {
   width: 8px;
@@ -754,4 +756,88 @@ input:focus, select:focus, textarea:focus {
 .card-hover:hover {
     transform: translateY(-3px);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* ============================================
+   HOVER SIDEBAR TRIGGER (DESKTOP)
+   ============================================ */
+@media (min-width: 769px) {
+    .sidebar-hover-trigger {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 20px; /* Largura da área sensível */
+        height: 100vh;
+        z-index: 1002;
+        cursor: pointer;
+        background: transparent;
+    }
+
+    /* Quando o menu está fechado, ele fica escondido */
+    .sidebar.closed {
+        transform: translateX(-100%);
+    }
+
+    /* Ajuste para quando está aberto via hover */
+    .sidebar:not(.closed) {
+        box-shadow: 4px 0 24px rgba(27, 54, 93, 0.25);
+    }
+}
+
+/* ============================================
+   MINI SIDEBAR (DESKTOP) - REPLACES HOVER TRIGGER
+   ============================================ */
+@media (min-width: 769px) {
+    /* O trigger antigo não é mais necessário, escondemos ele se ainda existir */
+    .sidebar-hover-trigger {
+        display: none !important;
+    }
+
+    /* MINI SIDEBAR: Quando fechado, mostra icons */
+    .sidebar.closed {
+        transform: none;
+        width: 70px;
+        overflow: hidden;
+    }
+
+    /* Esconde textos quando fechado */
+    .sidebar.closed .sidebar-logo,
+    .sidebar.closed .sidebar-menu-link span,
+    .sidebar.closed .sidebar-submenu-link span,
+    .sidebar.closed .sidebar-header .bi-list,
+    .sidebar.closed .font-adjust-container,
+    .sidebar.closed .user-info-content,
+    .sidebar.closed .bi-chevron-down {
+        display: none !important;
+        opacity: 0;
+    }
+
+    /* Centraliza ícones */
+    .sidebar.closed .sidebar-menu-link,
+    .sidebar.closed .sidebar-submenu-link {
+        justify-content: center;
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    .sidebar.closed .sidebar-menu-link i,
+    .sidebar.closed .sidebar-submenu-link i {
+        margin: 0;
+        font-size: 1.5rem;
+    }
+
+    /* Ajuste da margem do conteúdo principal quando sidebar está mini */
+    .main-content.sidebar-closed {
+        margin-left: 70px !important;
+    }
+
+    /* Sidebar aberto sempre sobrepõe se expandir, ou empurra?
+       O pedido foi 'aparecendo apenas os emojis'.
+       Geralmente expande 'por cima' (z-index) ou empurra.
+       Como a lógica anterior era 'overlay' no hover, vamos manter 'por cima' para não quebrar layout fluido */
+    .sidebar.open {
+        width: 280px;
+        z-index: 1001;
+        box-shadow: 4px 0 24px rgba(27, 54, 93, 0.25);
+    }
 }

@@ -11,7 +11,7 @@
 						<h3 class="mb-0">
 							<i class="bi bi-pencil-square"></i> Informar Natureza de Operação
 						</h3>
-						<a href="{{ url_for('operador_pendencias') }}" class="btn btn-secondary">
+						<a href="{{ url_for('main.operador_pendencias') }}" class="btn btn-secondary">
 							<i class="bi bi-arrow-left"></i> Voltar
 						</a>
 					</div>
@@ -80,6 +80,7 @@
 							{% endif %}
 						</h5>
 						<form method="POST">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 							<div class="mb-3">
 								<label for="natureza_operacao" class="form-label">
 									<strong>
@@ -109,7 +110,7 @@
 							</div>
 							
 							<div class="d-grid gap-2 d-md-flex justify-content-md-end">
-								<a href="{{ url_for('operador_pendencias') }}" class="btn btn-secondary me-md-2">
+								<a href="{{ url_for('main.operador_pendencias') }}" class="btn btn-secondary me-md-2">
 									<i class="bi bi-x-circle"></i> Cancelar
 								</a>
 								<button type="submit" class="btn btn-{% if pendencia.status == 'DEVOLVIDA AO OPERADOR' %}warning{% else %}success{% endif %}">

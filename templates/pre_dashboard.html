@@ -1,151 +1,305 @@
 {% extends "base.html" %}
 
-{% block title %}Empresas - UP380{% endblock %}
+{% block title %}Dashboard - Empresas{% endblock %}
 
 {% block content %}
-<style>
-.btn-empresa-text {
-    white-space: nowrap !important;
-    font-size: 0.875rem !important;
-    padding: 0.375rem 0.5rem !important;
-    line-height: 1.2 !important;
-    min-width: fit-content !important;
-}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">
+                <i class="bi bi-grid-fill me-2 text-primary"></i>Visão Geral das Empresas
+            </h2>
+            <p class="text-muted">Acompanhe as pendências e status de cada empresa.</p>
+        </div>
 
-.filtro-datas {
-    background: #f8f9fa;
-    padding: 1.5rem;
-    border-radius: 0.5rem;
-    margin-bottom: 2rem;
-}
-</style>
+        <!-- Filtros Avançados (Botão Modal) -->
+        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#filtroModal">
+            <i class="bi bi-funnel me-2"></i>Filtros Avançados
+        </button>
+    </div>
 
-<h1 class="mb-4 d-flex justify-content-between align-items-center">
-    Empresas - Pendências em Aberto
-    {% if session['usuario_tipo'] != 'cliente' %}
-    <span>
-        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-primary me-2">
-            <i class="bi bi-clock-history"></i> Ver Últimas Pendências
-        </a>
-        <a href="/logs_recentes" class="btn btn-outline-secondary">
-            <i class="bi bi-list-check"></i> Ver Logs Recentes
-        </a>
-    </span>
+    <!-- Filtros Ativos -->
+    {% if request.args %}
+    <div class="mb-4">
+        <div class="card border-0 shadow-sm bg-light">
+            <div class="card-body py-2">
+                <div class="d-flex align-items-center flex-wrap gap-2">
+                    <span class="text-muted small fw-bold text-uppercase me-2"><i
+                            class="bi bi-funnel-fill me-1"></i>Filtros:</span>
+
+                    {% if request.args.get('data_abertura_inicio') %}
+                    <span class="badge bg-white text-primary border rounded-pill px-3 py-2">
+                        Abertura: {{ request.args.get('data_abertura_inicio')|datetime_format }} até {{
+                        request.args.get('data_abertura_fim')|datetime_format }}
+                        <a href="{{ remove_filter('data_abertura_inicio', 'data_abertura_fim') }}"
+                            class="text-danger ms-2 text-decoration-none"><i class="bi bi-x-circle-fill"></i></a>
+                    </span>
+                    {% endif %}
+
+                    {% if request.args.get('data_resolucao_inicio') %}
+                    <span class="badge bg-white text-success border rounded-pill px-3 py-2">
+                        Resolução: {{ request.args.get('data_resolucao_inicio')|datetime_format }} até {{
+                        request.args.get('data_resolucao_fim')|datetime_format }}
+                        <a href="{{ remove_filter('data_resolucao_inicio', 'data_resolucao_fim') }}"
+                            class="text-danger ms-2 text-decoration-none"><i class="bi bi-x-circle-fill"></i></a>
+                    </span>
+                    {% endif %}
+
+                    {% for segmento_id in request.args.getlist('segmentos') %}
+                    <span class="badge bg-primary text-white border rounded-pill px-3 py-2">
+                        Segmento ID: {{ segmento_id }}
+                        <a href="{{ remove_filter('segmentos', value=segmento_id) }}"
+                            class="text-white ms-2 text-decoration-none"><i class="bi bi-x-circle-fill"></i></a>
+                    </span>
+                    {% endfor %}
+
+                    <a href="{{ url_for('main.pre_dashboard') }}"
+                        class="btn btn-sm btn-link text-danger text-decoration-none fw-bold">
+                        Limpar Todos
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
     {% endif %}
-</h1>
 
-{% if session['usuario_tipo'] != 'cliente' %}
-<!-- Filtros de Data -->
-<div class="filtro-datas">
-    <h5 class="mb-3"><i class="bi bi-calendar-range me-2"></i>Filtrar Pendências por Data</h5>
-    <form method="GET" action="{{ url_for('pre_dashboard') }}" class="row g-3">
-        <div class="col-md-3">
-            <label class="form-label">Data Abertura - Início</label>
-            <input type="date" name="data_abertura_inicio" class="form-control" value="{{ data_abertura_inicio }}">
-        </div>
-        <div class="col-md-3">
-            <label class="form-label">Data Abertura - Fim</label>
-            <input type="date" name="data_abertura_fim" class="form-control" value="{{ data_abertura_fim }}">
-        </div>
-        <div class="col-md-3">
-            <label class="form-label">Data Resolução - Início</label>
-            <input type="date" name="data_resolucao_inicio" class="form-control" value="{{ data_resolucao_inicio }}">
-        </div>
-        <div class="col-md-3">
-            <label class="form-label">Data Resolução - Fim</label>
-            <input type="date" name="data_resolucao_fim" class="form-control" value="{{ data_resolucao_fim }}">
-        </div>
-        <div class="col-12">
-            <button type="submit" class="btn btn-primary">
-                <i class="bi bi-filter me-2"></i>Aplicar Filtros
-            </button>
-            <a href="{{ url_for('pre_dashboard') }}" class="btn btn-secondary">
-                <i class="bi bi-x-circle me-2"></i>Limpar Filtros
-            </a>
-        </div>
-    </form>
-</div>
-
-<!-- Gráficos -->
-<div class="row mb-4">
-    <div class="col-md-6">
-        <div class="card card-resumo h-100 p-3">
-            <h5 class="mb-3"><i class="bi bi-pie-chart me-2"></i>Quantidade por Tipo de Pendência</h5>
-            <canvas id="graficoTipo" width="400" height="300"></canvas>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="card card-resumo h-100 p-3">
-            <h5 class="mb-3"><i class="bi bi-bar-chart me-2"></i>Pendências Abertas vs Resolvidas</h5>
-            <canvas id="graficoStatus" width="400" height="300"></canvas>
-            <div class="text-center mt-3">
-                <span class="badge bg-warning text-dark me-2" style="font-size: 1rem;">
-                    <i class="bi bi-clock me-1"></i>Abertas: {{ abertas_count }}
-                </span>
-                <span class="badge bg-success" style="font-size: 1rem;">
-                    <i class="bi bi-check-circle me-1"></i>Resolvidas: {{ resolvidas_count }}
-                </span>
-            </div>
-        </div>
-    </div>
-</div>
-{% endif %}
-
-<!-- Lista de Empresas -->
-<div class="row">
-    {% for empresa in empresas_info %}
-    <div class="col-md-6 col-lg-4 mb-4">
-        <div class="card card-resumo h-100 justify-content-between">
-            <div class="d-flex align-items-center gap-3">
-                <span class="icon" style="font-size:2.2rem;"><i class="bi bi-building"></i></span>
-                <div>
-                    <div class="value" style="font-size:1.5rem;">{{ empresa.nome }}</div>
-                    <div class="label">Pendências em aberto: {% if empresa.abertas > 0 %}<b class="destaque-aberto{% if empresa.abertas > 5 %} badge-alerta{% endif %}">{{ empresa.abertas }}</b>{% else %}<b>{{ empresa.abertas }}</b>{% endif %}</div>
+    <!-- Métricas Gerais (Opcional, se houver dados agregados) -->
+    {% if empresas_info %}
+    <div class="row graficos-container mb-4">
+        <div class="col-lg-6 col-xl-5">
+            <div class="card card-resumo h-100 p-3">
+                <h5 class="mb-3"><i class="bi bi-pie-chart me-2"></i>Quantidade por Tipo de Pendência</h5>
+                <div style="height: 200px; position: relative;">
+                    <canvas id="graficoTipo"></canvas>
                 </div>
             </div>
-            <div class="mt-3">
-                {% if session['usuario_tipo'] == 'cliente' %}
-                <a href="{{ url_for('dashboard', empresa=empresa.nome) }}" class="btn btn-primary btn-empresa-text w-100">
-                    <i class="bi bi-arrow-right-circle"></i> Ver Pend.
-                </a>
-                {% else %}
-                <div class="row g-2">
-                    <div class="col-6">
-                        <a href="{{ url_for('dashboard', empresa=empresa.nome) }}" class="btn btn-primary btn-empresa-text w-100">
-                            <i class="bi bi-arrow-right-circle"></i> Ver Pend.
-                        </a>
-                    </div>
-                    {% if session['usuario_tipo'] in ['adm', 'operador', 'supervisor'] %}
-                    <div class="col-6">
-                        <a href="{{ url_for('nova_pendencia', empresa=empresa.nome) }}" class="btn btn-success btn-empresa-text w-100">
-                            <i class="bi bi-plus-circle"></i> Nova Pendência
-                        </a>
-                    </div>
-                    {% endif %}
-                    {% if session['usuario_tipo'] in ['adm', 'supervisor'] %}
-                    <div class="col-6">
-                        <a href="{{ url_for('listar_pendencias', status='RESOLVIDA', empresa=empresa.nome) }}" class="btn btn-outline-success btn-empresa-text w-100">
-                            <i class="bi bi-check-circle"></i> Resolvidas
-                        </a>
-                    </div>
-                    <div class="col-6">
-                        <a href="{{ url_for('relatorio_mensal', ref=current_month, empresa_id=empresa.id) }}" class="btn btn-outline-primary btn-empresa-text w-100">
-                            <i class="bi bi-calendar-month"></i> Relatório Mensal
-                        </a>
-                    </div>
-                    {% endif %}
+        </div>
+        <div class="col-lg-6 col-xl-7">
+            <div class="card card-resumo h-100 p-3">
+                <h5 class="mb-3"><i class="bi bi-bar-chart me-2"></i>Pendências Abertas vs Resolvidas</h5>
+                <div style="height: 200px; position: relative;">
+                    <canvas id="graficoStatus"></canvas>
                 </div>
-                {% endif %}
+                <div class="text-center mt-3">
+                    <span class="badge bg-warning text-dark me-2" style="font-size: 1rem;">
+                        <i class="bi bi-clock me-1"></i>Abertas: {{ abertas_count }}
+                    </span>
+                    <span class="badge bg-success" style="font-size: 1rem;">
+                        <i class="bi bi-check-circle me-1"></i>Resolvidas: {{ resolvidas_count }}
+                    </span>
+                </div>
             </div>
         </div>
     </div>
-    {% endfor %}
+    {% endif %}
+
+    <!-- Lista de Empresas -->
+    {% if empresas_info %}
+    <div class="row empresas-grid g-4">
+        {% for empresa in empresas_info %}
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3 col-xl-3">
+            <div class="card h-100 shadow-sm" style="background: #ffffff;
+                        border: 1px solid #e5e7eb;
+                        border-radius: 1.2rem;
+                        transition: all 0.3s ease;
+                        position: relative;
+                        overflow: hidden;">
+                <!-- Faixa lateral colorida (System Blue) -->
+                <div style="position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: #1B365D;"></div>
+
+                <div class="card-body p-3 d-flex flex-column" style="padding-left: 1.2rem;">
+                    <!-- Header -->
+                    <div class="d-flex align-items-start justify-content-between mb-3">
+                        <h6 class="mb-0 fw-bold" style="color: #1B365D; font-size: 1.1rem;">{{ empresa.nome }}</h6>
+                        <i class="bi bi-building fs-4" style="color: #cbd5e1;"></i>
+                    </div>
+
+                    <!-- Estatísticas -->
+                    <div class="mb-3 p-2 rounded" style="background-color: #f8fafc; border: 1px solid #f1f5f9;">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-clock-history me-2 text-danger"></i>
+                            <span class="small text-secondary">
+                                <strong class="text-dark">{{ empresa.abertas or 0 }}</strong> em aberto
+                            </span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-check-circle me-2 text-success"></i>
+                            <span class="small text-secondary">
+                                <strong class="text-dark">{{ empresa.resolvidas or 0 }}</strong> resolvidas
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Botões -->
+                    <div class="mt-auto d-grid gap-2">
+                        {% if session['usuario_tipo'] == 'cliente' %}
+                        <a href="{{ url_for('main.dashboard', empresa=empresa.nome) }}"
+                            class="btn btn-primary btn-sm fw-semibold"
+                            style="background-color: #1B365D; border-color: #1B365D;">
+                            <i class="bi bi-arrow-right-circle me-1"></i> Ver Pend.
+                        </a>
+                        {% else %}
+                        <a href="{{ url_for('main.dashboard', empresa=empresa.nome) }}"
+                            class="btn btn-primary btn-sm fw-semibold"
+                            style="background-color: #1B365D; border-color: #1B365D;">
+                            <i class="bi bi-arrow-right-circle me-1"></i> Ver Pend.
+                        </a>
+
+                        {% if session['usuario_tipo'] in ['adm', 'operador', 'supervisor'] %}
+                        <a href="{{ url_for('main.nova_pendencia', empresa=empresa.nome) }}"
+                            class="btn btn-warning btn-sm text-white fw-bold">
+                            <i class="bi bi-plus-circle me-1"></i> Nova Pendência
+                        </a>
+                        {% endif %}
+
+                        {% if session['usuario_tipo'] in ['adm', 'supervisor'] %}
+                        <a href="{{ url_for('main.listar_pendencias', status='RESOLVIDA', empresa=empresa.nome) }}"
+                            class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-check-circle me-1"></i> Resolvidas
+                        </a>
+                        <a href="{{ url_for('main.relatorio_mensal', ref=current_month, empresa_id=empresa.id) }}"
+                            class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-calendar-month me-1"></i> Relatório Mensal
+                        </a>
+                        {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info" role="alert">
+        <i class="bi bi-info-circle me-2"></i>
+        Nenhuma empresa encontrada com os filtros selecionados.
+    </div>
+    {% endif %}
 </div>
 
-{% if session['usuario_tipo'] != 'cliente' %}
-<!-- Scripts para gráficos -->
-<script src="{{ url_for('static', filename='chart.min.js') }}"></script>
-<script src="{{ url_for('static', filename='graficos.js') }}"></script>
-{% endif %}
+<!-- Modal de Filtros -->
+<div class="modal fade" id="filtroModal" tabindex="-1" aria-labelledby="filtroModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="filtroModalLabel"><i class="bi bi-funnel me-2"></i>Filtros Avançados</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('main.pre_dashboard') }}" method="GET">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <!-- Segmentos -->
+                        <div class="col-md-12">
+                            <label class="form-label fw-bold">Segmentos</label>
+                            <select class="form-select" name="segmentos" multiple size="4">
+                                {% for segmento in segmentos_disponiveis %}
+                                <option value="{{ segmento.id }}" {% if segmento.id|string in
+                                    request.args.getlist('segmentos') %}selected{% endif %}>
+                                    {{ segmento.nome }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Segure Ctrl para selecionar múltiplos.</div>
+                        </div>
 
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Data Abertura (Início)</label>
+                            <input type="date" class="form-control" name="data_abertura_inicio"
+                                value="{{ request.args.get('data_abertura_inicio', '') }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Data Abertura (Fim)</label>
+                            <input type="date" class="form-control" name="data_abertura_fim"
+                                value="{{ request.args.get('data_abertura_fim', '') }}">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Data Resolução (Início)</label>
+                            <input type="date" class="form-control" name="data_resolucao_inicio"
+                                value="{{ request.args.get('data_resolucao_inicio', '') }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Data Resolução (Fim)</label>
+                            <input type="date" class="form-control" name="data_resolucao_fim"
+                                value="{{ request.args.get('data_resolucao_fim', '') }}">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Aplicar Filtros</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Gráfico por Status
+        const ctxStatus = document.getElementById('graficoStatus').getContext('2d');
+        new Chart(ctxStatus, {
+            type: 'doughnut',
+            data: {
+                labels: ['Abertas', 'Resolvidas'],
+                datasets: [{
+                    data: [{{ abertas_count }}, {{ resolvidas_count }}],
+            backgroundColor: ['#ffc107', '#198754'],
+            borderWidth: 0
+        }]
+            },
+        options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom' } }
+    }
+        });
+
+    // Gráfico por Tipo
+    const ctxTipo = document.getElementById('graficoTipo').getContext('2d');
+    const tipoLabels = {{ tipos_labels | tojson }};
+    const tipoData = {{ tipos_valores | tojson }};
+
+    // Cores vibrantes do Bootstrap
+    const cores = [
+        '#0d6efd', '#6610f2', '#6f42c1', '#d63384', '#dc3545',
+        '#fd7e14', '#ffc107', '#198754', '#20c997', '#0dcaf0'
+    ];
+
+    new Chart(ctxTipo, {
+        type: 'pie', // Mudando para Pizza para variar
+        data: {
+            labels: tipoLabels,
+            datasets: [{
+                data: tipoData,
+                backgroundColor: cores,
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'right' } }
+        }
+    });
+    });
+</script>
+
+<style>
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25) !important;
+    }
+
+    .empresa-link {
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .empresas-grid .card {
+        cursor: pointer;
+    }
+</style>
 {% endblock %}

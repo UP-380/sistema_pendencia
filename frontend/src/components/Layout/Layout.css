@@ -1,0 +1,37 @@
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.main-content {
+  padding: 2rem;
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: 100vh;
+  background: #F5F6FA;
+  flex: 1;
+  width: 100%;
+}
+
+.main-content.no-sidebar {
+  margin-left: 0;
+  width: 100%;
+}
+
+/* Em desktop, quando o menu está aberto, adiciona margem */
+@media (min-width: 769px) {
+  .main-content {
+    margin-left: 0;
+  }
+  
+  /* Quando o menu está aberto via hover, o conteúdo não precisa de margem
+     pois o menu aparece por cima com z-index alto */
+}
+
+@media (max-width: 768px) {
+  .main-content {
+    margin-left: 0;
+    width: 100%;
+    padding: 1rem;
+  }
+}
+

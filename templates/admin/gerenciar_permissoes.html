@@ -4,6 +4,7 @@
 <div class="container mt-4">
     <h2 class="mb-4"><i class="bi bi-shield-lock"></i> Gestão de Permissões por Tipo de Usuário</h2>
     <form method="post">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         <div class="table-responsive">
             <table class="table table-bordered align-middle">
                 <thead class="table-light">

@@ -6,8 +6,8 @@
 <div class="container mt-4">
     <nav aria-label="breadcrumb" class="mb-4">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{ url_for('pre_dashboard') }}">Home</a></li>
-            <li class="breadcrumb-item"><a href="{{ url_for('gerenciar_empresas') }}">Gerenciar Empresas</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('main.pre_dashboard') }}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('main.gerenciar_empresas') }}">Gerenciar Empresas</a></li>
             <li class="breadcrumb-item active" aria-current="page">{{ 'Editar' if empresa else 'Nova' }} Empresa</li>
         </ol>
     </nav>
@@ -28,6 +28,7 @@
                 </div>
                 <div class="card-body">
                     <form method="POST">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                         <!-- Campo Nome -->
                         <div class="mb-3">
                             <label for="nome" class="form-label">
@@ -73,7 +74,7 @@
                                 <i class="bi bi-check-circle me-2"></i>
                                 {{ 'Salvar Alterações' if empresa else 'Criar Empresa' }}
                             </button>
-                            <a href="{{ url_for('gerenciar_empresas') }}" class="btn btn-secondary">
+                            <a href="{{ url_for('main.gerenciar_empresas') }}" class="btn btn-secondary">
                                 <i class="bi bi-x-circle me-2"></i>
                                 Cancelar
                             </a>

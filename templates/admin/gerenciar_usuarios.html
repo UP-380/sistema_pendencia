@@ -2,7 +2,7 @@
 {% block title %}Gerenciar Usuários{% endblock %}
 {% block content %}
 <h2>Gerenciar Usuários</h2>
-<a href="{{ url_for('novo_usuario') }}" class="btn btn-primary mb-3">Novo Usuário</a>
+<a href="{{ url_for('main.novo_usuario') }}" class="btn btn-primary mb-3">Novo Usuário</a>
 <table class="table">
     <thead>
         <tr>
@@ -31,8 +31,9 @@
             </td>
             <td>{{ 'Ativo' if usuario.ativo else 'Inativo' }}</td>
             <td>
-                <a href="{{ url_for('editar_usuario', id=usuario.id) }}" class="btn btn-sm btn-outline-primary">Editar</a>
-                <form action="{{ url_for('deletar_usuario', id=usuario.id) }}" method="post" style="display:inline;" onsubmit="return confirm('Tem certeza que deseja excluir este usuário?');">
+                <a href="{{ url_for('main.editar_usuario', id=usuario.id) }}" class="btn btn-sm btn-outline-primary">Editar</a>
+                <form action="{{ url_for('main.deletar_usuario', id=usuario.id) }}" method="post" style="display:inline;" onsubmit="return confirm('Tem certeza que deseja excluir este usuário?');">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <button type="submit" class="btn btn-sm btn-outline-danger">Excluir</button>
                 </form>
             </td>

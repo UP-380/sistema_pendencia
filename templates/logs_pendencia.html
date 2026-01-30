@@ -21,7 +21,7 @@
                     <p><strong>Tipo:</strong> {{ pendencia.tipo_pendencia }}</p>
                     {% if pendencia.nota_fiscal_arquivo %}
                         <p><strong>Anexo:</strong> 
-                            <a href="{{ url_for('baixar_anexo', pendencia_id=pendencia.id) }}" 
+                            <a href="{{ url_for('main.baixar_anexo', pendencia_id=pendencia.id) }}" 
                                class="btn btn-sm btn-outline-primary">
                                 <i class="bi bi-download"></i> Baixar Anexo
                             </a>
@@ -35,8 +35,8 @@
     </div>
     
     <div class="mb-3 d-flex justify-content-between align-items-center">
-        <a href="{{ url_for('ver_pendencia', token=pendencia.token_acesso) }}" class="btn btn-secondary">Voltar para Pendência</a>
-        <a href="{{ url_for('exportar_logs', pendencia_id=pendencia.id) }}" class="btn btn-outline-success">
+        <a href="{{ url_for('main.ver_pendencia', token=pendencia.token_acesso) }}" class="btn btn-secondary">Voltar para Pendência</a>
+        <a href="{{ url_for('main.exportar_logs', pendencia_id=pendencia.id) }}" class="btn btn-outline-success">
             <i class="bi bi-download"></i> Exportar Logs (CSV)
         </a>
     </div>

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,194 +9,597 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='up380.css') }}">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='logoUP.png') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
-        body { font-family: 'Inter', Arial, sans-serif; }
-        .flash-messages { margin-top: 1rem; }
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            background-color: #f8f9fa;
+        }
+
+        /* ============================================
+           NOVO SIDEBAR (CLONE REATIVO)
+           ============================================ */
+        /* Botão hambúrguer para mobile */
+        .mobile-menu-toggle {
+            display: none;
+            position: fixed;
+            top: 12px;
+            left: 12px;
+            z-index: 1002 !important;
+            background: #0e3b6f;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            width: 44px;
+            height: 44px;
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .mobile-menu-toggle:hover {
+            background: #144577;
+            transform: scale(1.05);
+        }
+
+        /* Overlay */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999 !important;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* Sidebar Principal */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            height: 100vh;
+            width: 70px;
+            background: #ffffff;
+            border-right: 1px solid #e5e7eb;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+            transition: width 0.3s ease, transform 0.3s ease;
+            z-index: 1001;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar:hover {
+            width: 280px;
+        }
+
+        .sidebar-content {
+            padding: 0;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            background: #ffffff;
+            width: 100%;
+        }
+
+        .sidebar-header {
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            border-bottom: 1px solid #f3f4f6;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        .sidebar:hover .sidebar-header {
+            justify-content: flex-start;
+            padding-left: 20px;
+        }
+
+        .sidebar-logo-icon {
+            font-size: 1.5rem;
+            color: #0e3b6f;
+            display: block;
+        }
+
+        .sidebar-menu-wrapper {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 10px 0;
+        }
+
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 10px;
+            color: #4b5563;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            position: relative;
+            white-space: nowrap;
+            border-radius: 8px;
+            margin: 4px 10px;
+            justify-content: center;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            width: calc(100% - 20px);
+        }
+
+        .sidebar:hover .sidebar-item {
+            justify-content: flex-start;
+            padding-left: 15px;
+        }
+
+        .sidebar-item:hover {
+            background: #f3f4f6;
+            color: #0e3b6f;
+        }
+
+        .sidebar-item.active {
+            background: #eff6ff;
+            color: #1d4ed8;
+            font-weight: 500;
+        }
+
+        .sidebar-item i,
+        .sidebar-item>span:first-child:not(.sidebar-text) {
+            font-size: 1.1rem;
+            width: 24px;
+            text-align: center;
+            flex-shrink: 0;
+            display: inline-block;
+        }
+
+        .sidebar-text {
+            margin-left: 12px;
+            font-size: 0.9rem;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            display: none;
+        }
+
+        .sidebar:hover .sidebar-text {
+            opacity: 1;
+            display: block;
+        }
+
+        .sidebar-divider {
+            height: 1px;
+            background: #e5e7eb;
+            margin: 10px 15px;
+        }
+
+        .sidebar-chevron {
+            margin-left: auto;
+            font-size: 0.75rem;
+            opacity: 0;
+            display: none;
+        }
+
+        .sidebar:hover .sidebar-chevron {
+            opacity: 1;
+            display: block;
+        }
+
+        .sidebar-submenu {
+            margin-left: 20px;
+            border-left: 2px solid #e5e7eb;
+            display: none;
+            /* Controlado via JS/CSS */
+            flex-direction: column;
+        }
+
+        .sidebar-submenu.open {
+            display: flex !important;
+        }
+
+        .sidebar-submenu-item {
+            padding: 10px 10px 10px 15px;
+            font-size: 0.85rem;
+            color: #6b7280;
+            margin: 2px 10px 2px 0;
+        }
+
+        /* User Profile */
+        .sidebar-user-info {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 10px;
+        }
+
+        .sidebar:hover .sidebar-user-info {
+            justify-content: flex-start;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            background: #0e3b6f;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .user-details {
+            display: none;
+            flex-direction: column;
+        }
+
+        .sidebar:hover .user-details {
+            display: flex;
+        }
+
+        .user-name {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .user-role {
+            font-size: 0.75rem;
+            color: #6b7280;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 70px;
+            /* Largura fechada */
+            min-height: 100vh;
+            transition: margin-left 0.3s ease;
+            padding: 2rem;
+        }
+
+        /* Sidebar Footer (Logout) */
+        .sidebar-footer {
+            margin-top: auto;
+            padding: 10px;
+            border-top: 1px solid #f3f4f6;
+        }
+
+        .logout-btn {
+            display: flex;
+            align-items: center;
+            padding: 12px 10px;
+            color: #ef4444;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            border-radius: 8px;
+            justify-content: center;
+            white-space: nowrap;
+        }
+
+        .sidebar:hover .logout-btn {
+            justify-content: flex-start;
+            padding-left: 15px;
+        }
+
+        .logout-btn:hover {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+        .logout-btn i {
+            font-size: 1.1rem;
+            width: 24px;
+            text-align: center;
+            flex-shrink: 0;
+            display: inline-block;
+        }
+
+        /* Mobile */
+        @media (max-width: 768px) {
+            .mobile-menu-toggle {
+                display: flex !important;
+            }
+
+            .sidebar-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 1000;
+            }
+
+            .sidebar-overlay.show {
+                display: block;
+            }
+
+            .sidebar {
+                width: 280px !important;
+                transform: translateX(-100%);
+                z-index: 1001 !important;
+            }
+
+            .sidebar.mobile-open {
+                transform: translateX(0) !important;
+            }
+
+            .sidebar-text,
+            .sidebar-chevron,
+            .user-details {
+                display: block !important;
+                opacity: 1 !important;
+            }
+
+            .sidebar-item {
+                justify-content: flex-start !important;
+                padding-left: 15px !important;
+            }
+
+            .main-content {
+                margin-left: 0 !important;
+                padding-top: 60px;
+            }
+        }
     </style>
 </head>
+
 <body class="font-size-base" aria-label="Sistema de Gestão de Pendências" aria-live="polite">
-    <nav class="navbar navbar-expand-lg navbar-dark navbar-modern" aria-label="Menu principal">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="{{ url_for('pre_dashboard') }}">
-                <img id="navbar-logo" src="{{ url_for('static', filename='logoUP.png') }}" alt="UP380" class="d-inline-block align-text-top">
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item">
-                        <a class="nav-link" href="#filtroEmpresas" onclick="rolarParaFiltroEmpresas(); return false;">
-                            <i class="bi bi-building me-1"></i>
-                            <span>{% if empresas_selecionadas %}{{ empresas_selecionadas|join(', ') }}{% else %}Todas as Empresas{% endif %}</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link{% if request.endpoint == 'listar_segmentos' or 'segmento' in request.endpoint %} active{% endif %}" 
-                           href="{{ url_for('listar_segmentos') }}"
-                           {% if request.endpoint == 'listar_segmentos' %}aria-current="page"{% endif %}>
-                            <i class="bi bi-grid-3x3-gap me-1"></i>
-                            <span>Segmentos</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link{% if request.endpoint == 'pre_dashboard' %} active{% endif %}" 
-                           {% if request.endpoint == 'pre_dashboard' %}aria-current="page"{% endif %}
-                           href="{{ url_for('pre_dashboard') }}">
-                            <i class="bi bi-building me-1"></i>
-                            <span>Empresas</span>
-                        </a>
-                    </li>
-                    {% if session.get('usuario_tipo') in ['adm', 'operador'] %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('importar_planilha') }}">
-                            <i class="bi bi-upload me-1"></i>
-                            <span>Importar Planilha</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                    
-                    <!-- Novos links para o fluxo de aprovação -->
-                    {% if session.get('usuario_tipo') in ['adm', 'operador', 'supervisor'] %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('operador_pendencias') }}">
-                            <i class="bi bi-person-gear me-1"></i>
-                            <span>Operador</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                    
-                    {% if session.get('usuario_tipo') in ['adm', 'supervisor'] %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('supervisor_pendencias') }}">
-                            <i class="bi bi-person-check me-1"></i>
-                            <span>Supervisor</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                    
-                    {% if session.get('usuario_tipo') in ['adm', 'supervisor', 'operador', 'cliente_supervisor'] %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('relatorio_mensal', ref=current_month) }}">
-                            <i class="bi bi-calendar-month me-1"></i>
-                            <span>Relatório Mensal</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                    
-                    {% if session.get('usuario_tipo') in ['adm', 'supervisor'] %}
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownAdmin" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bi bi-gear me-1"></i>
-                            <span>Gerenciar</span>
-                        </a>
-                        <ul class="dropdown-menu" aria-labelledby="navbarDropdownAdmin">
-                            {% if session.get('usuario_tipo') == 'adm' %}
-                            <li><a class="dropdown-item" href="{{ url_for('gerenciar_usuarios') }}"><i class="bi bi-people me-2"></i>Usuários</a></li>
-                            {% endif %}
-                            <li><a class="dropdown-item" href="{{ url_for('gerenciar_segmentos') }}"><i class="bi bi-grid-3x3-gap me-2"></i>Segmentos</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('gerenciar_empresas') }}"><i class="bi bi-building me-2"></i>Empresas</a></li>
-                        </ul>
-                    </li>
-                    {% endif %}
-                    
-                    <!-- Item de menu Suporte -->
-                    {% if session.get('usuario_email') %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#modalSuporte" onclick="logSuporte()">
-                            <i class="bi bi-life-preserver me-1"></i>
-                            <span>Suporte</span>
-                        </a>
-                    </li>
-                    {% endif %}
-                </ul>
-                <div class="d-flex align-items-center">
-                    {% if session.get('usuario_email') %}
-                    <span class="navbar-text me-3">
-                        <i class="bi bi-person-circle me-2"></i>
-                        <span>{{ session['usuario_email'] }} ({{ session['usuario_tipo']|nome_tipo_usuario }})</span>
-                    </span>
-                    <a href="{{ url_for('logout') }}" class="btn btn-outline-light btn-sm btn-logout">
-                        <i class="bi bi-box-arrow-right me-2"></i>
-                        <span>Sair</span>
-                    </a>
-                    {% endif %}
-                    <div class="ms-3 d-flex align-items-center">
-                        <button class="font-adjust-btn" onclick="ajustarFonte(1.25)" aria-label="Aumentar fonte" title="Aumentar fonte">A+</button>
-                        <button class="font-adjust-btn" onclick="ajustarFonte(1)" aria-label="Fonte normal" title="Fonte normal">A</button>
-                        <button class="font-adjust-btn" onclick="ajustarFonte(0.8)" aria-label="Diminuir fonte" title="Diminuir fonte">A-</button>
+    {% if session.get('usuario_id') or session.get('usuario_email') %}
+    <!-- Botão toggle para mobile -->
+    <button class="mobile-menu-toggle" id="mobileToggle" onclick="toggleMobileSidebar()">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileSidebar()"></div>
+
+    <!-- Novo Menu Clone -->
+    <!-- Novo Menu Clone -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <img src="{{ url_for('static', filename='logoUP.png') }}" alt="Logo" style="width: 40px; height: auto;">
+            <div class="sidebar-text" style="font-size: 1.2rem; font-weight: bold; color: #0e3b6f; margin-left: 10px;">
+                UP380</div>
+        </div>
+
+        <div class="sidebar-content">
+            <div class="sidebar-menu-wrapper">
+                <!-- User Profile -->
+                <div style="padding: 0 10px;">
+                    <div class="sidebar-user-info">
+                        <div class="user-avatar">
+                            {{ session.get('usuario_email')[0]|upper if session.get('usuario_email') else '?' }}
+                        </div>
+                        <div class="user-details">
+                            <span class="user-name">{{ session.get('usuario_email') }}</span>
+                            <span class="user-role">{{ session.get('usuario_tipo')|default('Usuário') }}</span>
+                        </div>
                     </div>
                 </div>
+                <div class="sidebar-divider"></div>
+
+                <!-- Principal -->
+                <a href="{{ url_for('main.pre_dashboard') }}"
+                    class="sidebar-item {{ 'active' if request.endpoint == 'main.pre_dashboard' else '' }}">
+                    <i class="bi bi-buildings"></i>
+                    <span class="sidebar-text">Empresas</span>
+                </a>
+
+                <a href="{{ url_for('main.listar_segmentos') }}"
+                    class="sidebar-item {{ 'active' if request.endpoint == 'main.listar_segmentos' else '' }}">
+                    <i class="bi bi-layers"></i>
+                    <span class="sidebar-text">Segmentos</span>
+                </a>
+
+                {% if session.get('usuario_tipo') in ['adm', 'operador', 'supervisor'] %}
+                <!-- Operacional Accordion -->
+                <div class="sidebar-menu-group">
+                    <button class="sidebar-item sidebar-menu-toggle" onclick="toggleSubmenu('operacionalSubmenu')">
+                        <i class="bi bi-clipboard2-check"></i>
+                        <span class="sidebar-text">Operacional</span>
+                        <i class="fas fa-chevron-right sidebar-chevron" id="operacionalChevron"></i>
+                    </button>
+                    <div class="sidebar-submenu {{ 'open' if request.endpoint in ['main.nova_pendencia', 'main.importar_planilha', 'main.operador_pendencias', 'main.supervisor_pendencias'] else '' }}"
+                        id="operacionalSubmenu">
+                        <a href="{{ url_for('main.nova_pendencia') }}"
+                            class="sidebar-item sidebar-submenu-item {{ 'active' if request.endpoint == 'main.nova_pendencia' else '' }}">
+                            <i class="bi bi-plus-lg"></i>
+                            <span class="sidebar-text">Nova Pendência</span>
+                        </a>
+                        {% if session.get('usuario_tipo') in ['adm', 'operador'] %}
+                        <a href="{{ url_for('main.importar_planilha') }}"
+                            class="sidebar-item sidebar-submenu-item {{ 'active' if request.endpoint == 'main.importar_planilha' else '' }}">
+                            <i class="bi bi-file-earmark-arrow-up"></i>
+                            <span class="sidebar-text">Importar</span>
+                        </a>
+                        {% endif %}
+                        <a href="{{ url_for('main.operador_pendencias') }}"
+                            class="sidebar-item sidebar-submenu-item {{ 'active' if request.endpoint == 'main.operador_pendencias' else '' }}">
+                            <i class="bi bi-headset"></i>
+                            <span class="sidebar-text">Operador</span>
+                        </a>
+                        <a href="{{ url_for('main.supervisor_pendencias') }}"
+                            class="sidebar-item sidebar-submenu-item {{ 'active' if request.endpoint == 'main.supervisor_pendencias' else '' }}">
+                            <i class="bi bi-person-check"></i>
+                            <span class="sidebar-text">Supervisor</span>
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Relatórios Accordion -->
+                <div class="sidebar-menu-group">
+                    <button class="sidebar-item sidebar-menu-toggle" onclick="toggleSubmenu('relatoriosSubmenu')">
+                        <i class="bi bi-graph-up"></i>
+                        <span class="sidebar-text">Relatórios</span>
+                        <i class="fas fa-chevron-right sidebar-chevron" id="relatoriosChevron"></i>
+                    </button>
+                    <div class="sidebar-submenu {{ 'open' if request.endpoint in ['main.relatorio_mensal'] else '' }}"
+                        id="relatoriosSubmenu">
+                        <a href="{{ url_for('main.relatorio_mensal') }}"
+                            class="sidebar-item sidebar-submenu-item {{ 'active' if request.endpoint == 'main.relatorio_mensal' else '' }}">
+                            <i class="bi bi-calendar3"></i>
+                            <span class="sidebar-text">Mensal</span>
+                        </a>
+                    </div>
+                </div>
+
+                {% if session.get('usuario_tipo') == 'adm' %}
+                <!-- Administração Accordion -->
+                <div class="sidebar-menu-group">
+                    <button class="sidebar-item sidebar-menu-toggle" onclick="toggleSubmenu('adminSubmenu')">
+                        <i class="bi bi-gear"></i>
+                        <span class="sidebar-text">Administração</span>
+                        <i class="fas fa-chevron-right sidebar-chevron" id="adminChevron"></i>
+                    </button>
+                    <div class="sidebar-submenu {{ 'open' if request.endpoint in ['main.gerenciar_usuarios', 'main.gerenciar_segmentos', 'main.gerenciar_empresas'] else '' }}"
+                        id="adminSubmenu">
+                        <a href="{{ url_for('main.gerenciar_usuarios') }}"
+                            class="sidebar-item sidebar-submenu-item {{ 'active' if request.endpoint == 'main.gerenciar_usuarios' else '' }}">
+                            <i class="bi bi-people"></i>
+                            <span class="sidebar-text">Usuários</span>
+                        </a>
+                        <a href="{{ url_for('main.gerenciar_segmentos') }}"
+                            class="sidebar-item sidebar-submenu-item {{ 'active' if request.endpoint == 'main.gerenciar_segmentos' else '' }}">
+                            <i class="bi bi-layers-half"></i>
+                            <span class="sidebar-text">Segmentos</span>
+                        </a>
+                        <a href="{{ url_for('main.gerenciar_empresas') }}"
+                            class="sidebar-item sidebar-submenu-item {{ 'active' if request.endpoint == 'main.gerenciar_empresas' else '' }}">
+                            <i class="bi bi-building-gear"></i>
+                            <span class="sidebar-text">Empresas</span>
+                        </a>
+                    </div>
+                </div>
+                {% endif %}
+
+            </div>
+
+            <div class="sidebar-footer">
+                <a href="{{ url_for('auth.logout') }}" class="logout-btn">
+                    <i class="bi bi-box-arrow-right"></i>
+                    <span class="logout-text sidebar-text">Sair do Sistema</span>
+                </a>
             </div>
         </div>
-    </nav>
+    </aside>
+    {% endif %}
 
-    <div class="container mt-4">
+    <!-- Conteúdo Principal -->
+    <main
+        class="main-content{% if not (session.get('usuario_id') or session.get('usuario_email')) %} no-sidebar{% endif %}"
+        id="mainContent">
         {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <div class="flash-messages">
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show">
-                            {{ message }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                        <div class="toast" id="toast-flash-{{ loop.index }}">
-                            {{ message }}
-                        </div>
-                    {% endfor %}
-                </div>
-            {% endif %}
+        {% if messages %}
+        <div class="flash-messages">
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            <div class="toast" id="toast-flash-{{ loop.index }}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
         {% endwith %}
 
         {% block content %}{% endblock %}
-    </div>
+    </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-    // Exibe toast para cada mensagem flash
-    document.addEventListener('DOMContentLoaded', function() {
-        document.querySelectorAll('.toast').forEach(function(toast) {
-            toast.classList.add('show');
-            setTimeout(function() { toast.classList.remove('show'); }, 3500);
+        // Exibe toast para cada mensagem flash
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('.toast').forEach(function (toast) {
+                toast.classList.add('show');
+                setTimeout(function () { toast.classList.remove('show'); }, 3500);
+            });
+
+            // Inicializar estado dos chevrons para submenus abertos
+            document.querySelectorAll('.sidebar-submenu.open').forEach(submenu => {
+                const chevronId = submenu.id.replace('Submenu', 'Chevron');
+                const chevron = document.getElementById(chevronId);
+                if (chevron) chevron.style.transform = 'rotate(90deg)';
+            });
         });
-    });
 
-    function ajustarFonte(fator) {
-        document.body.style.fontSize = (1 * fator) + 'rem';
-    }
-
-    // Interactive Logo Script
-    document.addEventListener('DOMContentLoaded', function() {
-        const logo = document.getElementById('navbar-logo');
-        if (logo) {
-            logo.addEventListener('mouseover', function() {
-                logo.classList.add('logo-interactive');
-            });
-            logo.addEventListener('mouseout', function() {
-                logo.classList.remove('logo-interactive');
-            });
+        function ajustarFonte(fator) {
+            document.body.style.fontSize = (1 * fator) + 'rem';
         }
-    });
 
-    function rolarParaFiltroEmpresas() {
-        var filtro = document.getElementById('filtroEmpresas');
-        if (filtro) {
-            filtro.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            filtro.focus();
-        }
-    }
-    
-    function logSuporte() {
-        // Registra log de abertura do modal de suporte
-        fetch('/log_suporte', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
+        function toggleSubmenu(submenuId) {
+            const submenu = document.getElementById(submenuId);
+            const chevronId = submenuId.replace('Submenu', 'Chevron');
+            const chevron = document.getElementById(chevronId);
+
+            if (submenu) {
+                submenu.classList.toggle('open');
+                if (chevron) {
+                    const isOpen = submenu.classList.contains('open');
+                    chevron.style.transform = isOpen ? 'rotate(90deg)' : 'rotate(0deg)';
+                }
             }
-        }).catch(error => console.log('Erro ao registrar log de suporte:', error));
-    }
+        }
+
+        function toggleMobileSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+
+            if (sidebar) {
+                sidebar.classList.toggle('mobile-open');
+                const isOpen = sidebar.classList.contains('mobile-open');
+
+                if (overlay) {
+                    if (isOpen) {
+                        overlay.classList.add('show');
+                        document.body.style.overflow = 'hidden';
+                    } else {
+                        overlay.classList.remove('show');
+                        document.body.style.overflow = '';
+                    }
+                }
+            }
+        }
+
+        function rolarParaFiltroEmpresas() {
+            var filtro = document.getElementById('filtroEmpresas');
+            if (filtro) {
+                filtro.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                filtro.focus();
+            }
+        }
+
+        function logSuporte() {
+            fetch('/log_suporte', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            }).catch(error => console.log('Erro ao registrar log de suporte:', error));
+        }
     </script>
-    
+
     <!-- Modal Suporte -->
     <div class="modal fade" id="modalSuporte" tabindex="-1" aria-labelledby="modalSuporteLabel" aria-hidden="true">
         <div class="modal-dialog modal-xl modal-dialog-scrollable">
@@ -213,4 +617,5 @@
         </div>
     </div>
 </body>
-</html> 
+
+</html>

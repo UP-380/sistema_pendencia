@@ -8,7 +8,7 @@
             <i class="bi bi-grid-3x3-gap me-2" style="color: #1976d2;"></i>
             Gerenciar Segmentos
         </h2>
-        <a href="{{ url_for('novo_segmento') }}" class="btn btn-primary">
+        <a href="{{ url_for('main.novo_segmento') }}" class="btn btn-primary">
             <i class="bi bi-plus-circle me-2"></i>
             Novo Segmento
         </a>
@@ -45,21 +45,22 @@
                     </td>
                     <td class="text-center">
                         <div class="btn-group" role="group">
-                            <a href="{{ url_for('empresas_por_segmento', id=segmento.id) }}" 
+                            <a href="{{ url_for('main.empresas_por_segmento', id=segmento.id) }}" 
                                class="btn btn-sm btn-outline-info" 
                                title="Ver empresas">
                                 <i class="bi bi-eye"></i>
                             </a>
-                            <a href="{{ url_for('editar_segmento', id=segmento.id) }}" 
+                            <a href="{{ url_for('main.editar_segmento', id=segmento.id) }}" 
                                class="btn btn-sm btn-outline-primary" 
                                title="Editar">
                                 <i class="bi bi-pencil"></i>
                             </a>
                             {% if segmento.total_empresas == 0 %}
-                            <form action="{{ url_for('deletar_segmento', id=segmento.id) }}" 
+                            <form action="{{ url_for('main.deletar_segmento', id=segmento.id) }}" 
                                   method="post" 
                                   style="display:inline;" 
                                   onsubmit="return confirm('Tem certeza que deseja excluir este segmento?');">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                 <button type="submit" 
                                         class="btn btn-sm btn-outline-danger" 
                                         title="Excluir">
@@ -88,7 +89,7 @@
     {% endif %}
 
     <div class="mt-4">
-        <a href="{{ url_for('listar_segmentos') }}" class="btn btn-outline-secondary">
+        <a href="{{ url_for('main.listar_segmentos') }}" class="btn btn-outline-secondary">
             <i class="bi bi-arrow-left me-2"></i>
             Voltar para Segmentos
         </a>

@@ -8,7 +8,7 @@
             Relatório Mensal de Pendências
         </h2>
         <div>
-            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+            <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary">
                 <i class="bi bi-arrow-left"></i> Voltar ao Dashboard
             </a>
         </div>
@@ -17,7 +17,7 @@
     <!-- Breadcrumbs -->
     <nav aria-label="breadcrumb" class="mb-3">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{ url_for('pre_dashboard') }}">Empresas</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('main.pre_dashboard') }}">Empresas</a></li>
             <li class="breadcrumb-item active">Relatório Mensal</li>
         </ol>
     </nav>
@@ -40,7 +40,7 @@
     <!-- Formulário de filtro -->
     <div class="card mb-4">
         <div class="card-body">
-            <form method="get" action="{{ url_for('relatorio_mensal') }}">
+            <form method="get" action="{{ url_for('main.relatorio_mensal') }}">
                 <div class="row g-3 align-items-end">
                     <div class="col-md-3">
                         <label class="form-label">Mês/Ano</label>
@@ -115,11 +115,11 @@
     <div class="mb-4">
         <div class="d-flex gap-2">
             <a class="btn btn-outline-success"
-               href="{{ url_for('relatorio_mensal', ref=ref, base=base, empresas=empresas_selecionadas, format='csv') }}">
+               href="{{ url_for('main.relatorio_mensal', ref=ref, base=base, empresas=empresas_selecionadas, format='csv') }}">
                <i class="bi bi-filetype-csv me-1"></i>Exportar CSV
             </a>
             <a class="btn btn-outline-info"
-               href="{{ url_for('relatorio_mensal', ref=ref, base=base, empresas=empresas_selecionadas, format='json') }}">
+               href="{{ url_for('main.relatorio_mensal', ref=ref, base=base, empresas=empresas_selecionadas, format='json') }}">
                <i class="bi bi-braces me-1"></i>JSON
             </a>
         </div>

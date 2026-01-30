@@ -14,7 +14,7 @@
                             <i class="bi bi-arrow-left"></i> Voltar
                         </a>
                     {% else %}
-                        <a href="{{ url_for('dashboard', empresa=pendencia.empresa) }}" class="btn btn-secondary btn-sm">
+                        <a href="{{ url_for('main.dashboard', empresa=pendencia.empresa) }}" class="btn btn-secondary btn-sm">
                             <i class="bi bi-arrow-left"></i> Voltar
                         </a>
                     {% endif %}
@@ -93,7 +93,7 @@
                         {% if pendencia.nota_fiscal_arquivo %}
                         <dt class="col-sm-3">Anexo:</dt>
                         <dd class="col-sm-9">
-                            <a href="{{ url_for('baixar_anexo', pendencia_id=pendencia.id) }}" class="btn btn-sm btn-outline-primary">
+                            <a href="{{ url_for('main.baixar_anexo', pendencia_id=pendencia.id) }}" class="btn btn-sm btn-outline-primary">
                                 <i class="bi bi-download"></i> Baixar Anexo
                             </a>
                         </dd>
@@ -184,7 +184,8 @@
                             <i class="bi bi-chat-dots"></i> Responder Pendência
                         {% endif %}
                     </h4>
-                    <form method="POST" action="{{ url_for('ver_pendencia', token=pendencia.token_acesso) }}" enctype="multipart/form-data">
+                    <form method="POST" action="{{ url_for('main.ver_pendencia', token=pendencia.token_acesso) }}" enctype="multipart/form-data">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                         <input type="hidden" name="empresa" value="{{ request.args.get('empresa', pendencia.empresa) }}">
                         <input type="hidden" name="tipo_pendencia" value="{{ request.args.get('tipo_pendencia', pendencia.tipo_pendencia) }}">
                         <input type="hidden" name="busca" value="{{ request.args.get('busca', '') }}">
@@ -241,7 +242,8 @@
                             <h5 class="mb-0">Informar Natureza da Operação</h5>
                         </div>
                         <div class="card-body">
-                            <form method="POST" action="{{ url_for('informar_natureza_operacao', id=pendencia.id) }}">
+                            <form method="POST" action="{{ url_for('main.informar_natureza_operacao', id=pendencia.id) }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                 <div class="mb-3">
                                     <label for="natureza_operacao" class="form-label">Natureza da Operação</label>
                                     <textarea class="form-control" id="natureza_operacao" name="natureza_operacao" rows="3" 
@@ -263,7 +265,8 @@
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-md-6">
-                                    <form method="POST" action="{{ url_for('aceitar_resposta_cliente', id=pendencia.id) }}" style="display:inline;">
+                                    <form method="POST" action="{{ url_for('main.aceitar_resposta_cliente', id=pendencia.id) }}" style="display:inline;">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                         <button type="submit" class="btn btn-success w-100">
                                             <i class="bi bi-check-circle"></i> Aceitar e Enviar para Supervisor
                                         </button>
@@ -290,7 +293,8 @@
                                 </h5>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
-                            <form method="POST" action="{{ url_for('recusar_resposta_cliente', id=pendencia.id) }}">
+                            <form method="POST" action="{{ url_for('main.recusar_resposta_cliente', id=pendencia.id) }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                 <div class="modal-body">
                                     <div class="alert alert-warning">
                                         <i class="bi bi-info-circle"></i>
@@ -318,7 +322,8 @@
                 {% endif %}
 
                 {% if session.get('usuario_tipo') == 'adm' and pendencia.status != 'RESOLVIDA' %}
-                <form method="post" action="{{ url_for('aprovar_pendencia', id=pendencia.id) }}" style="display:inline;">
+                <form method="post" action="{{ url_for('main.aprovar_pendencia', id=pendencia.id) }}" style="display:inline;">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <button type="submit" class="btn btn-success">
                         <i class="bi bi-check-circle"></i> Aprovar Pendência
                     </button>

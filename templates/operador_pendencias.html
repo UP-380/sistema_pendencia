@@ -6,7 +6,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h2>
-                <i class="bi bi-person-gear"></i> 
+                <i class="bi bi-person-gear"></i>
                 Painel do Operador
                 {% if session.get('usuario_tipo') == 'supervisor' %}
                 <span class="badge bg-warning ms-2">
@@ -19,10 +19,11 @@
             {% endif %}
         </div>
         <div>
-            <button type="button" class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#modalAjudaOperador">
+            <button type="button" class="btn btn-outline-info btn-sm" data-bs-toggle="modal"
+                data-bs-target="#modalAjudaOperador">
                 <i class="bi bi-question-circle"></i> Ajuda
             </button>
-            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary ms-2">
+            <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary ms-2">
                 <i class="bi bi-arrow-left"></i> Voltar ao Dashboard
             </a>
         </div>
@@ -43,16 +44,18 @@
                     <div class="row">
                         {% for empresa, quantidade in pendencias_abertas_por_empresa %}
                         <div class="col-md-4 col-lg-3 mb-3">
-                            <div class="card h-100 border-{% if quantidade >= 10 %}danger{% elif quantidade >= 5 %}warning{% else %}primary{% endif %}">
+                            <div
+                                class="card h-100 border-{% if quantidade >= 10 %}danger{% elif quantidade >= 5 %}warning{% else %}primary{% endif %}">
                                 <div class="card-body text-center">
                                     <h6 class="card-title text-truncate" title="{{ empresa }}">{{ empresa }}</h6>
                                     <div class="mb-2">
-                                        <span class="badge bg-{% if quantidade >= 10 %}danger{% elif quantidade >= 5 %}warning{% else %}primary{% endif %} fs-6">
+                                        <span
+                                            class="badge bg-{% if quantidade >= 10 %}danger{% elif quantidade >= 5 %}warning{% else %}primary{% endif %} fs-6">
                                             {{ quantidade }} pendência{{ 's' if quantidade > 1 else '' }} em aberto
                                         </span>
                                     </div>
-                                    <a href="{{ url_for('operador_pendencias', empresa=empresa) }}" 
-                                       class="btn btn-outline-{% if quantidade >= 10 %}danger{% elif quantidade >= 5 %}warning{% else %}primary{% endif %} btn-sm">
+                                    <a href="{{ url_for('main.operador_pendencias', empresa=empresa) }}"
+                                        class="btn btn-outline-{% if quantidade >= 10 %}danger{% elif quantidade >= 5 %}warning{% else %}primary{% endif %} btn-sm">
                                         <i class="bi bi-eye"></i> Ver pendências
                                     </a>
                                 </div>
@@ -71,68 +74,89 @@
         <div class="mb-3">
             <label class="form-label">Empresas</label>
             <div class="dropdown w-100">
-                <button class="btn btn-light border dropdown-toggle w-100 py-2 fs-5 text-start rounded-3" type="button" id="dropdownEmpresas" data-bs-toggle="dropdown" aria-expanded="false" style="background:#fff;">
+                <button class="btn btn-light border dropdown-toggle w-100 py-2 fs-5 text-start rounded-3" type="button"
+                    id="dropdownEmpresas" data-bs-toggle="dropdown" aria-expanded="false" style="background:#fff;">
                     {% if empresas_selecionadas %}
-                        {{ empresas_selecionadas|join(', ') }}
+                    {{ empresas_selecionadas|join(', ') }}
                     {% else %}
-                        Selecione uma empresa
+                    Selecione uma empresa
                     {% endif %}
                 </button>
-                <ul class="dropdown-menu w-100 p-0 rounded-3" aria-labelledby="dropdownEmpresas" style="max-height: 340px; overflow-y: auto; min-width: 320px; border:1px solid #eee; box-shadow:none;">
+                <ul class="dropdown-menu w-100 p-0 rounded-3" aria-labelledby="dropdownEmpresas"
+                    style="max-height: 340px; overflow-y: auto; min-width: 320px; border:1px solid #eee; box-shadow:none;">
                     {% for empresa in empresas %}
-                        {% set qtd = 0 %}
-                        {% for e, quantidade in pendencias_abertas_por_empresa %}
-                            {% if e == empresa %}
-                                {% set qtd = quantidade %}
-                            {% endif %}
-                        {% endfor %}
-                        {% set status = 'inativo' %}
-                        {% set icon = '' %}
-                        {% set icon_color = '' %}
-                        {% if qtd >= 10 %}
-                            {% set status = 'urgente' %}
-                            {% set icon = '●' %}
-                            {% set icon_color = '#e74c3c' %}
-                        {% elif qtd >= 5 %}
-                            {% set status = 'atencao' %}
-                            {% set icon = '▲' %}
-                            {% set icon_color = '#f39c12' %}
-                        {% elif qtd >= 1 %}
-                            {% set status = 'pendente' %}
-                            {% set icon = '●' %}
-                            {% set icon_color = '#2980ef' %}
-                        {% elif qtd == 0 %}
-                            {% set status = 'ok' %}
-                            {% set icon = '✔' %}
-                            {% set icon_color = '#27ae60' %}
-                        {% else %}
-                            {% set status = 'inativo' %}
-                            {% set icon = '●' %}
-                            {% set icon_color = '#bdc3c7' %}
-                        {% endif %}
-                        <li>
-                            <a class="dropdown-item d-flex justify-content-between align-items-center px-3 py-2 fs-6 minimal-item" style="background:transparent; border-radius:8px;" href="{{ url_for('operador_pendencias', empresas=empresa) }}" title="{{ qtd }} pendência(s) em aberto">
-                                <span class="d-flex align-items-center gap-2">
-                                    <span style="font-size:1.2em; color:{{ icon_color }}; width:18px; display:inline-block; text-align:center;">{{ icon }}</span>
-                                    <span style="font-weight:400; color:#222;">{{ empresa }}</span>
-                                </span>
-                                <span>
-                                    {% if qtd > 0 %}
-                                        <span class="badge badge-minimal bg-{% if qtd >= 10 %}danger{% elif qtd >= 5 %}warning{% else %}primary{% endif %}">{{ qtd }}</span>
-                                    {% elif status == 'ok' %}
-                                        <span style="font-size:1.1em; color:#27ae60;">✔</span>
-                                    {% endif %}
-                                </span>
-                            </a>
-                        </li>
+                    {% set qtd = 0 %}
+                    {% for e, quantidade in pendencias_abertas_por_empresa %}
+                    {% if e == empresa %}
+                    {% set qtd = quantidade %}
+                    {% endif %}
                     {% endfor %}
-                    <li><hr class="dropdown-divider my-1"></li>
+                    {% set status = 'inativo' %}
+                    {% set icon = '' %}
+                    {% set icon_color = '' %}
+                    {% if qtd >= 10 %}
+                    {% set status = 'urgente' %}
+                    {% set icon = '●' %}
+                    {% set icon_color = '#e74c3c' %}
+                    {% elif qtd >= 5 %}
+                    {% set status = 'atencao' %}
+                    {% set icon = '▲' %}
+                    {% set icon_color = '#f39c12' %}
+                    {% elif qtd >= 1 %}
+                    {% set status = 'pendente' %}
+                    {% set icon = '●' %}
+                    {% set icon_color = '#2980ef' %}
+                    {% elif qtd == 0 %}
+                    {% set status = 'ok' %}
+                    {% set icon = '✔' %}
+                    {% set icon_color = '#27ae60' %}
+                    {% else %}
+                    {% set status = 'inativo' %}
+                    {% set icon = '●' %}
+                    {% set icon_color = '#bdc3c7' %}
+                    {% endif %}
+                    <li>
+                        <a class="dropdown-item d-flex justify-content-between align-items-center px-3 py-2 fs-6 minimal-item"
+                            style="background:transparent; border-radius:8px;"
+                            href="{{ url_for('main.operador_pendencias', empresas=empresa) }}"
+                            title="{{ qtd }} pendência(s) em aberto">
+                            <span class="d-flex align-items-center gap-2">
+                                <span
+                                    style="font-size:1.2em; color:{{ icon_color }}; width:18px; display:inline-block; text-align:center;">{{
+                                    icon }}</span>
+                                <span style="font-weight:400; color:#222;">{{ empresa }}</span>
+                            </span>
+                            <span>
+                                {% if qtd > 0 %}
+                                <span
+                                    class="badge badge-minimal bg-{% if qtd >= 10 %}danger{% elif qtd >= 5 %}warning{% else %}primary{% endif %}">{{
+                                    qtd }}</span>
+                                {% elif status == 'ok' %}
+                                <span style="font-size:1.1em; color:#27ae60;">✔</span>
+                                {% endif %}
+                            </span>
+                        </a>
+                    </li>
+                    {% endfor %}
+                    <li>
+                        <hr class="dropdown-divider my-1">
+                    </li>
                     <li class="px-3 pb-2 pt-1">
-                        <div class="d-flex align-items-center gap-2 mb-1"><span style="font-size:1.1em; color:#e74c3c;">●</span> <span class="small">Ações urgentes</span></div>
-                        <div class="d-flex align-items-center gap-2 mb-1"><span style="font-size:1.1em; color:#f39c12;">▲</span> <span class="small">Atenção necessária</span></div>
-                        <div class="d-flex align-items-center gap-2 mb-1"><span style="font-size:1.1em; color:#2980ef;">●</span> <span class="small">Pendências</span></div>
-                        <div class="d-flex align-items-center gap-2 mb-1"><span style="font-size:1.1em; color:#27ae60;">✔</span> <span class="small">Tudo certo</span></div>
-                        <div class="d-flex align-items-center gap-2"><span style="font-size:1.1em; color:#bdc3c7;">●</span> <span class="small">Inativo</span></div>
+                        <div class="d-flex align-items-center gap-2 mb-1"><span
+                                style="font-size:1.1em; color:#e74c3c;">●</span> <span class="small">Ações
+                                urgentes</span></div>
+                        <div class="d-flex align-items-center gap-2 mb-1"><span
+                                style="font-size:1.1em; color:#f39c12;">▲</span> <span class="small">Atenção
+                                necessária</span></div>
+                        <div class="d-flex align-items-center gap-2 mb-1"><span
+                                style="font-size:1.1em; color:#2980ef;">●</span> <span class="small">Pendências</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 mb-1"><span
+                                style="font-size:1.1em; color:#27ae60;">✔</span> <span class="small">Tudo certo</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2"><span
+                                style="font-size:1.1em; color:#bdc3c7;">●</span> <span class="small">Inativo</span>
+                        </div>
                     </li>
                 </ul>
             </div>
@@ -142,30 +166,39 @@
             <label for="filtro_status" class="form-label">Status</label>
             <select class="form-select" id="filtro_status" name="filtro_status">
                 <option value="">Todos</option>
-                <option value="PENDENTE OPERADOR UP" {% if request.args.get('filtro_status') == 'PENDENTE OPERADOR UP' %}selected{% endif %}>Aguardando Operador</option>
-                <option value="PENDENTE COMPLEMENTO CLIENTE" {% if request.args.get('filtro_status') == 'PENDENTE COMPLEMENTO CLIENTE' %}selected{% endif %}>Aguardando Cliente</option>
-                <option value="RESOLVIDA" {% if request.args.get('filtro_status') == 'RESOLVIDA' %}selected{% endif %}>Resolvidas</option>
+                <option value="PENDENTE OPERADOR UP" {% if request.args.get('filtro_status')=='PENDENTE OPERADOR UP'
+                    %}selected{% endif %}>Aguardando Operador</option>
+                <option value="PENDENTE COMPLEMENTO CLIENTE" {% if
+                    request.args.get('filtro_status')=='PENDENTE COMPLEMENTO CLIENTE' %}selected{% endif %}>Aguardando
+                    Cliente</option>
+                <option value="RESOLVIDA" {% if request.args.get('filtro_status')=='RESOLVIDA' %}selected{% endif %}>
+                    Resolvidas</option>
             </select>
         </div>
         <div class="col-md-2">
             <label for="filtro_prazo" class="form-label">Prazo</label>
             <select class="form-select" id="filtro_prazo" name="filtro_prazo">
                 <option value="">Todos</option>
-                <option value="atrasadas" {% if request.args.get('filtro_prazo') == 'atrasadas' %}selected{% endif %}>Atrasadas (&gt;7 dias)</option>
-                <option value="recentes" {% if request.args.get('filtro_prazo') == 'recentes' %}selected{% endif %}>Recentes (≤7 dias)</option>
+                <option value="atrasadas" {% if request.args.get('filtro_prazo')=='atrasadas' %}selected{% endif %}>
+                    Atrasadas (&gt;7 dias)</option>
+                <option value="recentes" {% if request.args.get('filtro_prazo')=='recentes' %}selected{% endif %}>
+                    Recentes (≤7 dias)</option>
             </select>
         </div>
         <div class="col-md-2">
             <label for="filtro_valor" class="form-label">Valor</label>
             <select class="form-select" id="filtro_valor" name="filtro_valor">
                 <option value="">Todos</option>
-                <option value="alto" {% if request.args.get('filtro_valor') == 'alto' %}selected{% endif %}>Acima de R$ 5.000</option>
-                <option value="baixo" {% if request.args.get('filtro_valor') == 'baixo' %}selected{% endif %}>Até R$ 5.000</option>
+                <option value="alto" {% if request.args.get('filtro_valor')=='alto' %}selected{% endif %}>Acima de R$
+                    5.000</option>
+                <option value="baixo" {% if request.args.get('filtro_valor')=='baixo' %}selected{% endif %}>Até R$ 5.000
+                </option>
             </select>
         </div>
         <div class="col-md-2">
             <label for="busca" class="form-label">Busca Avançada</label>
-            <input type="text" class="form-control" id="busca" name="busca" value="{{ busca }}" placeholder="Fornecedor, valor, data, status...">
+            <input type="text" class="form-control" id="busca" name="busca" value="{{ busca }}"
+                placeholder="Fornecedor, valor, data, status...">
         </div>
         <div class="col-md-12 text-end">
             <button type="submit" class="btn btn-primary">
@@ -181,317 +214,355 @@
     </div>
 
     <!-- Lista de Pendências -->
-    <form id="formLote" method="POST" action="{{ url_for('operador_lote_enviar_supervisor') }}">
-    <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">Pendências Aguardando Ação do Operador</h5>
-            <button type="submit" class="btn btn-success btn-sm" id="btnLoteEnviar" style="display:none;">
-                <i class="bi bi-arrow-up-circle"></i> Enviar selecionadas ao supervisor
-            </button>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th><input type="checkbox" id="checkAll"></th>
-                            <th>ID</th>
-                            <th>Tipo</th>
-                            <th>Banco</th>
-                            <th>Data</th>
-                            <th>Fornecedor/Cliente</th>
-                            <th>Valor</th>
-                            <th>Resposta do Cliente</th>
-                            <th>Anexo</th>
-                            <th>Ações</th>
-                            <th>Histórico</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% set hoje = now %}
-                        {% for pendencia in pendencias|sort(attribute='data_abertura')|reverse %}
-                        {% set dias = (now - (pendencia.data or pendencia.data_abertura.date())).days if pendencia.data or pendencia.data_abertura else 0 %}
-                        <tr {% if pendencia.valor >= 5000 or dias > 7 %}class="table-danger"{% endif %}>
-                            <td><input type="checkbox" name="ids" value="{{ pendencia.id }}" class="checkPendencia"></td>
-                            <td><strong>#{{ pendencia.id }}</strong></td>
-                            <td>{{ pendencia.tipo_pendencia }}</td>
-                            <td>{{ pendencia.banco }}</td>
-                            <td>{% if pendencia.data %}{{ pendencia.data.strftime('%d/%m/%Y') }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
-                            <td>{{ pendencia.fornecedor_cliente }}</td>
-                            <td><strong>R$ {{ "%.2f"|format(pendencia.valor) }}</strong>
-                                {% if pendencia.valor >= 5000 %}<span class="badge bg-danger ms-1">Alto</span>{% endif %}
-                            </td>
-                            <td>
-                                {% if pendencia.resposta_cliente %}
-                                    <span class="text-truncate d-inline-block" style="max-width: 200px;" title="{{ pendencia.resposta_cliente }}">
-                                        {{ pendencia.resposta_cliente[:50] }}{% if pendencia.resposta_cliente|length > 50 %}...{% endif %}
-                                    </span>
-                                {% else %}
-                                    <span class="text-muted">-</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if pendencia.nota_fiscal_arquivo %}
-                                    <a href="{{ url_for('baixar_anexo', pendencia_id=pendencia.id) }}" class="btn btn-sm btn-outline-primary" title="Baixar anexo">
-                                        <i class="bi bi-download"></i> Anexo
-                                    </a>
-                                {% else %}
-                                    <span class="text-muted">-</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if pendencia.status == 'PENDENTE OPERADOR UP' %}
-                                    <div class="btn-group" role="group">
-                                        <a href="{{ url_for('operador_natureza_operacao', id=pendencia.id) }}" 
-                                           class="btn btn-primary btn-sm">
-                                            <i class="bi bi-pencil-square"></i> Informar Natureza
-                                        </a>
-                                        <button type="button" class="btn btn-warning btn-sm" 
-                                                data-bs-toggle="modal" data-bs-target="#modalRecusar{{ pendencia.id }}"
-                                                title="Recusar resposta e solicitar complemento">
-                                            <i class="bi bi-x-circle"></i> Recusar
-                                        </button>
-                                    </div>
-                                {% elif pendencia.status == 'DEVOLVIDA AO OPERADOR' %}
-                                    <div class="btn-group" role="group">
-                                        <a href="{{ url_for('operador_natureza_operacao', id=pendencia.id) }}" 
-                                           class="btn btn-warning btn-sm">
-                                            <i class="bi bi-arrow-clockwise"></i> Corrigir e Reenviar
-                                        </a>
-                                        <button type="button" class="btn btn-info btn-sm" 
-                                                data-bs-toggle="modal" data-bs-target="#modalMotivoRecusa{{ pendencia.id }}"
-                                                title="Ver motivo da recusa">
-                                            <i class="bi bi-info-circle"></i> Ver Motivo
-                                        </button>
-                                    </div>
-                                {% elif pendencia.status == 'PENDENTE COMPLEMENTO CLIENTE' %}
-                                    <span class="badge bg-warning text-dark">
-                                        <i class="bi bi-clock"></i> Aguardando Cliente
-                                    </span>
-                                {% else %}
-                                    <span class="badge bg-secondary">{{ pendencia.status }}</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#modalHistorico{{ pendencia.id }}">
-                                    <i class="bi bi-clock-history"></i> Histórico
-                                </button>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="10" class="text-center text-muted">
-                                <i class="bi bi-check-circle"></i> Nenhuma pendência aguardando operador.
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+    <form id="formLote" method="POST" action="{{ url_for('main.operador_lote_enviar_supervisor') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Pendências Aguardando Ação do Operador</h5>
+                <button type="submit" class="btn btn-success btn-sm" id="btnLoteEnviar" style="display:none;">
+                    <i class="bi bi-arrow-up-circle"></i> Enviar selecionadas ao supervisor
+                </button>
             </div>
-        </div>
-    </div>
-    </form>
-    <script>
-    // Seleção em lote
-    const checkAll = document.getElementById('checkAll');
-    const checks = document.querySelectorAll('.checkPendencia');
-    const btnLote = document.getElementById('btnLoteEnviar');
-    if (checkAll) {
-        checkAll.addEventListener('change', function() {
-            document.querySelectorAll('.checkPendencia').forEach(c => c.checked = this.checked);
-            btnLote.style.display = document.querySelectorAll('.checkPendencia:checked').length ? '' : 'none';
-        });
-    }
-    document.querySelectorAll('.checkPendencia').forEach(c => {
-        c.addEventListener('change', function() {
-            btnLote.style.display = document.querySelectorAll('.checkPendencia:checked').length ? '' : 'none';
-        });
-    });
-    </script>
-
-{# MODAIS DE HISTÓRICO #}
-{% for pendencia in pendencias %}
-<div class="modal fade" id="modalHistorico{{ pendencia.id }}" tabindex="-1" aria-labelledby="modalHistoricoLabel{{ pendencia.id }}" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modalHistoricoLabel{{ pendencia.id }}">Histórico da Pendência #{{ pendencia.id }}</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-            </div>
-            <div class="modal-body">
+            <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-bordered table-sm">
+                    <table class="table table-hover">
                         <thead>
                             <tr>
-                                <th>Data/Hora</th>
-                                <th>Usuário</th>
-                                <th>Tipo</th>
-                                <th>Ação</th>
-                                <th>Campo Alterado</th>
-                                <th>Valor Anterior</th>
-                                <th>Valor Novo</th>
+                                <th><input type="checkbox" id="checkAll"></th>
+                                <th>ID</th>
+                                <th>Natureza de Operação</th>
+                                <th>Tipo de Lançamento</th>
+                                <th>Anexo</th>
+                                <th>Ações</th>
+                                <th>Histórico</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for log in pendencia.logs|default([]) %}
-                            <tr>
-                                <td>{{ log.data_hora.strftime('%d/%m/%Y %H:%M:%S') }}</td>
-                                <td>{{ log.usuario }}</td>
-                                <td>{{ log.tipo_usuario }}</td>
-                                <td>{{ log.acao }}</td>
-                                <td>{{ log.campo_alterado or '-' }}</td>
-                                <td>{{ log.valor_anterior or '-' }}</td>
-                                <td>{{ log.valor_novo or '-' }}</td>
+                            {% set hoje = now %}
+                            {% for pendencia in pendencias|sort(attribute='data_abertura')|reverse %}
+                            {% set dias = (now - (pendencia.data or pendencia.data_abertura.date())).days if
+                            pendencia.data or pendencia.data_abertura else 0 %}
+                            <tr {% if pendencia.valor>= 5000 or dias > 7 %}class="table-danger"{% endif %}>
+                                <td><input type="checkbox" name="ids" value="{{ pendencia.id }}" class="checkPendencia">
+                                </td>
+                                <td><strong>#{{ pendencia.id }}</strong></td>
+                                <td>{{ pendencia.tipo_pendencia }}</td>
+                                <td>{{ pendencia.banco }}</td>
+                                <td>{% if pendencia.data %}{{ pendencia.data.strftime('%d/%m/%Y') }}{% else %}<span
+                                        class="text-muted">—</span>{% endif %}</td>
+                                <td>{{ pendencia.fornecedor_cliente }}</td>
+                                <td><strong>R$ {{ "%.2f"|format(pendencia.valor) }}</strong>
+                                    {% if pendencia.valor >= 5000 %}<span class="badge bg-danger ms-1">Alto</span>{%
+                                    endif %}
+                                </td>
+                                <td>
+                                    {% if pendencia.resposta_cliente %}
+                                    <span class="text-truncate d-inline-block" style="max-width: 200px;"
+                                        title="{{ pendencia.resposta_cliente }}">
+                                        {{ pendencia.resposta_cliente[:50] }}{% if pendencia.resposta_cliente|length >
+                                        50 %}...{% endif %}
+                                    </span>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="text-truncate" style="max-width: 150px;">
+                                        {{ pendencia.natureza_operacao or '-' }}
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if pendencia.tipo_credito_debito %}
+                                    <span
+                                        class="badge {{ 'bg-success' if pendencia.tipo_credito_debito == 'CREDITO' else 'bg-danger' }}">
+                                        <i
+                                            class="bi bi-{{ 'arrow-down-circle' if pendencia.tipo_credito_debito == 'CREDITO' else 'arrow-up-circle' }}"></i>
+                                        {{ 'Crédito' if pendencia.tipo_credito_debito == 'CREDITO' else 'Débito' }}
+                                    </span>
+                                    {% else %}
+                                    <span class="text-muted">—</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if pendencia.nota_fiscal_arquivo %}
+                                    <a href="{{ url_for('main.baixar_anexo', pendencia_id=pendencia.id) }}"
+                                        class="btn btn-sm btn-outline-primary" title="Baixar anexo">
+                                        <i class="bi bi-download"></i> Anexo
+                                    </a>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if pendencia.status == 'PENDENTE OPERADOR UP' %}
+                                    <div class="btn-group" role="group">
+                                        <a href="{{ url_for('main.operador_natureza_operacao', id=pendencia.id) }}"
+                                            class="btn btn-primary btn-sm">
+                                            <i class="bi bi-pencil-square"></i> Informar Natureza
+                                        </a>
+                                        <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal"
+                                            data-bs-target="#modalRecusar{{ pendencia.id }}"
+                                            title="Recusar resposta e solicitar complemento">
+                                            <i class="bi bi-x-circle"></i> Recusar
+                                        </button>
+                                    </div>
+                                    {% elif pendencia.status == 'DEVOLVIDA AO OPERADOR' %}
+                                    <div class="btn-group" role="group">
+                                        <a href="{{ url_for('main.operador_natureza_operacao', id=pendencia.id) }}"
+                                            class="btn btn-warning btn-sm">
+                                            <i class="bi bi-arrow-clockwise"></i> Corrigir e Reenviar
+                                        </a>
+                                        <button type="button" class="btn btn-info btn-sm" data-bs-toggle="modal"
+                                            data-bs-target="#modalMotivoRecusa{{ pendencia.id }}"
+                                            title="Ver motivo da recusa">
+                                            <i class="bi bi-info-circle"></i> Ver Motivo
+                                        </button>
+                                    </div>
+                                    {% elif pendencia.status == 'PENDENTE COMPLEMENTO CLIENTE' %}
+                                    <span class="badge bg-warning text-dark">
+                                        <i class="bi bi-clock"></i> Aguardando Cliente
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{{ pendencia.status }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm"
+                                        data-bs-toggle="modal" data-bs-target="#modalHistorico{{ pendencia.id }}">
+                                        <i class="bi bi-clock-history"></i> Histórico
+                                    </button>
+                                </td>
                             </tr>
                             {% else %}
-                            <tr><td colspan="7" class="text-center">Nenhum histórico para esta pendência.</td></tr>
+                            <tr>
+                                <td colspan="10" class="text-center text-muted">
+                                    <i class="bi bi-check-circle"></i> Nenhuma pendência aguardando operador.
+                                </td>
+                            </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
-    </div>
-</div>
-{% endfor %}
+    </form>
+    <script>
+        // Seleção em lote
+        const checkAll = document.getElementById('checkAll');
+        const checks = document.querySelectorAll('.checkPendencia');
+        const btnLote = document.getElementById('btnLoteEnviar');
+        if (checkAll) {
+            checkAll.addEventListener('change', function () {
+                document.querySelectorAll('.checkPendencia').forEach(c => c.checked = this.checked);
+                btnLote.style.display = document.querySelectorAll('.checkPendencia:checked').length ? '' : 'none';
+            });
+        }
+        document.querySelectorAll('.checkPendencia').forEach(c => {
+            c.addEventListener('change', function () {
+                btnLote.style.display = document.querySelectorAll('.checkPendencia:checked').length ? '' : 'none';
+            });
+        });
+    </script>
 
-{# MODAIS DE RECUSA #}
-{% for pendencia in pendencias %}
-{% if pendencia.status == 'PENDENTE OPERADOR UP' %}
-<div class="modal fade" id="modalRecusar{{ pendencia.id }}" tabindex="-1" aria-labelledby="modalRecusarLabel{{ pendencia.id }}" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modalRecusarLabel{{ pendencia.id }}">
-                    <i class="bi bi-x-circle text-warning"></i> Recusar Resposta - Pendência #{{ pendencia.id }}
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+    {# MODAIS DE HISTÓRICO #}
+    {% for pendencia in pendencias %}
+    <div class="modal fade" id="modalHistorico{{ pendencia.id }}" tabindex="-1"
+        aria-labelledby="modalHistoricoLabel{{ pendencia.id }}" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalHistoricoLabel{{ pendencia.id }}">Histórico da Pendência #{{
+                        pendencia.id }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Data/Hora</th>
+                                    <th>Usuário</th>
+                                    <th>Tipo</th>
+                                    <th>Ação</th>
+                                    <th>Campo Alterado</th>
+                                    <th>Valor Anterior</th>
+                                    <th>Valor Novo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for log in pendencia.logs|default([]) %}
+                                <tr>
+                                    <td>{{ log.data_hora.strftime('%d/%m/%Y %H:%M:%S') }}</td>
+                                    <td>{{ log.usuario }}</td>
+                                    <td>{{ log.tipo_usuario }}</td>
+                                    <td>{{ log.acao }}</td>
+                                    <td>{{ log.campo_alterado or '-' }}</td>
+                                    <td>{{ log.valor_anterior or '-' }}</td>
+                                    <td>{{ log.valor_novo or '-' }}</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="7" class="text-center">Nenhum histórico para esta pendência.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
-            <form method="POST" action="{{ url_for('operador_recusar_resposta', id=pendencia.id) }}">
+        </div>
+    </div>
+    {% endfor %}
+
+    {# MODAIS DE RECUSA #}
+    {% for pendencia in pendencias %}
+    {% if pendencia.status == 'PENDENTE OPERADOR UP' %}
+    <div class="modal fade" id="modalRecusar{{ pendencia.id }}" tabindex="-1"
+        aria-labelledby="modalRecusarLabel{{ pendencia.id }}" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalRecusarLabel{{ pendencia.id }}">
+                        <i class="bi bi-x-circle text-warning"></i> Recusar Resposta - Pendência #{{ pendencia.id }}
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+                <form method="POST" action="{{ url_for('main.operador_recusar_resposta', id=pendencia.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <div class="modal-body">
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <strong>Atenção!</strong> Ao recusar a resposta, a pendência será devolvida ao cliente para
+                            complemento.
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="motivo_recusa{{ pendencia.id }}" class="form-label">
+                                <strong>Motivo da Recusa *</strong>
+                            </label>
+                            <textarea class="form-control" id="motivo_recusa{{ pendencia.id }}" name="motivo_recusa"
+                                rows="4" required
+                                placeholder="Informe detalhadamente o que está faltando ou incompleto na resposta do cliente..."></textarea>
+                            <div class="form-text">
+                                Ex: "Falta anexar a nota fiscal", "Informações insuficientes sobre o serviço",
+                                "Documento ilegível"
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label"><strong>Resposta Atual do Cliente:</strong></label>
+                            <div class="border rounded p-2 bg-light">
+                                {{ pendencia.resposta_cliente or 'Nenhuma resposta fornecida' }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x"></i> Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-warning">
+                            <i class="bi bi-x-circle"></i> Confirmar Recusa
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    {% endfor %}
+
+    {# MODAIS DE MOTIVO DE RECUSA DO SUPERVISOR #}
+    {% for pendencia in pendencias %}
+    {% if pendencia.status == 'DEVOLVIDA AO OPERADOR' and pendencia.motivo_recusa_supervisor %}
+    <div class="modal fade" id="modalMotivoRecusa{{ pendencia.id }}" tabindex="-1"
+        aria-labelledby="modalMotivoRecusaLabel{{ pendencia.id }}" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title" id="modalMotivoRecusaLabel{{ pendencia.id }}">
+                        <i class="bi bi-exclamation-triangle"></i> Motivo da Recusa - Pendência #{{ pendencia.id }}
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
                 <div class="modal-body">
                     <div class="alert alert-warning">
-                        <i class="bi bi-exclamation-triangle"></i>
-                        <strong>Atenção!</strong> Ao recusar a resposta, a pendência será devolvida ao cliente para complemento.
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Pendência devolvida pelo Supervisor</strong><br>
+                        Esta pendência foi recusada e devolvida para correção.
                     </div>
-                    
+
                     <div class="mb-3">
-                        <label for="motivo_recusa{{ pendencia.id }}" class="form-label">
-                            <strong>Motivo da Recusa *</strong>
-                        </label>
-                        <textarea class="form-control" id="motivo_recusa{{ pendencia.id }}" name="motivo_recusa" 
-                                  rows="4" required placeholder="Informe detalhadamente o que está faltando ou incompleto na resposta do cliente..."></textarea>
-                        <div class="form-text">
-                            Ex: "Falta anexar a nota fiscal", "Informações insuficientes sobre o serviço", "Documento ilegível"
+                        <label class="form-label"><strong>Motivo da Recusa:</strong></label>
+                        <div class="border rounded p-3 bg-light">
+                            <i class="bi bi-chat-quote"></i>
+                            {{ pendencia.motivo_recusa_supervisor }}
                         </div>
                     </div>
-                    
+
                     <div class="mb-3">
-                        <label class="form-label"><strong>Resposta Atual do Cliente:</strong></label>
+                        <label class="form-label"><strong>Natureza de Operação Atual:</strong></label>
                         <div class="border rounded p-2 bg-light">
-                            {{ pendencia.resposta_cliente or 'Nenhuma resposta fornecida' }}
+                            {{ pendencia.natureza_operacao or 'Não informada' }}
                         </div>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="bi bi-lightbulb"></i>
+                        <strong>Próximos passos:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>Analise o motivo da recusa</li>
+                            <li>Corrija as informações conforme solicitado</li>
+                            <li>Clique em "Corrigir e Reenviar" para enviar novamente ao supervisor</li>
+                        </ul>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="bi bi-x"></i> Cancelar
+                        <i class="bi bi-x"></i> Fechar
                     </button>
-                    <button type="submit" class="btn btn-warning">
-                        <i class="bi bi-x-circle"></i> Confirmar Recusa
-                    </button>
+                    <a href="{{ url_for('main.operador_natureza_operacao', id=pendencia.id) }}" class="btn btn-warning">
+                        <i class="bi bi-arrow-clockwise"></i> Corrigir e Reenviar
+                    </a>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
-</div>
-{% endif %}
-{% endfor %}
+    {% endif %}
+    {% endfor %}
 
-{# MODAIS DE MOTIVO DE RECUSA DO SUPERVISOR #}
-{% for pendencia in pendencias %}
-{% if pendencia.status == 'DEVOLVIDA AO OPERADOR' and pendencia.motivo_recusa_supervisor %}
-<div class="modal fade" id="modalMotivoRecusa{{ pendencia.id }}" tabindex="-1" aria-labelledby="modalMotivoRecusaLabel{{ pendencia.id }}" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-warning text-dark">
-                <h5 class="modal-title" id="modalMotivoRecusaLabel{{ pendencia.id }}">
-                    <i class="bi bi-exclamation-triangle"></i> Motivo da Recusa - Pendência #{{ pendencia.id }}
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-            </div>
-            <div class="modal-body">
-                <div class="alert alert-warning">
-                    <i class="bi bi-info-circle"></i>
-                    <strong>Pendência devolvida pelo Supervisor</strong><br>
-                    Esta pendência foi recusada e devolvida para correção.
+    {# MODAL DE AJUDA CONTEXTUAL #}
+    <div class="modal fade" id="modalAjudaOperador" tabindex="-1" aria-labelledby="modalAjudaOperadorLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalAjudaOperadorLabel"><i class="bi bi-question-circle"></i> Dicas
+                        para Operadores</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
                 </div>
-                
-                <div class="mb-3">
-                    <label class="form-label"><strong>Motivo da Recusa:</strong></label>
-                    <div class="border rounded p-3 bg-light">
-                        <i class="bi bi-chat-quote"></i>
-                        {{ pendencia.motivo_recusa_supervisor }}
-                    </div>
-                </div>
-                
-                <div class="mb-3">
-                    <label class="form-label"><strong>Natureza de Operação Atual:</strong></label>
-                    <div class="border rounded p-2 bg-light">
-                        {{ pendencia.natureza_operacao or 'Não informada' }}
-                    </div>
-                </div>
-                
-                <div class="alert alert-info">
-                    <i class="bi bi-lightbulb"></i>
-                    <strong>Próximos passos:</strong>
-                    <ul class="mb-0 mt-2">
-                        <li>Analise o motivo da recusa</li>
-                        <li>Corrija as informações conforme solicitado</li>
-                        <li>Clique em "Corrigir e Reenviar" para enviar novamente ao supervisor</li>
+                <div class="modal-body">
+                    <ul>
+                        <li><b>Pendências prioritárias</b> aparecem no topo: mais antigas e de valor alto são destacadas
+                            em vermelho.</li>
+                        <li>Use os <b>filtros rápidos</b> para encontrar pendências por prazo, valor, empresa ou tipo.
+                        </li>
+                        <li>O campo <b>Busca Avançada</b> permite pesquisar por qualquer termo: fornecedor, valor, data,
+                            status, etc.</li>
+                        <li><b>Para pendências "Aguardando Operador":</b>
+                            <ul>
+                                <li>Clique em <b>Informar Natureza</b> para aceitar e encaminhar ao supervisor.</li>
+                                <li>Clique em <b>Recusar</b> se a resposta estiver incompleta, informando o motivo.</li>
+                            </ul>
+                        </li>
+                        <li><b>Para pendências "Aguardando Cliente":</b> O cliente foi notificado para complementar a
+                            resposta.</li>
+                        <li>Clique em <b>Histórico</b> para ver todas as ações realizadas na pendência.</li>
+                        <li>Pendências com mais de 7 dias ou valor acima de R$ 5.000 são consideradas críticas.</li>
+                        <li>Após enviar ao supervisor, você não poderá mais editar a pendência.</li>
+                        <li>Se tiver dúvidas, procure o supervisor ou consulte o manual do sistema.</li>
                     </ul>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                    <i class="bi bi-x"></i> Fechar
-                </button>
-                <a href="{{ url_for('operador_natureza_operacao', id=pendencia.id) }}" class="btn btn-warning">
-                    <i class="bi bi-arrow-clockwise"></i> Corrigir e Reenviar
-                </a>
-            </div>
         </div>
     </div>
-</div>
-{% endif %}
-{% endfor %}
-
-{# MODAL DE AJUDA CONTEXTUAL #}
-<div class="modal fade" id="modalAjudaOperador" tabindex="-1" aria-labelledby="modalAjudaOperadorLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modalAjudaOperadorLabel"><i class="bi bi-question-circle"></i> Dicas para Operadores</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
-            </div>
-            <div class="modal-body">
-                <ul>
-                    <li><b>Pendências prioritárias</b> aparecem no topo: mais antigas e de valor alto são destacadas em vermelho.</li>
-                    <li>Use os <b>filtros rápidos</b> para encontrar pendências por prazo, valor, empresa ou tipo.</li>
-                    <li>O campo <b>Busca Avançada</b> permite pesquisar por qualquer termo: fornecedor, valor, data, status, etc.</li>
-                    <li><b>Para pendências "Aguardando Operador":</b>
-                        <ul>
-                            <li>Clique em <b>Informar Natureza</b> para aceitar e encaminhar ao supervisor.</li>
-                            <li>Clique em <b>Recusar</b> se a resposta estiver incompleta, informando o motivo.</li>
-                        </ul>
-                    </li>
-                    <li><b>Para pendências "Aguardando Cliente":</b> O cliente foi notificado para complementar a resposta.</li>
-                    <li>Clique em <b>Histórico</b> para ver todas as ações realizadas na pendência.</li>
-                    <li>Pendências com mais de 7 dias ou valor acima de R$ 5.000 são consideradas críticas.</li>
-                    <li>Após enviar ao supervisor, você não poderá mais editar a pendência.</li>
-                    <li>Se tiver dúvidas, procure o supervisor ou consulte o manual do sistema.</li>
-                </ul>
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %} 
+    {% endblock %}

@@ -5,7 +5,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>Listagem de Pendências</h2>
         <div>
-            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+            <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary">
                 <i class="bi bi-arrow-left"></i> Voltar ao Dashboard
             </a>
         </div>
@@ -14,9 +14,9 @@
     <!-- Breadcrumbs -->
     <nav aria-label="breadcrumb" class="mb-3">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{ url_for('pre_dashboard') }}">Empresas</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('main.pre_dashboard') }}">Empresas</a></li>
             {% if empresa %}
-            <li class="breadcrumb-item"><a href="{{ url_for('dashboard', empresa=empresa) }}">{{ empresa }}</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard', empresa=empresa) }}">{{ empresa }}</a></li>
             {% endif %}
             <li class="breadcrumb-item active">Pendências</li>
         </ol>
@@ -30,13 +30,13 @@
             {% if filtros.empresa %}
             <span class="badge bg-primary d-flex align-items-center">
                 Empresa: {{ filtros.empresa }}
-                <a href="{{ url_for('listar_pendencias', status=filtros.status) }}" class="text-white ms-2" style="text-decoration: none;">×</a>
+                <a href="{{ url_for('main.listar_pendencias', status=filtros.status) }}" class="text-white ms-2" style="text-decoration: none;">×</a>
             </span>
             {% endif %}
             {% if filtros.status %}
             <span class="badge bg-success d-flex align-items-center">
                 Status: {{ filtros.status }}
-                <a href="{{ url_for('listar_pendencias', empresa=filtros.empresa) }}" class="text-white ms-2" style="text-decoration: none;">×</a>
+                <a href="{{ url_for('main.listar_pendencias', empresa=filtros.empresa) }}" class="text-white ms-2" style="text-decoration: none;">×</a>
             </span>
             {% endif %}
             <span class="badge bg-info d-flex align-items-center">
@@ -84,7 +84,7 @@
                     </button>
                 </div>
                 <div class="col-md-2 d-flex align-items-end">
-                    <a href="{{ url_for('listar_pendencias') }}" class="btn btn-outline-secondary w-100">
+                    <a href="{{ url_for('main.listar_pendencias') }}" class="btn btn-outline-secondary w-100">
                         <i class="bi bi-x-circle"></i> Limpar
                     </a>
                 </div>
@@ -104,7 +104,7 @@
         </div>
         <div class="col-md-6 text-end">
             {% if pager.total > 0 %}
-            <a href="{{ url_for('exportar_pendencias_csv', empresa=empresa, status=status) }}" class="btn btn-success">
+            <a href="{{ url_for('main.exportar_pendencias_csv', empresa=empresa, status=status) }}" class="btn btn-success">
                 <i class="bi bi-download"></i> Exportar CSV
             </a>
             {% endif %}
@@ -171,12 +171,12 @@
                     </td>
                     <td>
                         <div class="btn-group" role="group">
-                            <a href="{{ url_for('ver_pendencia', token=pendencia.token_acesso, next=request.full_path) }}" 
+                            <a href="{{ url_for('main.ver_pendencia', token=pendencia.token_acesso, next=request.full_path) }}" 
                                class="btn btn-sm btn-outline-primary" title="Ver detalhes">
                                 <i class="bi bi-eye"></i>
                             </a>
                             {% if session['usuario_tipo'] in ['adm', 'supervisor'] %}
-                            <a href="{{ url_for('editar_pendencia', id=pendencia.id, next=request.full_path) }}" 
+                            <a href="{{ url_for('main.editar_pendencia', id=pendencia.id, next=request.full_path) }}" 
                                class="btn btn-sm btn-outline-warning" title="Editar">
                                 <i class="bi bi-pencil"></i>
                             </a>
@@ -195,7 +195,7 @@
         <ul class="pagination justify-content-center">
             {% if pager.has_prev %}
             <li class="page-item">
-                <a class="page-link" href="{{ url_for('listar_pendencias', page=pager.prev_num, empresa=empresa, status=status, per_page=pager.per_page) }}">
+                <a class="page-link" href="{{ url_for('main.listar_pendencias', page=pager.prev_num, empresa=empresa, status=status, per_page=pager.per_page) }}">
                     <i class="bi bi-chevron-left"></i> Anterior
                 </a>
             </li>
@@ -205,7 +205,7 @@
                 {% if page_num %}
                     {% if page_num != pager.page %}
                     <li class="page-item">
-                        <a class="page-link" href="{{ url_for('listar_pendencias', page=page_num, empresa=empresa, status=status, per_page=pager.per_page) }}">
+                        <a class="page-link" href="{{ url_for('main.listar_pendencias', page=page_num, empresa=empresa, status=status, per_page=pager.per_page) }}">
                             {{ page_num }}
                         </a>
                     </li>
@@ -223,7 +223,7 @@
             
             {% if pager.has_next %}
             <li class="page-item">
-                <a class="page-link" href="{{ url_for('listar_pendencias', page=pager.next_num, empresa=empresa, status=status, per_page=pager.per_page) }}">
+                <a class="page-link" href="{{ url_for('main.listar_pendencias', page=pager.next_num, empresa=empresa, status=status, per_page=pager.per_page) }}">
                     Próxima <i class="bi bi-chevron-right"></i>
                 </a>
             </li>
@@ -249,11 +249,11 @@
             {% endif %}
         </p>
         <div class="mt-3">
-            <a href="{{ url_for('listar_pendencias') }}" class="btn btn-primary">
+            <a href="{{ url_for('main.listar_pendencias') }}" class="btn btn-primary">
                 <i class="bi bi-arrow-clockwise"></i> Ver todas as pendências
             </a>
             {% if empresa %}
-            <a href="{{ url_for('dashboard', empresa=empresa) }}" class="btn btn-outline-secondary">
+            <a href="{{ url_for('main.dashboard', empresa=empresa) }}" class="btn btn-outline-secondary">
                 <i class="bi bi-arrow-left"></i> Voltar para {{ empresa }}
             </a>
             {% endif %}

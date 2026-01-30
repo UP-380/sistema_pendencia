@@ -6,7 +6,7 @@
 <div class="container mt-4">
     <nav aria-label="breadcrumb" class="mb-4">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{ url_for('pre_dashboard') }}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('main.pre_dashboard') }}">Home</a></li>
             <li class="breadcrumb-item active" aria-current="page">Gerenciar Empresas</li>
         </ol>
     </nav>
@@ -16,7 +16,7 @@
             <i class="bi bi-building me-2"></i>
             Gerenciar Empresas
         </h1>
-        <a href="{{ url_for('nova_empresa') }}" class="btn btn-primary">
+        <a href="{{ url_for('main.nova_empresa') }}" class="btn btn-primary">
             <i class="bi bi-plus-circle me-2"></i>
             Nova Empresa
         </a>
@@ -94,7 +94,7 @@
                             </td>
                             <td>
                                 <div class="btn-group" role="group">
-                                    <a href="{{ url_for('editar_empresa', id=empresa.id) }}" 
+                                    <a href="{{ url_for('main.editar_empresa', id=empresa.id) }}" 
                                        class="btn btn-sm btn-warning"
                                        title="Editar empresa">
                                         <i class="bi bi-pencil me-1"></i>Editar
@@ -210,6 +210,7 @@
                     Cancelar
                 </button>
                 <form id="formDelecaoEmpresa" method="POST" style="display: inline;">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <button type="submit" class="btn btn-danger">
                         <i class="bi bi-trash me-2"></i>
                         Sim, Excluir

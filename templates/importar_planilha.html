@@ -14,24 +14,47 @@
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
                         <!-- TIPOS ATUALIZADOS -->
-                        <li><a class="dropdown-item" href="{{ url_for('download_modelo_pendencias', tipo='CARTAO_NAO_IDENTIFICADO') }}">Cartão de Crédito Não Identificado</a></li>
-                        <li><a class="dropdown-item" href="{{ url_for('download_modelo_pendencias', tipo='PAGAMENTO_NAO_IDENTIFICADO') }}">Pagamento Não Identificado</a></li>
-                        <li><a class="dropdown-item" href="{{ url_for('download_modelo_pendencias', tipo='RECEBIMENTO_NAO_IDENTIFICADO') }}">Recebimento Não Identificado</a></li>
-                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item"
+                                href="{{ url_for('main.download_modelo_pendencias', tipo='CARTAO_NAO_IDENTIFICADO') }}">Cartão
+                                de Crédito Não Identificado</a></li>
+                        <li><a class="dropdown-item"
+                                href="{{ url_for('main.download_modelo_pendencias', tipo='PAGAMENTO_NAO_IDENTIFICADO') }}">Pagamento
+                                Não Identificado</a></li>
+                        <li><a class="dropdown-item"
+                                href="{{ url_for('main.download_modelo_pendencias', tipo='RECEBIMENTO_NAO_IDENTIFICADO') }}">Recebimento
+                                Não Identificado</a></li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
                         <!-- NOVOS TIPOS CONSOLIDADOS -->
-                        <li><a class="dropdown-item" href="{{ url_for('download_modelo_pendencias', tipo='DOCUMENTO_NAO_ANEXADO') }}">Documento Não Anexado</a></li>
-                        <li><a class="dropdown-item" href="{{ url_for('download_modelo_pendencias', tipo='LANCAMENTO_NAO_ENCONTRADO_EXTRATO') }}">Lançamento Não Encontrado em Extrato</a></li>
-                        <li><a class="dropdown-item" href="{{ url_for('download_modelo_pendencias', tipo='LANCAMENTO_NAO_ENCONTRADO_SISTEMA') }}">Lançamento Não Encontrado em Sistema</a></li>
-                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item"
+                                href="{{ url_for('main.download_modelo_pendencias', tipo='DOCUMENTO_NAO_ANEXADO') }}">Documento
+                                Não Anexado</a></li>
+                        <li><a class="dropdown-item"
+                                href="{{ url_for('main.download_modelo_pendencias', tipo='LANCAMENTO_NAO_ENCONTRADO_EXTRATO') }}">Lançamento
+                                Não Encontrado em Extrato</a></li>
+                        <li><a class="dropdown-item"
+                                href="{{ url_for('main.download_modelo_pendencias', tipo='LANCAMENTO_NAO_ENCONTRADO_SISTEMA') }}">Lançamento
+                                Não Encontrado em Sistema</a></li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
                         <!-- TIPOS ESPECIALIZADOS -->
-                        <li><a class="dropdown-item" href="{{ url_for('download_modelo_pendencias', tipo='NATUREZA_ERRADA') }}">Natureza Errada</a></li>
-                        <li><a class="dropdown-item" href="{{ url_for('download_modelo_pendencias', tipo='COMPETENCIA_ERRADA') }}">Competência Errada</a></li>
-                        <li><a class="dropdown-item" href="{{ url_for('download_modelo_pendencias', tipo='DATA_BAIXA_ERRADA') }}">Data da Baixa Errada</a></li>
+                        <li><a class="dropdown-item"
+                                href="{{ url_for('main.download_modelo_pendencias', tipo='NATUREZA_ERRADA') }}">Natureza
+                                Errada</a></li>
+                        <li><a class="dropdown-item"
+                                href="{{ url_for('main.download_modelo_pendencias', tipo='COMPETENCIA_ERRADA') }}">Competência
+                                Errada</a></li>
+                        <li><a class="dropdown-item"
+                                href="{{ url_for('main.download_modelo_pendencias', tipo='DATA_BAIXA_ERRADA') }}">Data
+                                da Baixa Errada</a></li>
                     </ul>
                 </div>
             </div>
             <div class="card-body">
                 <form id="form-importar" method="POST" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                     <!-- Seleção do tipo da planilha (obrigatório) -->
                     <div class="mb-3">
                         <label class="form-label">Tipo desta Planilha</label>
@@ -44,8 +67,10 @@
                             </optgroup>
                             <optgroup label="Novos Tipos Consolidados">
                                 <option value="DOCUMENTO_NAO_ANEXADO">Documento Não Anexado</option>
-                                <option value="LANCAMENTO_NAO_ENCONTRADO_EXTRATO">Lançamento Não Encontrado em Extrato</option>
-                                <option value="LANCAMENTO_NAO_ENCONTRADO_SISTEMA">Lançamento Não Encontrado em Sistema</option>
+                                <option value="LANCAMENTO_NAO_ENCONTRADO_EXTRATO">Lançamento Não Encontrado em Extrato
+                                </option>
+                                <option value="LANCAMENTO_NAO_ENCONTRADO_SISTEMA">Lançamento Não Encontrado em Sistema
+                                </option>
                             </optgroup>
                             <optgroup label="Tipos Especializados">
                                 <option value="NATUREZA_ERRADA">Natureza Errada</option>
@@ -55,51 +80,57 @@
                         </select>
                         <div class="form-text">O arquivo enviado será validado de acordo com este tipo.</div>
                     </div>
-                    
+
                     <!-- Empresa (contexto) -->
                     {% if empresa_id_contexto %}
-                        <input type="hidden" name="empresa_id" value="{{ empresa_id_contexto }}">
-                        <div class="mb-3">
-                            <label class="form-label">Empresa</label>
-                            <input type="text" class="form-control" value="{{ empresas[0] }}" disabled>
-                            <div class="form-text">Empresa pré-selecionada pelo contexto.</div>
-                        </div>
+                    <input type="hidden" name="empresa_id" value="{{ empresa_id_contexto }}">
+                    <div class="mb-3">
+                        <label class="form-label">Empresa</label>
+                        <input type="text" class="form-control" value="{{ empresas[0].nome }}" disabled>
+                        <div class="form-text">Empresa pré-selecionada pelo contexto.</div>
+                    </div>
                     {% else %}
-                        <div class="mb-3">
-                            <label for="empresa" class="form-label">Empresa</label>
-                            <select class="form-select" id="empresa" name="empresa" required>
-                                {% for emp in empresas %}
-                                    <option value="{{ emp }}">{{ emp }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
+                    <div class="mb-3">
+                        <label for="empresa_id" class="form-label">Empresa</label>
+                        <select class="form-select" id="empresa_id" name="empresa_id">
+                            <option value="">Selecione uma empresa...</option>
+                            {% for emp in empresas %}
+                            <option value="{{ emp.id }}">{{ emp.nome }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Deixe em branco se a planilha já contém a coluna "empresa"</div>
+                    </div>
                     {% endif %}
-                    
+
                     <div class="mb-3">
                         <label for="arquivo" class="form-label">Selecione o arquivo Excel (.xlsx)</label>
                         <input type="file" class="form-control" id="arquivo" name="arquivo" accept=".xlsx" required>
                     </div>
-                    
+
                     <div class="alert alert-info">
                         <h6><i class="bi bi-info-circle"></i> Instruções importantes:</h6>
                         <ul class="mb-0">
-                            <li><strong>Datas:</strong> Use formato YYYY-MM-DD (ex: 2025-08-18) ou DD/MM/YYYY (ex: 18/08/2025)</li>
+                            <li><strong>Datas:</strong> Use formato YYYY-MM-DD (ex: 2025-08-18) ou DD/MM/YYYY (ex:
+                                18/08/2025)</li>
                             <li><strong>Valores:</strong> Use ponto como separador decimal (ex: 1500.50)</li>
-                            <li><strong>Campos obrigatórios:</strong> Serão validados automaticamente conforme o tipo selecionado</li>
+                            <li><strong>Campos obrigatórios:</strong> Serão validados automaticamente conforme o tipo
+                                selecionado</li>
                         </ul>
                     </div>
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-primary">
-                            <span id="spinner-importar" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                            <span id="spinner-importar" class="spinner-border spinner-border-sm d-none" role="status"
+                                aria-hidden="true"></span>
                             <span id="btn-text">Importar Planilha</span>
                         </button>
-                        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+                        <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary">
                             <i class="bi bi-x-circle"></i> Cancelar
                         </a>
                     </div>
                 </form>
                 <div class="mt-3">
-                    <small class="text-muted">Apenas administradores podem importar pendências. Use o modelo correto para cada tipo.</small>
+                    <small class="text-muted">Apenas administradores podem importar pendências. Use o modelo correto
+                        para cada tipo.</small>
                 </div>
             </div>
         </div>
@@ -129,6 +160,7 @@
         </table>
     </div>
     <form method="post" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
         <input type="hidden" name="confirmar_importacao" value="1">
         <button type="submit" class="btn btn-success mt-2">Confirmar Importação</button>
     </form>
@@ -146,9 +178,9 @@
 </div>
 {% endif %}
 <script>
-document.getElementById('form-importar').addEventListener('submit', function() {
-    document.getElementById('spinner-importar').classList.remove('d-none');
-    document.getElementById('btn-text').textContent = 'Importando...';
-});
+    document.getElementById('form-importar').addEventListener('submit', function () {
+        document.getElementById('spinner-importar').classList.remove('d-none');
+        document.getElementById('btn-text').textContent = 'Importando...';
+    });
 </script>
-{% endblock %} 
+{% endblock %}

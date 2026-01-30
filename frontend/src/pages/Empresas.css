@@ -1,0 +1,304 @@
+.empresas-container {
+  width: 100%;
+  max-width: 100%;
+  padding: 0;
+  margin: 0;
+  background-color: #f8f9fa;
+  /* Fundo suave para a página toda */
+  min-height: 100vh;
+}
+
+.empresas-container .container-fluid {
+  padding: 2rem;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+/* Header da Página */
+.page-header-empresas {
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.page-header-empresas h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1e293b;
+  /* Dark slate */
+  letter-spacing: -0.025em;
+}
+
+/* Filtros */
+.filtro-datas {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  margin-bottom: 2rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+}
+
+.filtro-datas h5 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 1.25rem !important;
+  display: flex;
+  align-items: center;
+}
+
+.filtro-datas label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #64748b;
+  margin-bottom: 0.5rem;
+}
+
+/* Cards de Gráficos */
+.card-grafico {
+  background: white;
+  height: 100%;
+  padding: 1.5rem !important;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card-grafico:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+}
+
+.card-grafico-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+/* Grid de Empresas */
+.empresas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+/* NOVO DESIGN DO CARD DE EMPRESA */
+.card-empresa {
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  padding: 1.5rem;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+  overflow: hidden;
+}
+
+.card-empresa:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+  border-color: #cbd5e1;
+}
+
+/* Barra lateral colorida indicando status (opcional, mas elegante) */
+.card-empresa::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: #3b82f6;
+  /* Azul padrão */
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.card-empresa:hover::after {
+  opacity: 1;
+}
+
+/* Header do Card */
+.card-empresa-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.card-empresa-identificacao {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.card-empresa-avatar {
+  width: 48px;
+  height: 48px;
+  background: #eff6ff;
+  /* Azul muito claro */
+  color: #2563eb;
+  /* Azul forte */
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.card-empresa-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.card-empresa-nome {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1.4;
+}
+
+.card-empresa-tipo {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: #f1f5f9;
+  padding: 0.125rem 0.5rem;
+  border-radius: 999px;
+  align-self: flex-start;
+  margin-top: 0.25rem;
+}
+
+/* Métricas do Card */
+.card-empresa-metrics {
+  margin: 1.5rem 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  background: #f8fafc;
+  padding: 1rem;
+  border-radius: 12px;
+}
+
+.metric-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.metric-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.metric-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.metric-value.pendentes {
+  color: #ef4444;
+  /* Vermelho para pendências */
+}
+
+.metric-value.resolvidas {
+  color: #10b981;
+  /* Verde para resolvidos */
+}
+
+/* Ações do Card */
+.card-empresa-footer {
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid #f1f5f9;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+}
+
+.btn-card {
+  width: 100%;
+  padding: 0.625rem 1rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.2s;
+  cursor: pointer;
+  border: none;
+  text-decoration: none;
+}
+
+.btn-card-primary {
+  background: #3b82f6;
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
+}
+
+.btn-card-primary:hover {
+  background: #2563eb;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 8px -1px rgba(59, 130, 246, 0.3);
+  color: white;
+}
+
+.btn-card-secondary {
+  background: white;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+}
+
+.btn-card-secondary:hover {
+  background: #f8fafc;
+  color: #1e293b;
+  border-color: #94a3b8;
+}
+
+.btn-group-card {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .empresas-container .container-fluid {
+    padding: 1rem;
+  }
+
+  .empresas-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .page-header-empresas {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .card-empresa-metrics {
+    grid-template-columns: 1fr 1fr;
+    /* Manter lado a lado mesmo mobile */
+  }
+}
