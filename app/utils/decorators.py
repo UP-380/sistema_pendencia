@@ -5,9 +5,12 @@ def permissao_requerida(*tipos):
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
+            print(f"DEBUG: Verificando permissao para rota {f.__name__}. Session keys: {list(session.keys())}")
             if 'usuario_id' not in session:
+                print("DEBUG: usuario_id nao encontrado na sessao. Redirecionando para login.")
                 return redirect(url_for('auth.login'))
             if session.get('usuario_tipo') not in tipos:
+                print(f"DEBUG: Tipo de usuario {session.get('usuario_tipo')} nao permitido. Esperado: {tipos}")
                 flash('Você não tem permissão para acessar esta página.', 'danger')
                 # Redirecionar para dashboard ao invés de listar_segmentos
                 return redirect(url_for('main.dashboard'))
