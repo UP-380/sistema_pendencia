@@ -21,6 +21,9 @@ PRAGMA user_version;
 -- Para tipo de pendência "Lançamento Não Encontrado em Sistema"
 ALTER TABLE pendencia ADD COLUMN tipo_credito_debito VARCHAR(10);
 
+-- 1.2.B. Adicionar campo ativo em usuario (Correction for missing column)
+ALTER TABLE usuario ADD COLUMN ativo BOOLEAN DEFAULT 1;
+
 -- 1.2. Criar índices de performance
 -- Índices simples para filtros comuns
 CREATE INDEX IF NOT EXISTS idx_pendencia_empresa ON pendencia(empresa);
