@@ -30,6 +30,15 @@ ALTER TABLE empresa ADD COLUMN segmento_id INTEGER REFERENCES segmento(id);
 -- 1.2.D. Adicionar campo data_abertura em pendencia
 ALTER TABLE pendencia ADD COLUMN data_abertura DATETIME;
 
+-- 1.2.G NEW COLUMNS (Missed in previous migration)
+ALTER TABLE pendencia ADD COLUMN natureza_operacao VARCHAR(500);
+ALTER TABLE pendencia ADD COLUMN motivo_recusa VARCHAR(500);
+ALTER TABLE pendencia ADD COLUMN motivo_recusa_supervisor VARCHAR(500);
+ALTER TABLE pendencia ADD COLUMN codigo_lancamento VARCHAR(64);
+ALTER TABLE pendencia ADD COLUMN data_competencia DATE;
+ALTER TABLE pendencia ADD COLUMN data_baixa DATE;
+ALTER TABLE pendencia ADD COLUMN natureza_sistema VARCHAR(120);
+
 -- 1.2.E. Criar tabela permissao_usuario_tipo se nao existir
 CREATE TABLE IF NOT EXISTS permissao_usuario_tipo (
     id INTEGER PRIMARY KEY,
