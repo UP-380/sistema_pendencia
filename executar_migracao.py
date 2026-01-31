@@ -12,9 +12,9 @@ def fazer_backup():
     """Cria backup do banco antes da migração"""
     backup_name = f"pendencias_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db"
     
-    if os.path.exists('pendencias.db'):
+    if os.path.exists('instance/pendencias.db'):
         import shutil
-        shutil.copy2('pendencias.db', backup_name)
+        shutil.copy2('instance/pendencias.db', backup_name)
         print(f"✅ Backup criado: {backup_name}")
         return backup_name
     else:
@@ -39,7 +39,7 @@ def executar_migração():
     # Conectar ao banco
     print("\n2. Conectando ao banco de dados...")
     try:
-        conn = sqlite3.connect('pendencias.db')
+        conn = sqlite3.connect('instance/pendencias.db')
         cursor = conn.cursor()
         print("✅ Conectado com sucesso!")
     except Exception as e:
