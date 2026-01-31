@@ -544,6 +544,48 @@
                 const chevron = document.getElementById(chevronId);
                 if (chevron) chevron.style.transform = 'rotate(90deg)';
             });
+
+            // === MINI SIDEBAR LOGIC (Restored) ===
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('mainContent');
+            const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+            // Função para verificar mobile
+            const checkMobile = () => window.innerWidth <= 768;
+
+            if (sidebar && !checkMobile()) {
+                // Desktop: Modo Mini por padrão
+                sidebar.classList.add('closed');
+                if (mainContent) mainContent.classList.add('sidebar-closed');
+
+                // Hover para abrir
+                sidebar.addEventListener('mouseenter', () => {
+                    sidebar.classList.remove('closed');
+                    sidebar.classList.add('open');
+                    // Não removemos sidebar-closed do mainContent para manter layout fluido (sidebar sobrepõe)
+                });
+
+                // Sair para fechar
+                sidebar.addEventListener('mouseleave', () => {
+                    sidebar.classList.add('closed');
+                    sidebar.classList.remove('open');
+                });
+            }
+
+            // Ajuste ao redimensionar
+            window.addEventListener('resize', () => {
+                const isMobile = checkMobile();
+                if (isMobile) {
+                    sidebar.classList.remove('open');
+                    sidebar.classList.add('closed');
+                    if (mainContent) mainContent.classList.remove('sidebar-closed'); // No mobile, conteudo ocupa tudo
+                } else {
+                    // Desktop: volta para estado mini fechado
+                    sidebar.classList.add('closed');
+                    sidebar.classList.remove('open');
+                    if (mainContent) mainContent.classList.add('sidebar-closed');
+                }
+            });
         });
 
         function ajustarFonte(fator) {

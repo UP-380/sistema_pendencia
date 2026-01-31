@@ -9,7 +9,8 @@ class Config:
     # Banco de Dados
     # Banco de Dados (Caminho Absoluto para evitar erro de split brain app vs root)
     basedir = os.path.abspath(os.path.dirname(__file__))
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'pendencias.db')
+    # Apontando para o banco dentro da pasta instance (que você identificou como o desejado)
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'instance', 'pendencias.db')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # Segurança de Sessão
