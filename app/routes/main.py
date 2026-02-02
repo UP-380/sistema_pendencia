@@ -2044,7 +2044,7 @@ def recusar_resposta_cliente(id):
     """
     if not pode_atuar_como_operador():
         flash('Você não tem permissão para executar esta ação.', 'danger')
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('main.dashboard'))
     
     pendencia = Pendencia.query.get_or_404(id)
     
@@ -2057,7 +2057,7 @@ def recusar_resposta_cliente(id):
     empresas_usuario = obter_empresas_para_usuario()
     if pendencia.empresa not in empresas_usuario:
         flash('Você não tem acesso a esta empresa.', 'danger')
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('main.dashboard'))
     
     motivo_recusa = request.form.get('motivo_recusa')
     if not motivo_recusa:
@@ -2174,7 +2174,7 @@ def relatorio_mensal():
         dt_ini, dt_fim = month_bounds(ref)
     except ValueError:
         flash('Parâmetro "ref" inválido. Use YYYY-MM.', 'danger')
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('main.dashboard'))
 
     empresa_id = request.args.get("empresa_id", type=int)
     mult_empresas = request.args.getlist("empresas")  # usado no modo global (checkboxes)
@@ -2187,7 +2187,7 @@ def relatorio_mensal():
     if empresa_id:
         if empresa_id not in permitidas:
             flash('Você não tem acesso a esta empresa.', 'danger')
-            return redirect(url_for('dashboard'))
+            return redirect(url_for('main.dashboard'))
         empresas_alvo = [empresa_id]
     elif mult_empresas:
         empresas_alvo = [int(x) for x in mult_empresas if int(x) in permitidas]
@@ -2199,7 +2199,7 @@ def relatorio_mensal():
     emps = {e.id: e.nome for e in Empresa.query.filter(Empresa.id.in_(empresas_alvo)).all()}
     if not emps:
         flash('Nenhuma empresa selecionada ou permitida.', 'danger')
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('main.dashboard'))
 
     # --- Base de cálculo do mês ---
     if base == "abertura":
@@ -2831,15 +2831,17 @@ def baixar_anexo(pendencia_id):
     pendencia = Pendencia.query.get_or_404(pendencia_id)
     if not pendencia.nota_fiscal_arquivo:
         flash('Nenhum anexo encontrado para esta pendência.', 'warning')
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('main.dashboard'))
     
-    # Corrigido: usando current_app.static_folder para garantir o caminho absoluto correto
-    arquivo_path = os.path.join(current_app.static_folder, 'notas_fiscais', pendencia.nota_fiscal_arquivo)
-    if not os.path.exists(arquivo_path):
+    # Corrigido: usando send_from_directory que é mais robusto e seguro
+    directory = os.path.join(current_app.static_folder, 'notas_fiscais')
+    
+    if not os.path.exists(os.path.join(directory, pendencia.nota_fiscal_arquivo)):
         flash('Arquivo não encontrado no servidor.', 'error')
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('main.dashboard'))
     
-    return send_file(arquivo_path, as_attachment=True, download_name=pendencia.nota_fiscal_arquivo)
+    from flask import send_from_directory
+    return send_from_directory(directory, pendencia.nota_fiscal_arquivo, as_attachment=True)
 
 def checar_permissao(tipo_usuario, funcionalidade):
     permissao = PermissaoUsuarioTipo.query.filter_by(tipo_usuario=tipo_usuario, funcionalidade=funcionalidade).first()
