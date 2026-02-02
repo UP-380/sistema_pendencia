@@ -400,6 +400,14 @@
                 <div class="sidebar-divider"></div>
 
                 <!-- Principal -->
+                {% if session.get('usuario_tipo') in ['adm', 'supervisor', 'operador'] %}
+                <a href="{{ url_for('main.dashboard_gerencial') }}"
+                    class="sidebar-item {{ 'active' if request.endpoint == 'main.dashboard_gerencial' else '' }}">
+                    <i class="bi bi-pie-chart-fill"></i>
+                    <span class="sidebar-text">Gestão</span>
+                </a>
+                {% endif %}
+
                 <a href="{{ url_for('main.pre_dashboard') }}"
                     class="sidebar-item {{ 'active' if request.endpoint == 'main.pre_dashboard' else '' }}">
                     <i class="bi bi-buildings"></i>
@@ -427,7 +435,7 @@
                             <i class="bi bi-plus-lg"></i>
                             <span class="sidebar-text">Nova Pendência</span>
                         </a>
-                        {% if session.get('usuario_tipo') in ['adm', 'operador'] %}
+                        {% if session.get('usuario_tipo') in ['adm', 'operador', 'supervisor'] %}
                         <a href="{{ url_for('main.importar_planilha') }}"
                             class="sidebar-item sidebar-submenu-item {{ 'active' if request.endpoint == 'main.importar_planilha' else '' }}">
                             <i class="bi bi-file-earmark-arrow-up"></i>
@@ -439,11 +447,13 @@
                             <i class="bi bi-headset"></i>
                             <span class="sidebar-text">Operador</span>
                         </a>
+                        {% if session.get('usuario_tipo') in ['adm', 'supervisor'] %}
                         <a href="{{ url_for('main.supervisor_pendencias') }}"
                             class="sidebar-item sidebar-submenu-item {{ 'active' if request.endpoint == 'main.supervisor_pendencias' else '' }}">
                             <i class="bi bi-person-check"></i>
                             <span class="sidebar-text">Supervisor</span>
                         </a>
+                        {% endif %}
                     </div>
                 </div>
                 {% endif %}
@@ -529,7 +539,6 @@
         {% block content %}{% endblock %}
     </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // Exibe toast para cada mensagem flash
         document.addEventListener('DOMContentLoaded', function () {
@@ -545,58 +554,33 @@
                 if (chevron) chevron.style.transform = 'rotate(90deg)';
             });
 
-            // === MINI SIDEBAR LOGIC (Restored) ===
+            // === MINI SIDEBAR LOGIC ===
             const sidebar = document.getElementById('sidebar');
             const mainContent = document.getElementById('mainContent');
             const sidebarOverlay = document.getElementById('sidebarOverlay');
 
-            // Função para verificar mobile
             const checkMobile = () => window.innerWidth <= 768;
 
             if (sidebar && !checkMobile()) {
-                // Desktop: Modo Mini por padrão
                 sidebar.classList.add('closed');
                 if (mainContent) mainContent.classList.add('sidebar-closed');
 
-                // Hover para abrir
                 sidebar.addEventListener('mouseenter', () => {
                     sidebar.classList.remove('closed');
                     sidebar.classList.add('open');
-                    // Não removemos sidebar-closed do mainContent para manter layout fluido (sidebar sobrepõe)
                 });
 
-                // Sair para fechar
                 sidebar.addEventListener('mouseleave', () => {
                     sidebar.classList.add('closed');
                     sidebar.classList.remove('open');
                 });
             }
-
-            // Ajuste ao redimensionar
-            window.addEventListener('resize', () => {
-                const isMobile = checkMobile();
-                if (isMobile) {
-                    sidebar.classList.remove('open');
-                    sidebar.classList.add('closed');
-                    if (mainContent) mainContent.classList.remove('sidebar-closed'); // No mobile, conteudo ocupa tudo
-                } else {
-                    // Desktop: volta para estado mini fechado
-                    sidebar.classList.add('closed');
-                    sidebar.classList.remove('open');
-                    if (mainContent) mainContent.classList.add('sidebar-closed');
-                }
-            });
         });
-
-        function ajustarFonte(fator) {
-            document.body.style.fontSize = (1 * fator) + 'rem';
-        }
 
         function toggleSubmenu(submenuId) {
             const submenu = document.getElementById(submenuId);
             const chevronId = submenuId.replace('Submenu', 'Chevron');
             const chevron = document.getElementById(chevronId);
-
             if (submenu) {
                 submenu.classList.toggle('open');
                 if (chevron) {
@@ -609,11 +593,9 @@
         function toggleMobileSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebarOverlay');
-
             if (sidebar) {
                 sidebar.classList.toggle('mobile-open');
                 const isOpen = sidebar.classList.contains('mobile-open');
-
                 if (overlay) {
                     if (isOpen) {
                         overlay.classList.add('show');
@@ -624,21 +606,6 @@
                     }
                 }
             }
-        }
-
-        function rolarParaFiltroEmpresas() {
-            var filtro = document.getElementById('filtroEmpresas');
-            if (filtro) {
-                filtro.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                filtro.focus();
-            }
-        }
-
-        function logSuporte() {
-            fetch('/log_suporte', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            }).catch(error => console.log('Erro ao registrar log de suporte:', error));
         }
     </script>
 
@@ -658,6 +625,7 @@
             </div>
         </div>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 
 </html>

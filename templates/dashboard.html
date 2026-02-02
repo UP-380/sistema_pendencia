@@ -629,8 +629,7 @@
     </div>
 </div>
 {% endif %}
-{% if session['usuario_tipo'] in ['cliente', 'cliente_supervisor'] and pendencia.status == 'PENDENTE COMPLEMENTO
-CLIENTE' %}
+{% if session['usuario_tipo'] in ['cliente', 'cliente_supervisor'] and 'PENDENTE COMPLEMENTO' in pendencia.status %}
 <div class="modal fade" id="modalComplementar{{ pendencia.id }}" tabindex="-1"
     aria-labelledby="modalComplementarLabel{{ pendencia.id }}" aria-hidden="true">
     <div class="modal-dialog">
@@ -783,8 +782,7 @@ CLIENTE' %}
                                 <div class="row mb-2">
                                     <div class="col-md-4"><strong>Status:</strong></div>
                                     <div class="col-md-8">
-                                        {% if pendencia.status == 'Pendente Cliente' or pendencia.status == 'PENDENTE
-                                        CLIENTE' %}
+                                        {% if pendencia.status in ['Pendente Cliente', 'PENDENTE CLIENTE'] %}
                                         <span class="badge bg-warning">Pendente Cliente</span>
                                         {% elif pendencia.status == 'PENDENTE OPERADOR UP' %}
                                         <span class="badge bg-info">Operador UP</span>
@@ -950,13 +948,11 @@ CLIENTE' %}
                 {# Botão para CLIENTE e CLIENTE SUPERVISOR #}
                 {% if session['usuario_tipo'] in ['cliente', 'cliente_supervisor'] %}
                 {% if pendencia.status in ['PENDENTE CLIENTE', 'Pendente Cliente'] %}
-                <button type="button" class="btn btn-primary" data-bs-dismiss="modal" data-bs-toggle="modal"
-                    data-bs-target="#modalResponder{{ pendencia.id }}">
+                <button type="button" class="btn btn-primary" onclick="abrirModalResponder({{ pendencia.id }})">
                     <i class="bi bi-chat-dots"></i> Responder Pendência
                 </button>
-                {% elif pendencia.status == 'PENDENTE COMPLEMENTO CLIENTE' %}
-                <button type="button" class="btn btn-warning" data-bs-dismiss="modal" data-bs-toggle="modal"
-                    data-bs-target="#modalComplementar{{ pendencia.id }}">
+                {% elif 'PENDENTE COMPLEMENTO' in pendencia.status %}
+                <button type="button" class="btn btn-warning" onclick="abrirModalComplementar({{ pendencia.id }})">
                     <i class="bi bi-chat-dots"></i> Complementar Resposta
                 </button>
                 {% endif %}
@@ -1306,6 +1302,63 @@ CLIENTE' %}
             row.style.display = show ? '' : 'none';
         });
     }
+
+    // Função para transição segura entre modais (evita bug de backdrop travado)
+    function abrirModalComplementar(pendenciaId) {
+        const modalVerificarEl = document.getElementById('modalVerificar' + pendenciaId);
+        const modalCompEl = document.getElementById('modalComplementar' + pendenciaId);
+
+        if (!modalCompEl) {
+            console.error('Modal complementar não encontrado no DOM para ID:', pendenciaId);
+            // Tenta abrir o modalResponder se for o caso, ou apenas alerta
+            return;
+        }
+
+        const modalVerificar = bootstrap.Modal.getOrCreateInstance(modalVerificarEl);
+        const modalComp = bootstrap.Modal.getOrCreateInstance(modalCompEl);
+
+        if (modalVerificarEl.classList.contains('show')) {
+            modalVerificarEl.addEventListener('hidden.bs.modal', function onHidden() {
+                modalComp.show();
+                modalVerificarEl.removeEventListener('hidden.bs.modal', onHidden);
+            }, { once: true });
+            modalVerificar.hide();
+        } else {
+            modalComp.show();
+        }
+    }
+
+    // Função para transição segura para o modal de resposta
+    function abrirModalResponder(pendenciaId) {
+        const modalVerificarEl = document.getElementById('modalVerificar' + pendenciaId);
+        const modalRespEl = document.getElementById('modalResponder' + pendenciaId);
+
+        if (!modalRespEl) return;
+
+        const modalVerificar = bootstrap.Modal.getOrCreateInstance(modalVerificarEl);
+        const modalResp = bootstrap.Modal.getOrCreateInstance(modalRespEl);
+
+        if (modalVerificarEl.classList.contains('show')) {
+            modalVerificarEl.addEventListener('hidden.bs.modal', function onHidden() {
+                modalResp.show();
+                modalVerificarEl.removeEventListener('hidden.bs.modal', onHidden);
+            }, { once: true });
+            modalVerificar.hide();
+        } else {
+            modalResp.show();
+        }
+    }
+
+    // Limpeza global de backdrops órfãos ao fechar qualquer modal
+    document.addEventListener('hidden.bs.modal', function () {
+        setTimeout(() => {
+            if (document.querySelectorAll('.modal.show').length === 0) {
+                document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+                document.body.classList.remove('modal-open');
+                document.body.style.paddingRight = '';
+            }
+        }, 300); // Atraso maior para garantir transições
+    });
 </script>
 
 {% endblock %}

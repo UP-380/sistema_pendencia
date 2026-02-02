@@ -14,7 +14,7 @@ def obter_empresas_para_usuario():
     Para operador/cliente: apenas empresas permitidas
     """
     if session.get('usuario_tipo') in ['adm', 'supervisor']:
-        # Admin e supervisor veem todas as empresas
+        # Admin e Supervisor veem todas as empresas
         return [empresa.nome for empresa in Empresa.query.order_by(Empresa.nome).all()]
     else:
         # Operador e cliente veem apenas suas empresas permitidas

@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, send_file, Response, make_response, send_from_directory, jsonify, current_app
 from werkzeug.utils import secure_filename
+from werkzeug.security import generate_password_hash
 from datetime import datetime, timedelta
 import os
 import json
@@ -12,7 +13,7 @@ import openpyxl
 import csv
 
 from app.extensions import db, mail
-from app.models import Usuario, Empresa, Segmento, Pendencia, LogAlteracao, Importacao, usuario_empresas
+from app.models import Usuario, Empresa, Segmento, Pendencia, LogAlteracao, Importacao, usuario_empresas, PermissaoUsuarioTipo, PermissaoUsuarioPersonalizada
 from app.services.rules import TIPO_RULES, TIPO_IMPORT_MAP, validar_por_tipo, obter_colunas_por_tipo, obter_colunas_importacao_por_tipo, obter_todas_colunas, validar_row_por_tipo, label_tipo_planilha
 from app.services.business import obter_empresas_para_usuario, pode_atuar_como_operador, pode_atuar_como_supervisor, usuario_tem_acesso, integrar_nova_empresa
 from app.services.email_service import enviar_email_cliente, enviar_email_resposta_recusada
@@ -52,20 +53,7 @@ def inject_globals():
 
 # Rotas de Segmentos
 
-@main_bp.route('/app', defaults={'path': ''})
-@main_bp.route('/app/<path:path>')
-def serve_react_app(path):
-    # Caminho absoluto para a pasta de build do React
-    react_dist_dir = os.path.join(current_app.static_folder, 'react-build')
-    if path != "" and os.path.exists(os.path.join(react_dist_dir, path)):
-        return send_from_directory(react_dist_dir, path)
-    return send_from_directory(react_dist_dir, 'index.html')
 
-@main_bp.route('/assets/<path:path>')
-def serve_react_assets(path):
-    # Servir assets do Vite/React
-    assets_dir = os.path.join(current_app.static_folder, 'react-build', 'assets')
-    return send_from_directory(assets_dir, path)
 
 @main_bp.route('/segmentos')
 @main_bp.route('/')
@@ -160,9 +148,9 @@ def empresa_redirect(id):
     # Validar acesso
     if empresa.nome not in obter_empresas_para_usuario():
         flash('Você não tem acesso a esta empresa.', 'danger')
-        return redirect(url_for('acesso_negado'))
+        return redirect(url_for('main.acesso_negado'))
     
-    return redirect(url_for('dashboard', empresa=empresa.nome))
+    return redirect(url_for('main.dashboard', empresa=empresa.nome))
 
 # ============================================================================
 # FIM DAS ROTAS DE SEGMENTOS
@@ -423,13 +411,18 @@ def api_dados_graficos():
         'resolvidas': resolvidas_count
     })
 
+@main_bp.route('/dashboard-gerencial', methods=['GET'])
+@permissao_requerida('supervisor', 'adm', 'cliente_supervisor', 'operador')
+def dashboard_gerencial():
+    return render_template('dashboard_gerencial.html')
+
 @main_bp.route('/dashboard', methods=['GET'])
 @permissao_requerida('supervisor', 'adm', 'operador', 'cliente', 'cliente_supervisor')
 def dashboard():
     empresas_usuario = obter_empresas_para_usuario()
     if not empresas_usuario:
         flash('Você não tem acesso a nenhuma empresa.', 'warning')
-        return redirect(url_for('pre_dashboard'))
+        return redirect(url_for('main.pre_dashboard'))
     
     empresa_filtro = request.args.get('empresa', empresas_usuario[0])
     tipo_filtro = request.args.get('tipo_pendencia', TIPOS_PENDENCIA[0])
@@ -526,7 +519,7 @@ def nova_pendencia():
     empresas_usuario = obter_empresas_para_usuario()
     if not empresas_usuario:
         flash('Você não tem acesso a nenhuma empresa.', 'warning')
-        return redirect(url_for('pre_dashboard'))
+        return redirect(url_for('main.pre_dashboard'))
     
     # Obter empresa pré-selecionada da query string
     empresa_preselecionada = request.args.get('empresa')
@@ -542,26 +535,38 @@ def nova_pendencia():
             tipo_pendencia = request.form['tipo_pendencia']
             banco = request.form.get('banco', '')
             
+            # Auto-preencher fornecedor para pendências não identificadas
+            fornecedor = request.form.get('fornecedor_cliente', '').strip()
+            tipos_sem_fornecedor = [
+                "Cartão de Crédito Não Identificado",
+                "Pagamento Não Identificado", 
+                "Recebimento Não Identificado"
+            ]
+            
+            if not fornecedor and tipo_pendencia in tipos_sem_fornecedor:
+                fornecedor = "A IDENTIFICAR"
+
             # Preparar payload para validação
             payload = {
                 'tipo_pendencia': tipo_pendencia,
                 'empresa': empresa,
                 'banco': banco,
-                'fornecedor_cliente': request.form.get('fornecedor_cliente', ''),
+                'fornecedor_cliente': fornecedor,
                 'valor': request.form.get('valor', ''),
                 'codigo_lancamento': request.form.get('codigo_lancamento', ''),
                 'data': request.form.get('data', ''),
                 'data_competencia': request.form.get('data_competencia', ''),
                 'data_baixa': request.form.get('data_baixa', ''),
                 'observacao': request.form.get('observacao', ''),
-                'natureza_sistema': request.form.get('natureza_sistema', '')
+                'natureza_sistema': request.form.get('natureza_sistema', ''),
+                'tipo_credito_debito': request.form.get('tipo_credito_debito', '')
             }
             
             # Validar por tipo
             is_valid, error_msg = validar_por_tipo(payload)
             if not is_valid:
                 flash(f'Erro de validação: {error_msg}', 'danger')
-                return redirect(url_for('nova_pendencia'))
+                return redirect(url_for('main.nova_pendencia'))
             
             # Tratar Data da Pendência (pode ser NULL para "Nota Fiscal Não Identificada")
             data_pendencia = request.form.get('data')
@@ -598,7 +603,7 @@ def nova_pendencia():
             # Validar se o usuário tem acesso à empresa selecionada
             if empresa not in empresas_usuario:
                 flash('Você não tem acesso a esta empresa.', 'danger')
-                return redirect(url_for('nova_pendencia'))
+                return redirect(url_for('main.nova_pendencia'))
             
             nova_p = Pendencia(
                 empresa=empresa,
@@ -639,12 +644,12 @@ def nova_pendencia():
             flash('Pendência criada com sucesso!', 'success')
             # Redireciona para o painel correto já filtrado pela empresa
             if session.get('usuario_tipo') == 'supervisor':
-                return redirect(url_for('supervisor_pendencias', empresa=empresa))
+                return redirect(url_for('main.supervisor_pendencias', empresa=empresa))
             else:
-                return redirect(url_for('operador_pendencias', empresa=empresa))
+                return redirect(url_for('main.operador_pendencias', empresa=empresa))
         except Exception as e:
             flash(f'Erro ao criar pendência: {str(e)}', 'error')
-            return redirect(url_for('nova_pendencia'))
+            return redirect(url_for('main.nova_pendencia'))
     
     return render_template('nova_pendencia.html', 
                          empresas=empresas_usuario, 
@@ -779,7 +784,7 @@ def resolver_pendencia(id):
     db.session.add(log)
     db.session.commit()
     flash('Pendência marcada como resolvida!', 'success')
-    return redirect(url_for('dashboard'))
+    return redirect(url_for('main.dashboard'))
 
 @main_bp.route('/baixar_modelo')
 def baixar_modelo():
@@ -981,7 +986,7 @@ def importar_planilha():
                 session.pop('empresa_id_contexto', None)
                 
                 flash('Pendências importadas com sucesso!', 'success')
-                return redirect(url_for('main.dashboard'))
+                return redirect(url_for('main.dashboard_gerencial'))
             except Exception as e:
                 erros.append(f'Erro ao importar: {e}')
         else:
@@ -991,7 +996,7 @@ def importar_planilha():
             
             if not file or not tipo_import:
                 flash('Arquivo e tipo são obrigatórios.', 'error')
-                return render_template('importar_planilha.html', empresas=empresas_usuario, preview=preview, erros=erros, empresa_id_contexto=empresa_id_contexto)
+                return render_template('importar_planilha.html', empresas=empresas, preview=preview, erros=erros, empresa_id_contexto=empresa_id_contexto)
             
             try:
                 # Salvar arquivo temporário
@@ -1107,7 +1112,7 @@ def editar_pendencia(id):
         pendencia.modificado_por = 'ADIMIN UP380'
         db.session.commit()
         flash('Pendência editada com sucesso!', 'success')
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('main.dashboard'))
     return render_template('editar_pendencia.html', pendencia=pendencia, empresas=empresas_usuario, tipos_pendencia=TIPOS_PENDENCIA)
 
 TEAMS_WEBHOOK_URL = "https://upfinance.webhook.office.com/webhookb2/7c8dacfa-6413-4b34-9659-5be33e876493@62d96e16-cfeb-4bad-8803-4a764ac7339a/IncomingWebhook/a6612b3a144d4915bf9bc1171093c8c9/9cdf59ae-5ee6-4c43-8604-31390b2d5425/V21glDBnmGcX-HxLgk_gJxnhqHC79TV9BLey3t5_DzMbU1"
@@ -1136,7 +1141,7 @@ def operador_pendencias():
     empresas_usuario = obter_empresas_para_usuario()
     if not empresas_usuario:
         flash('Você não tem acesso a nenhuma empresa.', 'warning')
-        return redirect(url_for('pre_dashboard'))
+        return redirect(url_for('main.pre_dashboard'))
     
     empresa_filtro = request.args.get('empresa', empresas_usuario[0])
     tipo_filtro = request.args.get('tipo_pendencia', TIPOS_PENDENCIA[0])
@@ -1245,7 +1250,7 @@ def operador_natureza_operacao(id):
     
     if pendencia.status not in ['PENDENTE OPERADOR UP', 'DEVOLVIDA AO OPERADOR']:
         flash('Esta pendência não está disponível para operador.', 'warning')
-        return redirect(url_for('operador_pendencias'))
+        return redirect(url_for('main.operador_pendencias'))
     
     if request.method == 'POST':
         natureza_operacao = request.form.get('natureza_operacao', '').strip()
@@ -1295,7 +1300,7 @@ def operador_natureza_operacao(id):
         notificar_teams_pendente_supervisor(pendencia)
         
         flash('Natureza de Operação informada com sucesso! Pendência enviada para supervisor.', 'success')
-        return redirect(url_for('operador_pendencias'))
+        return redirect(url_for('main.operador_pendencias'))
     
     return render_template('operador_natureza_operacao.html', pendencia=pendencia)
 
@@ -1307,12 +1312,12 @@ def operador_recusar_resposta(id):
     
     if pendencia.status != 'PENDENTE OPERADOR UP':
         flash('Esta pendência não está disponível para recusa.', 'warning')
-        return redirect(url_for('operador_pendencias'))
+        return redirect(url_for('main.operador_pendencias'))
     
     motivo_recusa = request.form.get('motivo_recusa', '').strip()
     if not motivo_recusa:
         flash('Motivo da recusa é obrigatório.', 'danger')
-        return redirect(url_for('operador_pendencias'))
+        return redirect(url_for('main.operador_pendencias'))
     
     # Atualiza pendência
     pendencia.motivo_recusa = motivo_recusa
@@ -1349,7 +1354,7 @@ def operador_recusar_resposta(id):
     db.session.commit()
     
     flash('Resposta recusada. Cliente foi notificado para complementar.', 'success')
-    return redirect(url_for('operador_pendencias'))
+    return redirect(url_for('main.operador_pendencias'))
 
 @main_bp.route('/operador/lote_enviar_supervisor', methods=['POST'])
 @permissao_requerida('operador', 'adm', 'supervisor')
@@ -1357,7 +1362,7 @@ def operador_lote_enviar_supervisor():
     ids = request.form.getlist('ids')
     if not ids:
         flash('Nenhuma pendência selecionada.', 'warning')
-        return redirect(url_for('operador_pendencias'))
+        return redirect(url_for('main.operador_pendencias'))
     count = 0
     for pid in ids:
         pendencia = Pendencia.query.get(pid)
@@ -1379,7 +1384,7 @@ def operador_lote_enviar_supervisor():
             count += 1
     db.session.commit()
     flash(f'{count} pendência(s) enviadas ao supervisor!', 'success')
-    return redirect(url_for('operador_pendencias'))
+    return redirect(url_for('main.operador_pendencias'))
 
 @main_bp.route('/supervisor/pendencias')
 @permissao_requerida('supervisor', 'adm')
@@ -1388,7 +1393,7 @@ def supervisor_pendencias():
     empresas_usuario = obter_empresas_para_usuario()
     if not empresas_usuario:
         flash('Você não tem acesso a nenhuma empresa.', 'warning')
-        return redirect(url_for('pre_dashboard'))
+        return redirect(url_for('main.pre_dashboard'))
     
     empresa_filtro = request.args.get('empresa', empresas_usuario[0])
     tipo_filtro = request.args.get('tipo_pendencia', '')
@@ -1480,6 +1485,12 @@ def supervisor_pendencias():
         ).count()
         pendencias_sem_resposta_por_empresa[empresa] = count
     
+    # Calcular total de pendências aguardando supervisor (todas as empresas)
+    total_pendencias_supervisor = Pendencia.query.filter(
+        Pendencia.empresa.in_(empresas_permitidas),
+        Pendencia.status.in_(status_abertos_supervisor)
+    ).count()
+    
     return render_template(
         'supervisor_pendencias.html', 
         pendencias=pendencias, 
@@ -1495,7 +1506,8 @@ def supervisor_pendencias():
         now=datetime.now().date(),  # Adicionado para uso no template
         timedelta=timedelta,  # Adicionado para uso no template
         pendencias_sem_resposta_por_empresa=pendencias_sem_resposta_por_empresa,
-        pendencias_abertas_por_empresa=pendencias_abertas_por_empresa  # Nova variável para o indicador
+        pendencias_abertas_por_empresa=pendencias_abertas_por_empresa,  # Nova variável para o indicador
+        total_pendencias_supervisor=total_pendencias_supervisor  # Total geral de pendências
     )
 
 @main_bp.route('/supervisor/resolver_pendencia/<int:id>', methods=['POST'])
@@ -1506,7 +1518,7 @@ def supervisor_resolver_pendencia(id):
     
     if pendencia.status != 'PENDENTE SUPERVISOR UP':
         flash('Esta pendência não está disponível para resolução.', 'warning')
-        return redirect(url_for('supervisor_pendencias'))
+        return redirect(url_for('main.supervisor_pendencias'))
     
     valor_anterior = pendencia.status
     pendencia.status = 'RESOLVIDA'
@@ -1529,7 +1541,7 @@ def supervisor_resolver_pendencia(id):
     db.session.commit()
     
     flash('Pendência resolvida com sucesso!', 'success')
-    return redirect(url_for('supervisor_pendencias'))
+    return redirect(url_for('main.supervisor_pendencias'))
 
 @main_bp.route('/supervisor/lote_resolver_pendencias', methods=['POST'])
 @permissao_requerida('supervisor', 'adm')
@@ -1538,7 +1550,7 @@ def supervisor_lote_resolver_pendencias():
     ids = request.form.getlist('ids')
     if not ids:
         flash('Nenhuma pendência selecionada.', 'warning')
-        return redirect(url_for('supervisor_pendencias'))
+        return redirect(url_for('main.supervisor_pendencias'))
     
     count = 0
     for pid in ids:
@@ -1564,7 +1576,7 @@ def supervisor_lote_resolver_pendencias():
     
     db.session.commit()
     flash(f'{count} pendência(s) resolvidas com sucesso!', 'success')
-    return redirect(url_for('supervisor_pendencias'))
+    return redirect(url_for('main.supervisor_pendencias'))
 
 @main_bp.route('/supervisor/recusar_devolver_operador/<int:id>', methods=['POST'])
 @permissao_requerida('supervisor', 'adm')
@@ -1574,12 +1586,12 @@ def supervisor_recusar_devolver_operador(id):
     
     if pendencia.status != 'PENDENTE SUPERVISOR UP':
         flash('Esta pendência não está disponível para recusa.', 'warning')
-        return redirect(url_for('supervisor_pendencias'))
+        return redirect(url_for('main.supervisor_pendencias'))
     
     motivo_recusa = request.form.get('motivo_recusa_supervisor', '').strip()
     if not motivo_recusa:
         flash('Motivo da recusa é obrigatório.', 'danger')
-        return redirect(url_for('supervisor_pendencias'))
+        return redirect(url_for('main.supervisor_pendencias'))
     
     # Atualiza pendência
     valor_anterior = pendencia.status
@@ -1620,7 +1632,7 @@ def supervisor_recusar_devolver_operador(id):
     notificar_teams_recusa_supervisor(pendencia)
     
     flash('Pendência recusada e devolvida ao operador para correção!', 'success')
-    return redirect(url_for('supervisor_pendencias'))
+    return redirect(url_for('main.supervisor_pendencias'))
 
 @main_bp.route('/editar_observacao/<int:id>', methods=['GET', 'POST'])
 @permissao_requerida('supervisor', 'adm', 'cliente', 'cliente_supervisor')
@@ -1656,7 +1668,7 @@ def editar_observacao(id):
         # Notificação para operadores
         notificar_teams_pendente_operador(pendencia)
         flash('Observação atualizada com sucesso!', 'success')
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('main.dashboard'))
     return render_template('editar_observacao.html', pendencia=pendencia)
 
 @main_bp.route('/resolvidas', methods=['GET'])
@@ -1665,7 +1677,7 @@ def dashboard_resolvidas():
     empresas_usuario = obter_empresas_para_usuario()
     if not empresas_usuario:
         flash('Você não tem acesso a nenhuma empresa.', 'warning')
-        return redirect(url_for('pre_dashboard'))
+        return redirect(url_for('main.pre_dashboard'))
     
     empresa_filtro = request.args.get('empresa', empresas_usuario[0])
     tipo_filtro = request.args.get('tipo_pendencia', TIPOS_PENDENCIA[0])
@@ -1708,7 +1720,7 @@ def listar_pendencias():
     empresas_usuario = obter_empresas_para_usuario()
     if not empresas_usuario:
         flash('Você não tem acesso a nenhuma empresa.', 'warning')
-        return redirect(url_for('pre_dashboard'))
+        return redirect(url_for('main.pre_dashboard'))
 
     query = Pendencia.query
 
@@ -1716,7 +1728,7 @@ def listar_pendencias():
     if empresa:
         if empresa not in empresas_usuario:
             flash('Você não tem acesso a esta empresa.', 'danger')
-            return redirect(url_for('pre_dashboard'))
+            return redirect(url_for('main.pre_dashboard'))
         query = query.filter(Pendencia.empresa == empresa)
 
     # Filtro por status
@@ -1841,7 +1853,7 @@ def exportar_pendencias_csv():
     empresas_usuario = obter_empresas_para_usuario()
     if not empresas_usuario:
         flash('Você não tem acesso a nenhuma empresa.', 'warning')
-        return redirect(url_for('pre_dashboard'))
+        return redirect(url_for('main.pre_dashboard'))
 
     query = Pendencia.query
 
@@ -1849,7 +1861,7 @@ def exportar_pendencias_csv():
     if empresa:
         if empresa not in empresas_usuario:
             flash('Você não tem acesso a esta empresa.', 'danger')
-            return redirect(url_for('pre_dashboard'))
+            return redirect(url_for('main.pre_dashboard'))
         query = query.filter(Pendencia.empresa == empresa)
 
     # Filtro por status
@@ -1918,25 +1930,25 @@ def informar_natureza_operacao(id):
     """
     if not pode_atuar_como_operador():
         flash('Você não tem permissão para executar esta ação.', 'danger')
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('main.dashboard'))
     
     pendencia = Pendencia.query.get_or_404(id)
     
     # Verificar se o status atual permite a ação
     if pendencia.status != 'PENDENTE OPERADOR UP':
         flash('Esta pendência não está no status correto para esta ação.', 'warning')
-        return redirect(url_for('ver_pendencia', token=pendencia.token_acesso))
+        return redirect(url_for('main.ver_pendencia', token=pendencia.token_acesso))
     
     # Verificar permissão de empresa
     empresas_usuario = obter_empresas_para_usuario()
     if pendencia.empresa not in empresas_usuario:
         flash('Você não tem acesso a esta empresa.', 'danger')
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('main.dashboard'))
     
     natureza_operacao = request.form.get('natureza_operacao')
     if not natureza_operacao:
         flash('Natureza da operação é obrigatória.', 'danger')
-        return redirect(url_for('ver_pendencia', token=pendencia.token_acesso))
+        return redirect(url_for('main.ver_pendencia', token=pendencia.token_acesso))
     
     # Atualizar a pendência
     valor_anterior = pendencia.natureza_operacao
@@ -1960,7 +1972,7 @@ def informar_natureza_operacao(id):
     db.session.commit()
     
     flash('Natureza da operação informada com sucesso!', 'success')
-    return redirect(url_for('ver_pendencia', token=pendencia.token_acesso))
+    return redirect(url_for('main.ver_pendencia', token=pendencia.token_acesso))
 
 @main_bp.route('/pendencia/<int:id>/aceitar_resposta', methods=['POST'])
 @permissao_requerida('operador', 'supervisor')
@@ -1970,20 +1982,20 @@ def aceitar_resposta_cliente(id):
     """
     if not pode_atuar_como_operador():
         flash('Você não tem permissão para executar esta ação.', 'danger')
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('main.dashboard'))
     
     pendencia = Pendencia.query.get_or_404(id)
     
     # Verificar se o status atual permite a ação
     if pendencia.status != 'PENDENTE OPERADOR UP':
         flash('Esta pendência não está no status correto para esta ação.', 'warning')
-        return redirect(url_for('ver_pendencia', token=pendencia.token_acesso))
+        return redirect(url_for('main.ver_pendencia', token=pendencia.token_acesso))
     
     # Verificar permissão de empresa
     empresas_usuario = obter_empresas_para_usuario()
     if pendencia.empresa not in empresas_usuario:
         flash('Você não tem acesso a esta empresa.', 'danger')
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('main.dashboard'))
     
     # Atualizar status
     valor_anterior = pendencia.status
@@ -2456,7 +2468,7 @@ def novo_usuario():
         ativo = True
         if Usuario.query.filter_by(email=email).first():
             flash('E-mail já cadastrado.', 'danger')
-            return redirect(url_for('novo_usuario'))
+            return redirect(url_for('main.novo_usuario'))
         novo = Usuario(email=email, senha_hash=generate_password_hash(senha), tipo=tipo)
         if empresas_ids:
             novo.empresas = Empresa.query.filter(Empresa.id.in_(empresas_ids)).all()
@@ -2471,7 +2483,7 @@ def novo_usuario():
                     db.session.add(p)
         db.session.commit()
         flash('Usuário criado com sucesso!', 'success')
-        return redirect(url_for('gerenciar_usuarios'))
+        return redirect(url_for('main.gerenciar_usuarios'))
     # Permissões padrão do tipo
     permissoes_tipo = {func: checar_permissao('operador', func) for cat, funclist in FUNCIONALIDADES_CATEGORIZADAS for func, _ in funclist}
     return render_template('admin/novo_usuario.html', empresas=empresas, funcionalidades_categorizadas=FUNCIONALIDADES_CATEGORIZADAS, permissoes_tipo=permissoes_tipo)
@@ -2504,7 +2516,7 @@ def editar_usuario(id):
                     db.session.add(p)
         db.session.commit()
         flash('Usuário atualizado com sucesso!', 'success')
-        return redirect(url_for('gerenciar_usuarios'))
+        return redirect(url_for('main.gerenciar_usuarios'))
     empresas_permitidas = [e.id for e in usuario.empresas]
     # Permissões atuais (personalizadas ou herdadas)
     permissoes_usuario = {}

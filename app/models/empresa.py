@@ -5,6 +5,11 @@ class Segmento(db.Model):
     __tablename__ = 'segmento'
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(100), unique=True, nullable=False)
+    descricao = db.Column(db.Text)
+    cor = db.Column(db.String(20), default='#1F4E78')
+    icone = db.Column(db.String(50), default='building')
+    ativo = db.Column(db.Boolean, default=True)
+    criado_em = db.Column(db.DateTime, default=db.func.current_timestamp())
     
     # Relacionamento com empresas (one-to-many)
     empresas = db.relationship('Empresa', backref='segmento', lazy=True)

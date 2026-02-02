@@ -38,8 +38,11 @@ def login():
                 session['usuario_tipo'] = usuario.tipo
                 print(f"DEBUG: Sessão configurada: {session}")
                 
-                # Redirecionar para a tela de segmentos (no blueprint main)
-                return redirect(url_for('main.listar_segmentos'))
+                # Redirecionamento condicional baseado no perfil
+                if usuario.tipo in ['cliente', 'cliente_supervisor']:
+                    return redirect(url_for('main.pre_dashboard'))
+                
+                return redirect(url_for('main.dashboard_gerencial'))
             else:
                 print("DEBUG: Senha INVÁLIDA.")
         else:

@@ -71,7 +71,15 @@ def parse_date_or_none(s):
     if not s or str(s).strip() == "" or str(s).strip().lower() in ["nan", "none", "null"]:
         return None
     
+    # Se já for um objeto date ou datetime
+    if isinstance(s, datetime):
+        return s.date()
+    
     s = str(s).strip()
+    
+    # Se contiver espaço (provavelmente tem hora), pega apenas a primeira parte
+    if " " in s:
+        s = s.split(" ")[0]
     
     # Lista de formatos de data aceitos
     date_formats = [
@@ -83,24 +91,28 @@ def parse_date_or_none(s):
         "%d-%m-%y",      # 18-08-25
         "%d.%m.%Y",      # 18.08.2025
         "%d.%m.%y",      # 18.08.25
-        "%d-%b-%y",      # 18-Aug-25 (Excel sometimes)
+        "%Y-%m-%dT%H:%M:%S", # ISO format common in some exports
     ]
     
     for fmt in date_formats:
         try:
+            # Tenta converter usando o formato completo ou apenas a parte da data
+            if 'T' in s and fmt == "%Y-%m-%dT%H:%M:%S":
+                return datetime.strptime(s, fmt).date()
             return datetime.strptime(s, fmt).date()
         except ValueError:
             continue
     
-    # Tentar converter se for um número (Excel às vezes retorna números)
+    # Tentar converter se for um número (Excel às vezes retorna números de série)
     try:
-        if s.replace('.', '').replace('-', '').isdigit():
-            # Pode ser um timestamp do Excel
-            if '.' in str(s):
-                # Timestamp do Excel
-                excel_date = datetime(1900, 1, 1) + timedelta(days=float(s) - 2)
-                return excel_date.date()
-    except (ValueError, TypeError):
+        # Remove caracteres que podem vir em números formatados
+        clean_s = s.replace(',', '.').split('.')[0] # Pega apenas a parte inteira para dias
+        if clean_s.isdigit() and len(clean_s) <= 6: # Serial do Excel é um número curto
+            serial = int(clean_s)
+            # Excel base date is 1899-12-30 for serial 1 (due to 1900 leap year bug)
+            base_date = datetime(1899, 12, 30)
+            return (base_date + timedelta(days=serial)).date()
+    except (ValueError, TypeError, OverflowError):
         pass
     
     return None

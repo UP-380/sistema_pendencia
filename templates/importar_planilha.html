@@ -9,10 +9,11 @@
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h2 class="card-title mb-0">Importar Pendências da Planilha</h2>
                 <div class="dropdown ms-auto">
-                    <button class="btn btn-light dropdown-toggle" data-bs-toggle="dropdown">
+                    <button class="btn btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                        aria-expanded="false">
                         Baixar Planilha Modelo
                     </button>
-                    <ul class="dropdown-menu dropdown-menu-end">
+                    <ul class="dropdown-menu dropdown-menu-end shadow">
                         <!-- TIPOS ATUALIZADOS -->
                         <li><a class="dropdown-item"
                                 href="{{ url_for('main.download_modelo_pendencias', tipo='CARTAO_NAO_IDENTIFICADO') }}">Cartão
@@ -123,13 +124,14 @@
                                 aria-hidden="true"></span>
                             <span id="btn-text">Importar Planilha</span>
                         </button>
-                        <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary">
+                        <a href="{{ url_for('main.dashboard_gerencial') }}" class="btn btn-secondary">
                             <i class="bi bi-x-circle"></i> Cancelar
                         </a>
                     </div>
                 </form>
                 <div class="mt-3">
-                    <small class="text-muted">Apenas administradores podem importar pendências. Use o modelo correto
+                    <small class="text-muted">Apenas administradores, supervisores e operadores podem importar
+                        pendências. Use o modelo correto
                         para cada tipo.</small>
                 </div>
             </div>
@@ -181,6 +183,14 @@
     document.getElementById('form-importar').addEventListener('submit', function () {
         document.getElementById('spinner-importar').classList.remove('d-none');
         document.getElementById('btn-text').textContent = 'Importando...';
+    });
+
+    // Inicialização manual do dropdown caso o auto-init falhe
+    document.addEventListener('DOMContentLoaded', function () {
+        var dropdownElementList = [].slice.call(document.querySelectorAll('.dropdown-toggle'))
+        var dropdownList = dropdownElementList.map(function (dropdownToggleEl) {
+            return new bootstrap.Dropdown(dropdownToggleEl)
+        });
     });
 </script>
 {% endblock %}

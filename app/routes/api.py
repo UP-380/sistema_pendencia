@@ -1,11 +1,11 @@
-from flask import Blueprint, jsonify, session, request
+from flask import Blueprint, jsonify, session, request, send_file, url_for
 from werkzeug.security import check_password_hash
 from app.models.usuario import Usuario, usuario_empresas
 from app.models.empresa import Empresa, Segmento
 from app.models.pendencia import Pendencia, LogAlteracao
 from app.extensions import db
-from app.services.business import obter_empresas_para_usuario
-from app.services.rules import TIPO_IMPORT_MAP
+from app.services.business import obter_empresas_para_usuario, pode_atuar_como_supervisor
+from app.services.rules import TIPO_RULES, TIPO_IMPORT_MAP
 from app.services.notifications import (
     notificar_teams_pendente_supervisor,
     notificar_teams_recusa_cliente,
@@ -14,7 +14,9 @@ from app.services.notifications import (
 from app.utils.decorators import api_auth_required
 from app.utils.helpers import now_brazil
 from datetime import datetime, timedelta
-from sqlalchemy import func, or_
+from sqlalchemy import func, or_, case, extract, and_
+import pandas as pd
+import io
 
 api_bp = Blueprint('api', __name__, url_prefix='/api')
 
@@ -665,3 +667,390 @@ def api_check_auth():
             }
         })
     return jsonify({'authenticated': False})
+
+@api_bp.route('/dashboard/metrics', methods=['GET'])
+@api_auth_required
+def api_dashboard_metrics():
+    # 1. Filtros de Empresas
+    empresas_selecionadas = request.args.getlist('empresas')
+    
+    # Validar acesso às empresas
+    usuario = Usuario.query.get(session['usuario_id'])
+    allowed_empresas = obter_empresas_para_usuario()
+    
+    if not allowed_empresas:
+        # Retorna lista vazia em vez de erro 403 para não quebrar o frontend
+        if request.args.get('only_companies') == 'true':
+            return jsonify({'allowed_empresas': []})
+        return jsonify({'message': 'Sem acesso a empresas'}), 403
+
+    # Otimização: Se o frontend pedir apenas a lista (para preencher filtros), retorna rápido
+    if request.args.get('only_companies') == 'true':
+        return jsonify({
+            'allowed_empresas': sorted(allowed_empresas)
+        })
+
+    # Se 'todas' ou vazio, usa todas permitidas. Se selecionadas, intersecta com permitidas.
+    if not empresas_selecionadas or 'todas' in empresas_selecionadas:
+        target_empresas = allowed_empresas
+    else:
+        target_empresas = [emp for emp in empresas_selecionadas if emp in allowed_empresas]
+        
+    if not target_empresas:
+        return jsonify({'message': 'Nenhuma empresa válida selecionada'}), 400
+
+    # 2. Query Base Construction
+    base_clauses = [Pendencia.empresa.in_(target_empresas)]
+    
+    # Filtros de Data
+    start_abertura = request.args.get('start_abertura')
+    end_abertura = request.args.get('end_abertura')
+    if start_abertura and end_abertura:
+        base_clauses.append(func.date(Pendencia.data_abertura).between(start_abertura, end_abertura))
+        
+    start_pendencia = request.args.get('start_pendencia')
+    end_pendencia = request.args.get('end_pendencia')
+    if start_pendencia and end_pendencia:
+        base_clauses.append(Pendencia.data.between(start_pendencia, end_pendencia))
+
+    # Query Principal (Totais)
+    query = Pendencia.query.filter(and_(*base_clauses))
+    
+    # 3. Métricas
+    
+    # A. Totais Gerais
+    total = query.count()
+    abertas = query.filter(Pendencia.status != 'RESOLVIDA').count()
+    resolvidas = query.filter(Pendencia.status == 'RESOLVIDA').count()
+
+    # B. Por Status
+    por_status = db.session.query(Pendencia.status, func.count(Pendencia.id))\
+        .filter(and_(*base_clauses))\
+        .group_by(Pendencia.status).all()
+    
+    data_status = {s: count for s, count in por_status}
+    
+    # C. Por Tipo (Baseado em TIPO_RULES)
+    por_tipo = db.session.query(Pendencia.tipo_pendencia, func.count(Pendencia.id))\
+        .filter(and_(*base_clauses))\
+        .group_by(Pendencia.tipo_pendencia).all()
+        
+    data_tipo = {}
+    for t, count in por_tipo:
+        label = TIPO_RULES.get(t, {}).get('label', t)
+        data_tipo[label] = count
+
+    # D. Por Empresa (Top 10)
+    por_empresa = db.session.query(Pendencia.empresa, func.count(Pendencia.id))\
+        .filter(and_(*base_clauses))\
+        .group_by(Pendencia.empresa)\
+        .order_by(func.count(Pendencia.id).desc())\
+        .limit(10).all()
+        
+    data_empresa = [{'empresa': e, 'count': c} for e, c in por_empresa]
+
+    # E. Evolução Abertura vs Fechamento
+    
+    # Se usuário filtrou período de abertura, usamos o filtro dele. 
+    # Se não, usamos últimos 6 meses por padrão.
+    six_months_ago = datetime.now().date() - timedelta(days=180)
+    
+    evolucao_abertura_query = db.session.query(
+        func.strftime('%Y-%m', Pendencia.data_abertura).label('mes'),
+        func.count(Pendencia.id)
+    ).filter(and_(*base_clauses))
+    
+    if not (start_abertura and end_abertura):
+        evolucao_abertura_query = evolucao_abertura_query.filter(Pendencia.data_abertura >= six_months_ago)
+        
+    evolucao_abertura = evolucao_abertura_query.group_by('mes').all()
+     
+    # Fechamento: Mesma lógica de filtro base, mas agrupando por data de resolução
+    evolucao_fechamento_query = db.session.query(
+        func.strftime('%Y-%m', Pendencia.data_resposta).label('mes'),
+        func.count(Pendencia.id)
+    ).filter(and_(*base_clauses))\
+     .filter(Pendencia.status == 'RESOLVIDA')
+
+    if not (start_abertura and end_abertura):
+         evolucao_fechamento_query = evolucao_fechamento_query.filter(Pendencia.data_resposta >= six_months_ago)
+
+    evolucao_fechamento = evolucao_fechamento_query.group_by('mes').all()
+
+    evolucao_abertura_dict = {m: c for m, c in evolucao_abertura}
+    evolucao_fechamento_dict = {m: c for m, c in evolucao_fechamento}
+    
+    all_months = sorted(list(set(list(evolucao_abertura_dict.keys()) + list(evolucao_fechamento_dict.keys()))))
+    
+    data_evolucao = {
+        'labels': all_months,
+        'abertas': [evolucao_abertura_dict.get(m, 0) for m in all_months],
+        'resolvidas': [evolucao_fechamento_dict.get(m, 0) for m in all_months]
+    }
+
+    return jsonify({
+        'total': total,
+        'abertas': abertas,
+        'resolvidas': resolvidas,
+        'por_status': data_status,
+        'por_tipo': data_tipo,
+        'por_empresa': data_empresa,
+        'evolucao': data_evolucao,
+        'allowed_empresas': sorted(allowed_empresas)
+    })
+
+@api_bp.route('/dashboard/details', methods=['GET'])
+@api_auth_required
+def api_dashboard_details():
+    tipo_grafico = request.args.get('type')
+    empresas_selecionadas = request.args.getlist('empresas')
+    
+    # Validar acesso (Igual a metrics)
+    usuario = Usuario.query.get(session['usuario_id'])
+    allowed_empresas = obter_empresas_para_usuario()
+    
+    if not allowed_empresas:
+        return jsonify({'message': 'Sem acesso'}), 403
+
+    if not empresas_selecionadas or 'todas' in empresas_selecionadas:
+        target_empresas = allowed_empresas
+    else:
+        target_empresas = [emp for emp in empresas_selecionadas if emp in allowed_empresas]
+        
+    if not target_empresas:
+        return jsonify({'message': 'Nenhuma empresa válida selecionada'}), 400
+
+    # 2. Query Base Construction
+    base_clauses = [Pendencia.empresa.in_(target_empresas)]
+    
+    # Filtros de Data
+    start_abertura = request.args.get('start_abertura')
+    end_abertura = request.args.get('end_abertura')
+    if start_abertura and end_abertura:
+        base_clauses.append(func.date(Pendencia.data_abertura).between(start_abertura, end_abertura))
+        
+    start_pendencia = request.args.get('start_pendencia')
+    end_pendencia = request.args.get('end_pendencia')
+    if start_pendencia and end_pendencia:
+        base_clauses.append(Pendencia.data.between(start_pendencia, end_pendencia))
+
+    data_result = []
+    columns = []
+
+    if tipo_grafico == 'status':
+        columns = ['Empresa', 'Status', 'Quantidade']
+        results = db.session.query(Pendencia.empresa, Pendencia.status, func.count(Pendencia.id))\
+            .filter(and_(*base_clauses))\
+            .group_by(Pendencia.empresa, Pendencia.status)\
+            .order_by(Pendencia.empresa, Pendencia.status).all()
+        for row in results:
+            data_result.append({'Empresa': row[0], 'Status': row[1], 'Quantidade': row[2]})
+            
+    elif tipo_grafico == 'tipo':
+        columns = ['Empresa', 'Tipo de Pendência', 'Quantidade']
+        results = db.session.query(Pendencia.empresa, Pendencia.tipo_pendencia, func.count(Pendencia.id))\
+            .filter(and_(*base_clauses))\
+            .group_by(Pendencia.empresa, Pendencia.tipo_pendencia)\
+            .order_by(Pendencia.empresa, func.count(Pendencia.id).desc()).all()
+        for row in results:
+            data_result.append({'Empresa': row[0], 'Tipo de Pendência': row[1], 'Quantidade': row[2]})
+            
+    elif tipo_grafico == 'empresas':
+        columns = ['Empresa', 'Total Pendências']
+        results = db.session.query(Pendencia.empresa, func.count(Pendencia.id))\
+            .filter(and_(*base_clauses))\
+            .group_by(Pendencia.empresa)\
+            .order_by(func.count(Pendencia.id).desc()).all()
+        for row in results:
+            data_result.append({'Empresa': row[0], 'Total Pendências': row[1]})
+            
+    elif tipo_grafico == 'evolucao':
+        # Para evolução, detalhar por mês e status é mais útil
+        columns = ['Mês', 'Status', 'Quantidade']
+        six_months_ago = datetime.now().date() - timedelta(days=180)
+        
+        # Abertas
+        abertas_query = db.session.query(
+            func.strftime('%Y-%m', Pendencia.data_abertura).label('mes'),
+            func.count(Pendencia.id)
+        ).filter(and_(*base_clauses))
+        
+        if not (start_abertura and end_abertura):
+            abertas_query = abertas_query.filter(Pendencia.data_abertura >= six_months_ago)
+            
+        abertas = abertas_query.group_by('mes').all()
+         
+        # Resolvidas
+        resolvidas_query = db.session.query(
+            func.strftime('%Y-%m', Pendencia.data_resposta).label('mes'),
+            func.count(Pendencia.id)
+        ).filter(and_(*base_clauses))\
+         .filter(Pendencia.status == 'RESOLVIDA')
+
+        if not (start_abertura and end_abertura):
+            resolvidas_query = resolvidas_query.filter(Pendencia.data_resposta >= six_months_ago)
+
+        resolvidas = resolvidas_query.group_by('mes').all()
+         
+        for row in abertas:
+            data_result.append({'Mês': row[0], 'Status': 'Aberta (Criada)', 'Quantidade': row[1]})
+        for row in resolvidas:
+            data_result.append({'Mês': row[0], 'Status': 'Resolvida', 'Quantidade': row[1]})
+            
+        # Ordenar por mês
+        data_result.sort(key=lambda x: x['Mês'], reverse=True)
+
+    return jsonify({
+        'columns': columns,
+        'data': data_result,
+        'title': f'Detalhes: {tipo_grafico.upper()}'
+    })
+
+
+@api_bp.route('/dashboard/actions')
+def api_dashboard_actions():
+    """
+    Retorna dados para os Cards de Ação:
+    1. Última Pendência Aberta (Geral das empresas permitidas)
+    2. Painel Rápido (Pendências que exigem ação do usuário)
+    """
+    try:
+        usuario_id = session.get('usuario_id')
+        usuario_tipo = session.get('usuario_tipo')
+        
+        if not usuario_id:
+            return jsonify({'error': 'Unauthorized'}), 401
+
+        # 1. Obter empresas permitidas
+        target_empresas = obter_empresas_para_usuario()
+        if not target_empresas:
+            return jsonify({
+                'latest': None,
+                'quick_panel': []
+            })
+            
+        # 2. Última Pendência Aberta (Geral)
+        latest_pendency = Pendencia.query.filter(
+            Pendencia.empresa.in_(target_empresas)
+        ).order_by(Pendencia.data_abertura.desc()).first()
+        
+        latest_data = None
+        if latest_pendency:
+            latest_data = {
+                'id': latest_pendency.id,
+                'empresa': latest_pendency.empresa,
+                'data_abertura': latest_pendency.data_abertura.strftime('%d/%m/%Y %H:%M'),
+                'tipo': latest_pendency.tipo_pendencia,
+                'valor': latest_pendency.valor,
+                'status': latest_pendency.status
+            }
+            
+        # 3. Painel Rápido (Ação Necessária)
+        # Define status urgentes baseados no perfil
+        status_urgentes = []
+        is_supervisor = pode_atuar_como_supervisor()
+        
+        if is_supervisor:
+            # Supervisor vê o que aguarda aprovação dele
+            status_urgentes = ['PENDENTE SUPERVISOR UP']
+        else:
+            # Operador vê o que caiu pra ele ou voltou
+            status_urgentes = ['PENDENTE OPERADOR UP', 'DEVOLVIDA AO OPERADOR']
+            
+        quick_query = Pendencia.query.filter(
+            Pendencia.empresa.in_(target_empresas),
+            Pendencia.status.in_(status_urgentes)
+        ).order_by(Pendencia.data_abertura.asc()) # Mais antigas primeiro (fila)
+        
+        # Limitar a 5 ou 10 itens para não poluir
+        quick_items = quick_query.limit(10).all()
+        
+        quick_panel_data = []
+        for p in quick_items:
+            # Calcular dias em aberto
+            dias_aberto = 0
+            if p.data_abertura:
+                dias_aberto = (datetime.now() - p.data_abertura).days
+                
+            # Determinar URL de ação baseado no perfil do usuário
+            if is_supervisor:
+                acao_url = url_for('main.supervisor_pendencias', empresa=p.empresa, _external=False)
+            else:
+                acao_url = url_for('main.operador_pendencias', empresa=p.empresa, _external=False)
+            
+            quick_panel_data.append({
+                'id': p.id,
+                'empresa': p.empresa,
+                'data': p.data.strftime('%d/%m/%Y') if p.data else '-',
+                'status': p.status,
+                'prioridade': 'Alta' if dias_aberto > 7 or p.valor > 5000 else 'Normal',
+                'acao_url': acao_url
+            })
+
+        return jsonify({
+            'latest': latest_data,
+            'quick_panel': quick_panel_data,
+            'user_role': 'Supervisor' if is_supervisor else 'Operador'
+        })
+
+    except Exception as e:
+        print(f"Erro em /api/dashboard/actions: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@api_bp.route('/dashboard/export', methods=['GET'])
+@api_auth_required
+def api_dashboard_export():
+    # 1. Filtros (Igual metrics)
+    empresas_selecionadas = request.args.getlist('empresas')
+    usuario = Usuario.query.get(session['usuario_id'])
+    allowed_empresas = obter_empresas_para_usuario()
+    
+    if not allowed_empresas:
+        return jsonify({'message': 'Sem acesso'}), 403
+
+    if not empresas_selecionadas or 'todas' in empresas_selecionadas:
+        target_empresas = allowed_empresas
+    else:
+        target_empresas = [emp for emp in empresas_selecionadas if emp in allowed_empresas]
+        
+    # 2. Query Full
+    pendencias = Pendencia.query.filter(Pendencia.empresa.in_(target_empresas)).all()
+    
+    # 3. Gerar DataFrame
+    data_list = []
+    for p in pendencias:
+        data_list.append({
+            'ID': p.id,
+            'Empresa': p.empresa,
+            'Tipo': p.tipo_pendencia,
+            'Banco': p.banco or '',
+            'Data Pendência': p.data.strftime('%d/%m/%Y') if p.data else '',
+            'Data Abertura': p.data_abertura.strftime('%d/%m/%Y %H:%M') if p.data_abertura else '',
+            'Fornecedor/Cliente': p.fornecedor_cliente,
+            'Valor': p.valor,
+            'Status': p.status,
+            'Observação': p.observacao,
+            'Natureza Operação': p.natureza_operacao or '',
+            'Data Competência': p.data_competencia.strftime('%d/%m/%Y') if p.data_competencia else '',
+            'Data Baixa': p.data_baixa.strftime('%d/%m/%Y') if p.data_baixa else '',
+            'Código Lançamento': p.codigo_lancamento or '',
+            'Tipo Lançamento': p.tipo_credito_debito or ''
+        })
+        
+    df = pd.DataFrame(data_list)
+    
+    # 4. Exportar para Excel em memória
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Pendencias')
+        
+    output.seek(0)
+    
+    filename = f"pendencias_export_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx"
+    
+    return send_file(
+        output,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        as_attachment=True,
+        download_name=filename
+    )

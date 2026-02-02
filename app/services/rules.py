@@ -2,19 +2,19 @@
 TIPO_RULES = {
     "Natureza Errada": {
         "required": ["fornecedor_cliente", "valor", "codigo_lancamento", "data"],
-        "forbidden": ["banco", "data_competencia", "data_baixa"],
+        "forbidden": ["data_competencia", "data_baixa"],
         "labels": {"data": "Data do Lançamento ou Baixa"},
         "observacao_hint": "Natureza atual no ERP (obrigatório registrar)",
         "columns": ["tipo", "fornecedor_cliente", "valor", "codigo_lancamento", "data", "observacao", "status", "modificado_por"],
-        "import_columns": ["empresa", "fornecedor", "valor", "codigo_lancamento", "data", "natureza_sistema", "observacao", "email_cliente"]
+        "import_columns": ["empresa", "banco", "data", "fornecedor", "valor", "codigo_lancamento", "natureza_sistema", "observacao", "email_cliente"]
     },
     "Competência Errada": {
         "required": ["fornecedor_cliente", "valor", "codigo_lancamento", "data_competencia"],
-        "forbidden": ["banco", "data_baixa"],
+        "forbidden": ["data_baixa"],
         "labels": {"data_competencia": "Data Competência"},
         "observacao_hint": "Informe: Data da competência errada",
         "columns": ["tipo", "fornecedor_cliente", "valor", "codigo_lancamento", "data_competencia", "observacao", "status", "modificado_por"],
-        "import_columns": ["empresa", "fornecedor", "valor", "codigo_lancamento", "data_competencia", "observacao", "email_cliente"]
+        "import_columns": ["empresa", "banco", "data_competencia", "fornecedor", "valor", "codigo_lancamento", "observacao", "email_cliente"]
     },
     "Data da Baixa Errada": {
         "required": ["banco", "data_baixa", "fornecedor_cliente", "valor", "codigo_lancamento"],
@@ -25,28 +25,28 @@ TIPO_RULES = {
         "import_columns": ["empresa", "banco", "data_baixa", "fornecedor", "valor", "codigo_lancamento", "observacao", "email_cliente"]
     },
     "Cartão de Crédito Não Identificado": {
-        "required": ["banco", "data", "fornecedor_cliente", "valor"],
+        "required": ["banco", "data", "valor"],
         "forbidden": [],
         "columns": ["tipo", "banco", "data", "fornecedor_cliente", "valor", "observacao", "status", "modificado_por"],
         "import_columns": ["empresa", "banco", "data", "fornecedor", "valor", "observacao", "email_cliente"]
     },
     "Pagamento Não Identificado": {
-        "required": ["banco", "data", "fornecedor_cliente", "valor"],
+        "required": ["banco", "data", "valor"],
         "forbidden": [],
         "columns": ["tipo", "banco", "data", "fornecedor_cliente", "valor", "observacao", "status", "modificado_por"],
         "import_columns": ["empresa", "banco", "data", "fornecedor", "valor", "observacao", "email_cliente"]
     },
     "Recebimento Não Identificado": {
-        "required": ["banco", "data", "fornecedor_cliente", "valor"],
+        "required": ["banco", "data", "valor"],
         "forbidden": [],
         "columns": ["tipo", "banco", "data", "fornecedor_cliente", "valor", "observacao", "status", "modificado_por"],
         "import_columns": ["empresa", "banco", "data", "fornecedor", "valor", "observacao", "email_cliente"]
     },
     "Documento Não Anexado": {
         "required": ["fornecedor_cliente", "valor", "data"],
-        "forbidden": ["banco"],
-        "columns": ["tipo", "data", "fornecedor_cliente", "valor", "codigo_lancamento", "observacao", "status", "modificado_por"],
-        "import_columns": ["empresa", "fornecedor", "valor", "data", "codigo_lancamento", "observacao", "email_cliente"]
+        "forbidden": [],
+        "columns": ["tipo", "data", "banco", "fornecedor_cliente", "valor", "codigo_lancamento", "observacao", "status", "modificado_por"],
+        "import_columns": ["empresa", "banco", "data", "fornecedor", "valor", "codigo_lancamento", "observacao", "email_cliente"]
     },
     "Lançamento Não Encontrado em Extrato": {
         "required": ["banco", "data", "fornecedor_cliente", "valor", "tipo_credito_debito"],
@@ -59,8 +59,8 @@ TIPO_RULES = {
     "Lançamento Não Encontrado em Sistema": {
         "required": ["fornecedor_cliente", "valor", "data", "tipo_credito_debito"],
         "forbidden": [],
-        "columns": ["tipo", "banco", "data", "fornecedor_cliente", "valor", "codigo_lancamento", "tipo_credito_debito", "observacao", "status", "modificado_por"],
-        "import_columns": ["empresa", "banco", "fornecedor", "valor", "data", "codigo_lancamento", "tipo_credito_debito", "observacao", "email_cliente"],
+        "columns": ["tipo", "banco", "data", "fornecedor_cliente", "valor", "tipo_credito_debito", "observacao", "status", "modificado_por"],
+        "import_columns": ["empresa", "banco", "data", "fornecedor", "valor", "tipo_credito_debito", "observacao", "email_cliente"],
         "labels": {"tipo_credito_debito": "Tipo de Lançamento"},
         "observacao_hint": "Informe detalhes do lançamento não encontrado"
     }
@@ -199,29 +199,33 @@ def validar_row_por_tipo(tipo, row):
     # Validar data da baixa para "Data da Baixa Errada"
     if tipo == "Data da Baixa Errada" and has("data_baixa"):
         if not parse_date_or_none(row.get("data_baixa")):
-            return "Data da Baixa inválida. Use formato: YYYY-MM-DD, DD/MM/YYYY, DD-MM-YYYY"
+            return "Data da Baixa inválida. Use formato: YYYY-MM-DD, DD/MM/YYYY ou DD-MM-YYYY"
     
     # Validar data para "Natureza Errada"
     if tipo == "Natureza Errada" and has("data"):
         if not parse_date_or_none(row.get("data")):
-            return "Data do Lançamento ou Baixa inválida. Use formato: YYYY-MM-DD, DD/MM/YYYY, DD-MM-YYYY"
+            return "Data do Lançamento ou Baixa inválida. Use formato: YYYY-MM-DD, DD/MM/YYYY ou DD-MM-YYYY"
     
     # Validar campos de data obrigatórios para outros tipos
     if tipo == "Recebimento Não Identificado" and has("data"):
         if not parse_date_or_none(row.get("data")):
-            return "Data inválida para Recebimento Não Identificado. Use formato: YYYY-MM-DD, DD/MM/YYYY, DD-MM-YYYY"
+            return "Data inválida para Recebimento Não Identificado. Use formato: YYYY-MM-DD, DD/MM/YYYY ou DD-MM-YYYY"
     
     if tipo == "Pagamento Não Identificado" and has("data"):
         if not parse_date_or_none(row.get("data")):
-            return "Data inválida para Pagamento Não Identificado. Use formato: YYYY-MM-DD, DD/MM/YYYY, DD-MM-YYYY"
+            return "Data inválida para Pagamento Não Identificado. Use formato: YYYY-MM-DD, DD/MM/YYYY ou DD-MM-YYYY"
     
     if tipo == "Cartão de Crédito Não Identificado" and has("data"):
         if not parse_date_or_none(row.get("data")):
-            return "Data inválida para Cartão de Crédito Não Identificado. Use formato: YYYY-MM-DD, DD/MM/YYYY, DD-MM-YYYY"
+            return "Data inválida para Cartão de Crédito Não Identificado. Use formato: YYYY-MM-DD, DD/MM/YYYY ou DD-MM-YYYY"
     
     if tipo == "Nota Fiscal Não Anexada" and has("data"):
         if not parse_date_or_none(row.get("data")):
-            return "Data inválida para Nota Fiscal Não Anexada. Use formato: YYYY-MM-DD, DD/MM/YYYY, DD-MM-YYYY"
+            return "Data inválida para Nota Fiscal Não Anexada. Use formato: YYYY-MM-DD, DD/MM/YYYY ou DD-MM-YYYY"
+
+    if tipo in ["Lançamento Não Encontrado em Extrato", "Lançamento Não Encontrado em Sistema"] and has("data"):
+        if not parse_date_or_none(row.get("data")):
+            return f"Data inválida para {tipo}. Use formato: YYYY-MM-DD, DD/MM/YYYY ou DD-MM-YYYY"
     
     return None
 

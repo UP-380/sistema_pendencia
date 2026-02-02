@@ -132,23 +132,23 @@
         "Cartão de Crédito Não Identificado": {
             show: ["grp_data", "grp_fornecedor", "grp_valor", "grp_obs"],
             hide: ["grp_data_competencia", "grp_data_baixa", "grp_codigo", "grp_natureza_sistema", "grp_tipo_credito_debito"],
-            required: ["banco", "data", "fornecedor_cliente", "valor"],
+            required: ["banco", "data", "valor"],
             label_data: null
         },
         "Pagamento Não Identificado": {
             show: ["grp_data", "grp_fornecedor", "grp_valor", "grp_obs"],
             hide: ["grp_data_competencia", "grp_data_baixa", "grp_codigo", "grp_natureza_sistema", "grp_tipo_credito_debito"],
-            required: ["banco", "data", "fornecedor_cliente", "valor"],
+            required: ["banco", "data", "valor"],
             label_data: null
         },
         "Recebimento Não Identificado": {
             show: ["grp_data", "grp_fornecedor", "grp_valor", "grp_obs"],
             hide: ["grp_data_competencia", "grp_data_baixa", "grp_codigo", "grp_natureza_sistema", "grp_tipo_credito_debito"],
-            required: ["banco", "data", "fornecedor_cliente", "valor"],
+            required: ["banco", "data", "valor"],
             label_data: null
         },
         "Documento Não Anexado": {
-            show: ["grp_fornecedor", "grp_valor", "grp_obs", "grp_data"],
+            show: ["grp_fornecedor", "grp_valor", "grp_obs", "grp_data", "grp_banco"],
             hide: ["grp_data_competencia", "grp_data_baixa", "grp_codigo", "grp_natureza_sistema", "grp_tipo_credito_debito"],
             required: ["fornecedor_cliente", "valor", "data"],
             label_data: null
@@ -160,20 +160,20 @@
             label_data: null
         },
         "Lançamento Não Encontrado em Sistema": {
-            show: ["grp_fornecedor", "grp_valor", "grp_data", "grp_codigo", "grp_obs", "grp_tipo_credito_debito"],
-            hide: ["grp_data_competencia", "grp_data_baixa", "grp_natureza_sistema"],
+            show: ["grp_fornecedor", "grp_valor", "grp_data", "grp_obs", "grp_tipo_credito_debito", "grp_banco"],
+            hide: ["grp_data_competencia", "grp_data_baixa", "grp_natureza_sistema", "grp_codigo"],
             required: ["fornecedor_cliente", "valor", "data", "tipo_credito_debito"],
             label_data: null
         },
         "Natureza Errada": {
-            show: ["grp_fornecedor", "grp_valor", "grp_codigo", "grp_obs", "grp_data", "grp_natureza_sistema"],
-            hide: ["grp_data_competencia", "grp_data_baixa"],
+            show: ["grp_fornecedor", "grp_valor", "grp_codigo", "grp_obs", "grp_data", "grp_natureza_sistema", "grp_banco"],
+            hide: ["grp_data_competencia", "grp_data_baixa", "grp_tipo_credito_debito"],
             required: ["fornecedor_cliente", "valor", "codigo_lancamento", "data"],
             label_data: "Data do Lançamento ou Baixa"
         },
         "Competência Errada": {
-            show: ["grp_fornecedor", "grp_valor", "grp_codigo", "grp_obs", "grp_data_competencia"],
-            hide: ["grp_data_baixa", "grp_data", "grp_natureza_sistema"],
+            show: ["grp_fornecedor", "grp_valor", "grp_codigo", "grp_obs", "grp_data_competencia", "grp_banco"],
+            hide: ["grp_data_baixa", "grp_data", "grp_natureza_sistema", "grp_tipo_credito_debito"],
             required: ["fornecedor_cliente", "valor", "codigo_lancamento", "data_competencia"],
             label_data: null
         },

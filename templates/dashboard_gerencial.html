@@ -1,0 +1,921 @@
+{% extends "base.html" %}
+{% block title %}Dashboard Gerencial - UP380{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="fw-bold text-dark mb-0">
+                <i class="bi bi-pie-chart-fill me-2" style="color: #0e3b6f;"></i>Dashboard Gerencial
+            </h4>
+            <p class="text-muted mb-0 small">Visão estratégica e indicadores de performance</p>
+        </div>
+        <div class="d-flex gap-2 align-items-center flex-wrap">
+            <!-- Flatpickr CSS -->
+            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+            <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+            <script src="https://npmcdn.com/flatpickr/dist/l10n/pt.js"></script>
+
+            <!-- Filtro Período Abertura -->
+            <div class="input-group input-group-sm" style="width: 250px;">
+                <span class="input-group-text bg-white"><i class="bi bi-calendar-event"></i></span>
+                <input type="text" id="filtroPeriodoAbertura" class="form-control" placeholder="Período Criação">
+            </div>
+
+            <!-- Filtro Data Pendência -->
+            <div class="input-group input-group-sm" style="width: 250px;">
+                <span class="input-group-text bg-white"><i class="bi bi-calendar-check"></i></span>
+                <input type="text" id="filtroPeriodoPendencia" class="form-control" placeholder="Período da Pendência">
+            </div>
+            <!-- Filtro Multi-Select -->
+            <div class="dropdown">
+                <button class="btn btn-white border dropdown-toggle d-flex align-items-center gap-2" type="button"
+                    id="dropdownEmpresas" onclick="toggleDropdownManual(event)" aria-expanded="false"
+                    style="background-color: #fff;">
+                    <i class="bi bi-building"></i>
+                    <span id="labelEmpresas">Todas as Empresas</span>
+                </button>
+                <div class="dropdown-menu p-2" aria-labelledby="dropdownEmpresas"
+                    style="max-height: 400px; overflow-y: auto; width: 300px; z-index: 9999;">
+
+                    <!-- Campo de Busca -->
+                    <div class="px-2 mb-2 sticky-top bg-white pt-1 pb-2" style="z-index: 10;">
+                        <input type="text" id="inputBuscaEmpresa" class="form-control form-control-sm"
+                            placeholder="Buscar empresa..." autocomplete="off">
+                    </div>
+
+                    <div class="form-check mb-2 ms-3">
+                        <input class="form-check-input filter-checkbox" type="checkbox" value="todas" id="chk-todas"
+                            checked>
+                        <label class="form-check-label fw-bold" for="chk-todas">
+                            Todas as Empresas
+                        </label>
+                    </div>
+
+                    <div class="dropdown-divider"></div>
+
+                    <div id="listaEmpresas" class="px-2">
+                        <!-- Preenchido via JS -->
+                        <div class="text-center text-muted"><small>Carregando...</small></div>
+                    </div>
+
+                    <div class="dropdown-divider"></div>
+                    <div class="px-2 pb-1">
+                        <button class="btn btn-sm btn-primary w-100" onclick="aplicarFiltros()">Aplicar Filtros</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Export Button -->
+            <button class="btn btn-success d-flex align-items-center gap-2" onclick="exportarExcel()">
+                <i class="bi bi-file-earmark-excel"></i> Exportar XLSX
+            </button>
+        </div>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loading" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-2 text-muted">Carregando indicadores...</p>
+    </div>
+
+    <!-- Content (Hidden initially) -->
+    <div id="dashboardContent" style="display: none;">
+
+        <!-- Action Cards Row (Phase 3) -->
+        <div class="row g-4 mb-4">
+            <!-- Card 1: Última Atividade -->
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm h-100 pending-card">
+                    <div class="card-body p-3 position-relative overflow-hidden">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h6 class="text-uppercase text-muted fw-bold mb-2"
+                                    style="font-size: 0.75rem; letter-spacing: 1.2px;">
+                                    <i class="bi bi-clock-history me-1"></i> Última Pendência Aberta
+                                </h6>
+                                <h5 class="fw-bold text-dark mb-0 text-truncate" style="max-width: 250px;"
+                                    id="latest-empresa">Carregando...</h5>
+                            </div>
+                            <span class="badge bg-light text-dark border" id="latest-id">#---</span>
+                        </div>
+
+                        <div id="latest-content">
+                            <!-- Dynamic Content -->
+                            <div class="d-flex align-items-center text-muted mb-3">
+                                <i class="bi bi-calendar3 me-2"></i>
+                                <span id="latest-data">--/--/----</span>
+                                <span class="mx-2">•</span>
+                                <i class="bi bi-tag me-2"></i>
+                                <span id="latest-tipo">---</span>
+                            </div>
+                            <div class="alert alert-light border rounded-3 mb-0 p-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted fw-bold">VALOR</small>
+                                    <span class="fw-bold text-success" id="latest-valor">R$ 0,00</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="latest-empty" class="text-center py-4 d-none">
+                            <i class="bi bi-inbox text-muted fs-1 opacity-50"></i>
+                            <p class="text-muted mt-2 small">Nenhuma atividade recente</p>
+                        </div>
+
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 2: Painel Rápido -->
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-white border-0 py-2 d-flex justify-content-between align-items-center">
+                        <h6 class="text-uppercase text-danger fw-bold mb-0"
+                            style="font-size: 0.75rem; letter-spacing: 1.2px;">
+                            <i class="bi bi-exclamation-triangle-fill me-1"></i> Painel Rápido (<span
+                                id="quick-role-name">Ações</span>)
+                        </h6>
+                        <span class="badge bg-danger rounded-pill" id="quick-count">0</span>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="list-group list-group-flush" id="quick-list">
+                            <!-- Dynamic Items -->
+                            <div class="text-center py-4 text-muted">
+                                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                <small class="ms-2">Buscando prioridades...</small>
+                            </div>
+                        </div>
+                        <div id="quick-empty" class="text-center py-5 d-none">
+                            <i class="bi bi-check-circle text-success fs-1"></i>
+                            <p class="text-muted mt-2 mb-0">Tudo em dia! Nenhuma ação pendente.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- KPIs -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100" style="border-left: 5px solid #0d6efd !important;">
+                    <div class="card-body py-3 px-4">
+                        <h6 class="text-uppercase text-muted mb-1" style="font-size: 0.7rem; letter-spacing: 1px;">Total
+                            Pendências</h6>
+                        <h4 class="fw-bold mb-0 text-dark" id="kpiTotal">0</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100" style="border-left: 5px solid #dc3545 !important;">
+                    <div class="card-body py-3 px-4">
+                        <h6 class="text-uppercase text-muted mb-1" style="font-size: 0.7rem; letter-spacing: 1px;">Em
+                            Aberto</h6>
+                        <h4 class="fw-bold mb-0 text-danger" id="kpiAbertas">0</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100" style="border-left: 5px solid #198754 !important;">
+                    <div class="card-body py-3 px-4">
+                        <h6 class="text-uppercase text-muted mb-1" style="font-size: 0.7rem; letter-spacing: 1px;">
+                            Resolvidas</h6>
+                        <h4 class="fw-bold mb-0 text-success" id="kpiResolvidas">0</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Linha 1: Evolução e Status -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-8">
+                <div class="card border-0 shadow-sm h-100 position-relative">
+                    <button class="btn-info-chart" onclick="abrirDetalhes('evolucao')" title="Ver detalhes">
+                        <i class="bi bi-info-circle-fill"></i>
+                    </button>
+                    <div class="card-body">
+                        <h6 class="fw-bold mb-3">Evolução: Abertura x Fechamento</h6>
+                        <div style="height: 220px;">
+                            <canvas id="chartEvolucao"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100 position-relative">
+                    <button class="btn-info-chart" onclick="abrirDetalhes('status')" title="Ver detalhes">
+                        <i class="bi bi-info-circle-fill"></i>
+                    </button>
+                    <div class="card-body">
+                        <h6 class="fw-bold mb-3">Por Status Atual</h6>
+                        <div style="height: 220px; display: flex; justify-content: center;">
+                            <canvas id="chartStatus"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Linha 2: Empresas e Tipos -->
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm h-100 position-relative">
+                    <button class="btn-info-chart" onclick="abrirDetalhes('empresas')" title="Ver detalhes">
+                        <i class="bi bi-info-circle-fill"></i>
+                    </button>
+                    <div class="card-body">
+                        <h6 class="fw-bold mb-3">Top 10 Empresas (Volume)</h6>
+                        <div style="height: 220px;">
+                            <canvas id="chartEmpresas"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm h-100 position-relative">
+                    <button class="btn-info-chart" onclick="abrirDetalhes('tipo')" title="Ver detalhes">
+                        <i class="bi bi-info-circle-fill"></i>
+                    </button>
+                    <div class="card-body">
+                        <h6 class="fw-bold mb-3">Distribuição Por Tipo</h6>
+                        <div style="height: 220px;">
+                            <canvas id="chartTipos"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- CSS do Botão de Info e Accordion -->
+    <style>
+        .btn-info-chart {
+            background: linear-gradient(135deg, #0d6efd, #0a58ca);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2), inset 1px 1px 2px rgba(255, 255, 255, 0.3);
+            transition: all 0.2s ease;
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            z-index: 10;
+            cursor: pointer;
+        }
+
+        .btn-info-chart:hover {
+            transform: translateY(-2px);
+            box-shadow: 3px 3px 8px rgba(0, 0, 0, 0.3);
+            color: white;
+        }
+
+        .item-card {
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            background: white;
+            overflow: hidden;
+            transition: box-shadow 0.2s;
+        }
+
+        .item-card:hover {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .item-header {
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            background: #fff;
+        }
+
+        .item-header:hover {
+            background-color: #f8f9fa;
+        }
+
+        .btn-expand {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 1px solid #dee2e6;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            color: #6c757d;
+            transition: all 0.2s;
+        }
+
+        .item-card.expanded .btn-expand {
+            transform: rotate(180deg);
+            background: #e9ecef;
+            color: #0d6efd;
+        }
+
+        .item-title {
+            font-weight: 600;
+            color: #212529;
+            flex-grow: 1;
+        }
+
+        .item-badge {
+            background: #e9ecef;
+            color: #495057;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .item-body {
+            display: none;
+            padding: 0;
+            border-top: 1px solid #e9ecef;
+            background-color: #f8f9fa;
+        }
+
+        .item-card.expanded .item-body {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+
+    <!-- Modal de Detalhes -->
+    <div class="modal fade" id="modalDetalhes" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="modalDetalhesTitle">Detalhes</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body bg-light">
+                    <div id="modalLoading" class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status"></div>
+                    </div>
+
+                    <!-- Container dos Cards -->
+                    <div id="modalCardsContainer" style="display:none;">
+                        <!-- Injetado via JS -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    let charts = {};
+    let empresasDisponiveisGlobal = [];
+    let detalhesModal;
+
+    document.addEventListener('DOMContentLoaded', async function () {
+        // Inicializar modal apenas depois que o Bootstrap estiver carregado
+        detalhesModal = new bootstrap.Modal(document.getElementById('modalDetalhes'));
+
+        await carregarEmpresas();
+        aplicarFiltros();
+    });
+
+    async function abrirDetalhes(tipoGrafico) {
+        detalhesModal.show();
+
+        document.getElementById('modalLoading').style.display = 'block';
+        document.getElementById('modalCardsContainer').style.display = 'none';
+        document.getElementById('modalDetalhesTitle').textContent = 'Carregando detalhes...';
+
+        try {
+            const empresas = getEmpresasSelecionadas();
+            const params = new URLSearchParams();
+            params.append('type', tipoGrafico);
+            empresas.forEach(e => params.append('empresas', e));
+
+            // Capturar datas
+            if (pickerAbertura && pickerAbertura.selectedDates.length === 2) {
+                const start = pickerAbertura.selectedDates[0].toISOString().split('T')[0];
+                const end = pickerAbertura.selectedDates[1].toISOString().split('T')[0];
+                params.append('start_abertura', start);
+                params.append('end_abertura', end);
+            }
+
+            if (pickerPendencia && pickerPendencia.selectedDates.length === 2) {
+                const start = pickerPendencia.selectedDates[0].toISOString().split('T')[0];
+                const end = pickerPendencia.selectedDates[1].toISOString().split('T')[0];
+                params.append('start_pendencia', start);
+                params.append('end_pendencia', end);
+            }
+
+            const response = await fetch(`/api/dashboard/details?${params.toString()}`);
+            if (!response.ok) throw new Error('Erro na API');
+
+            const data = await response.json();
+            document.getElementById('modalDetalhesTitle').textContent = data.title || 'Detalhes';
+
+            renderizarCards(data.data, data.columns, tipoGrafico);
+
+            document.getElementById('modalLoading').style.display = 'none';
+            document.getElementById('modalCardsContainer').style.display = 'block';
+
+        } catch (error) {
+            console.error(error);
+            document.getElementById('modalDetalhesTitle').textContent = 'Erro ao carregar';
+            document.getElementById('modalLoading').style.display = 'none';
+        }
+    }
+
+    function renderizarCards(rows, columns, tipoGrafico) {
+        const container = document.getElementById('modalCardsContainer');
+        container.innerHTML = '';
+
+        if (rows.length === 0) {
+            container.innerHTML = '<div class="text-center p-3 text-muted">Nenhum dado encontrado</div>';
+            return;
+        }
+
+        // 1. Agrupar dados
+        let grouped = {};
+        // Se a primeira coluna é "Empresa", agrupa por ela. Se for "Mês" (Evolução), agrupa por mês.
+        // O backend manda as colunas certas, então a [0] é a chave principal.
+        let groupKey = columns[0];
+
+        rows.forEach(row => {
+            const key = row[groupKey];
+            if (!grouped[key]) grouped[key] = [];
+            grouped[key].push(row);
+        });
+
+        // 2. Criar Cards
+        Object.keys(grouped).forEach(key => {
+            const items = grouped[key];
+            // Tenta somar a quantidade se existir coluna de quantidade
+            // Colunas variam: 'Quantidade', 'Total Pendências'.
+            // Na evolução, temos 'Quantidade'.
+            let total = 0;
+            if (columns.includes('Quantidade')) {
+                total = items.reduce((sum, item) => sum + (item['Quantidade'] || 0), 0);
+            } else if (columns.includes('Total Pendências')) {
+                total = items.reduce((sum, item) => sum + (item['Total Pendências'] || 0), 0);
+            } else {
+                total = items.length;
+            }
+
+            const card = document.createElement('div');
+            card.className = 'item-card';
+
+            // Header do Card
+            card.innerHTML = `
+                <div class="item-header" onclick="toggleCard(this)">
+                    <div class="btn-expand">
+                        <i class="bi bi-chevron-down"></i>
+                    </div>
+                    <div class="item-title">${key}</div>
+                    <div class="item-badge">${total} un.</div>
+                </div>
+                <div class="item-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-borderless mb-0">
+                            <thead class="text-muted" style="font-size: 0.85rem;">
+                                <tr>
+                                    ${columns.slice(1).map(c => `<th>${c}</th>`).join('')}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${items.map(item => `
+                                    <tr>
+                                        ${columns.slice(1).map(col => `
+                                            <td class="py-2" style="font-size: 0.9rem;">
+                                                ${item[col]}
+                                            </td>
+                                        `).join('')}
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+
+            container.appendChild(card);
+        });
+    }
+
+    // Função global para toggle
+    window.toggleCard = function (header) {
+        const card = header.parentElement;
+        card.classList.toggle('expanded');
+    }
+
+    async function carregarEmpresas() {
+        try {
+            // Usa modo otimizado apenas para pegar lista (sem calcular métricas pesadas)
+            const response = await fetch('/api/dashboard/metrics?only_companies=true');
+            const data = await response.json();
+
+            if (data.allowed_empresas) {
+                empresasDisponiveisGlobal = data.allowed_empresas;
+                renderizarListaEmpresas(data.allowed_empresas);
+            }
+        } catch (error) {
+            console.error('Erro ao carregar empresas:', error);
+        }
+    }
+
+    // Toggle Manual do Dropdown para garantir funcionamento
+    function toggleDropdownManual(event) {
+        event.stopPropagation();
+        const btn = event.currentTarget;
+        const menu = btn.nextElementSibling;
+
+        if (menu) {
+            if (menu.classList.contains('show')) {
+                menu.classList.remove('show');
+                menu.style.display = 'none';
+            } else {
+                menu.classList.add('show');
+                menu.style.display = 'block';
+            }
+        }
+    }
+
+    // Fechar ao clicar fora
+    document.addEventListener('click', function (e) {
+        const dropdown = document.querySelector('.dropdown');
+        if (dropdown && !dropdown.contains(e.target)) {
+            const menu = dropdown.querySelector('.dropdown-menu');
+            if (menu && menu.classList.contains('show')) {
+                menu.classList.remove('show');
+                menu.style.display = 'none';
+            }
+        }
+    });
+
+    function renderizarListaEmpresas(empresas) {
+        const container = document.getElementById('listaEmpresas');
+        container.innerHTML = '';
+
+        if (!empresas || empresas.length === 0) {
+            container.innerHTML = '<div class="text-center text-muted p-2"><small>Nenhuma empresa vinculada</small></div>';
+            return;
+        }
+
+        empresas.forEach(emp => {
+            const div = document.createElement('div');
+            div.className = 'form-check mb-1 d-flex align-items-center item-empresa';
+
+            const checkbox = document.createElement('input');
+            checkbox.className = 'form-check-input filter-checkbox-item me-2';
+            checkbox.type = 'checkbox';
+            checkbox.value = emp;
+            checkbox.id = `chk-${emp.replace(/\s+/g, '-')}`;
+            checkbox.style.marginTop = '0';
+
+            const label = document.createElement('label');
+            label.className = 'form-check-label text-truncate w-100';
+            label.htmlFor = checkbox.id;
+            label.style.fontSize = '0.9rem';
+            label.style.cursor = 'pointer';
+            label.textContent = emp;
+
+            div.appendChild(checkbox);
+            div.appendChild(label);
+            container.appendChild(div);
+        });
+
+        setupDropdownListeners();
+    }
+
+    function setupDropdownListeners() {
+        // Event Listeners para controle "Todas" vs "Individuais"
+        const chkTodas = document.getElementById('chk-todas');
+        const chkItems = document.querySelectorAll('.filter-checkbox-item');
+        const inputBusca = document.getElementById('inputBuscaEmpresa');
+
+        // Busca
+        inputBusca.addEventListener('keyup', function (e) {
+            const termo = e.target.value.toLowerCase();
+            const items = document.querySelectorAll('.item-empresa');
+
+            items.forEach(item => {
+                const label = item.querySelector('label').textContent.toLowerCase();
+                if (label.includes(termo)) {
+                    item.style.display = 'flex'; // ou 'block' se preferir, mas flex mantem alinhamento
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+
+        // Impede que clicar na busca feche o dropdown (redundância por segurança)
+        inputBusca.addEventListener('click', function (e) {
+            e.stopPropagation();
+        });
+
+        chkTodas.addEventListener('change', (e) => {
+            if (e.target.checked) {
+                chkItems.forEach(chk => chk.checked = false);
+                chkItems.forEach(chk => chk.disabled = true);
+                document.getElementById('labelEmpresas').textContent = 'Todas as Empresas';
+            } else {
+                chkItems.forEach(chk => chk.disabled = false);
+                document.getElementById('labelEmpresas').textContent = 'Selecione...';
+            }
+        });
+
+        chkItems.forEach(chk => {
+            chk.addEventListener('change', () => {
+                if (chkTodas.checked) chkTodas.checked = false;
+
+                const selecionados = Array.from(chkItems).filter(c => c.checked).length;
+                if (selecionados === 0) {
+                    chkTodas.checked = true;
+                    chkItems.forEach(c => c.disabled = true);
+                    document.getElementById('labelEmpresas').textContent = 'Todas as Empresas';
+                } else {
+                    document.getElementById('labelEmpresas').textContent = `${selecionados} Selecionada(s)`;
+                }
+            });
+            // Init state
+            chk.disabled = true;
+        });
+
+        // Impedir fechamento ao clicar dentro do menu
+        document.querySelector('.dropdown-menu').addEventListener('click', function (e) {
+            // Se o clique não foi no botão de aplicar (que deve fechar), para a propagação
+            if (e.target.tagName !== 'BUTTON') {
+                e.stopPropagation();
+            }
+        });
+    }
+
+    function getEmpresasSelecionadas() {
+        const chkTodas = document.getElementById('chk-todas');
+        if (chkTodas.checked) return ['todas'];
+
+        const chkItems = document.querySelectorAll('.filter-checkbox-item');
+        const selecionadas = Array.from(chkItems)
+            .filter(chk => chk.checked)
+            .map(chk => chk.value);
+
+        return selecionadas.length > 0 ? selecionadas : ['todas'];
+    }
+
+    // Variáveis globais para os pickers
+    let pickerAbertura;
+    let pickerPendencia;
+
+    document.addEventListener('DOMContentLoaded', function () {
+        try {
+            // Inicializar Flatpickr
+            pickerAbertura = flatpickr("#filtroPeriodoAbertura", {
+                mode: "range",
+                dateFormat: "Y-m-d",
+                altInput: true,
+                altFormat: "d/m/Y",
+                locale: "pt"
+            });
+
+            pickerPendencia = flatpickr("#filtroPeriodoPendencia", {
+                mode: "range",
+                dateFormat: "Y-m-d",
+                altInput: true,
+                altFormat: "d/m/Y",
+                locale: "pt"
+            });
+
+            carregarEmpresas();
+            // Carrega inicial sem filtros de data
+            carregarDados();
+            // Carregar cards de ação (Fase 3)
+            carregarAcoes();
+        } catch (error) {
+            console.error('Erro na inicialização:', error);
+            alert('Erro de Inicialização (JS): ' + error.message);
+            document.getElementById('loading').style.display = 'none';
+        }
+    });
+
+    async function aplicarFiltros() {
+        const loading = document.getElementById('loading');
+        const content = document.getElementById('dashboardContent');
+
+        // Capturar empresas
+        const empresas = getEmpresasSelecionadas();
+        let query = `?empresas=${empresas.join('&empresas=')}`;
+
+        // Capturar datas
+        if (pickerAbertura.selectedDates.length === 2) {
+            const start = pickerAbertura.selectedDates[0].toISOString().split('T')[0];
+            const end = pickerAbertura.selectedDates[1].toISOString().split('T')[0];
+            query += `&start_abertura=${start}&end_abertura=${end}`;
+        }
+
+        if (pickerPendencia.selectedDates.length === 2) {
+            const start = pickerPendencia.selectedDates[0].toISOString().split('T')[0];
+            const end = pickerPendencia.selectedDates[1].toISOString().split('T')[0];
+            query += `&start_pendencia=${start}&end_pendencia=${end}`;
+        }
+
+        loading.style.display = 'block';
+        content.style.display = 'none';
+
+        await carregarDados(query);
+    }
+
+    async function carregarDados(query = '') {
+        try {
+            const response = await fetch(`/api/dashboard/metrics${query}`);
+            if (!response.ok) {
+                const errData = await response.json();
+                throw new Error(errData.message || 'Erro na resposta da API (' + response.status + ')');
+            }
+
+            const data = await response.json();
+            atualizarDashboard(data);
+
+            const loading = document.getElementById('loading');
+            const content = document.getElementById('dashboardContent');
+            loading.style.display = 'none';
+            content.style.display = 'block';
+        } catch (error) {
+            console.error('Erro ao atualizar dashboard:', error);
+            alert('Erro: ' + error.message);
+            const loading = document.getElementById('loading');
+            if (loading) loading.style.display = 'none';
+        }
+    }
+
+    function atualizarDashboard(data) {
+        // KPIs
+        document.getElementById('kpiTotal').textContent = data.total;
+        document.getElementById('kpiAbertas').textContent = data.abertas;
+        document.getElementById('kpiResolvidas').textContent = data.resolvidas;
+
+        // Gráficos
+        renderChart('chartEvolucao', 'line', {
+            labels: data.evolucao.labels,
+            datasets: [
+                {
+                    label: 'Abertas',
+                    data: data.evolucao.abertas,
+                    borderColor: 'rgb(255, 99, 132)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                    tension: 0.3
+                },
+                {
+                    label: 'Resolvidas',
+                    data: data.evolucao.resolvidas,
+                    borderColor: 'rgb(53, 162, 235)',
+                    backgroundColor: 'rgba(53, 162, 235, 0.5)',
+                    tension: 0.3
+                }
+            ]
+        });
+
+        renderChart('chartStatus', 'doughnut', {
+            labels: Object.keys(data.por_status),
+            datasets: [{
+                data: Object.values(data.por_status),
+                backgroundColor: [
+                    'rgba(255, 206, 86, 0.7)',
+                    'rgba(75, 192, 192, 0.7)',
+                    'rgba(54, 162, 235, 0.7)',
+                    'rgba(153, 102, 255, 0.7)',
+                    'rgba(255, 99, 132, 0.7)'
+                ]
+            }]
+        });
+
+        renderChart('chartEmpresas', 'bar', {
+            labels: data.por_empresa.map(e => e.empresa),
+            datasets: [{
+                label: 'Volume de Pendências',
+                data: data.por_empresa.map(e => e.count),
+                backgroundColor: 'rgba(255, 159, 64, 0.7)'
+            }]
+        }, { indexAxis: 'y' });
+
+        renderChart('chartTipos', 'bar', {
+            labels: Object.keys(data.por_tipo),
+            datasets: [{
+                label: 'Qtd. por Tipo',
+                data: Object.values(data.por_tipo),
+                backgroundColor: 'rgba(153, 102, 255, 0.7)'
+            }]
+        });
+    }
+
+    function renderChart(canvasId, type, data, options = {}) {
+        const ctx = document.getElementById(canvasId).getContext('2d');
+
+        if (charts[canvasId]) {
+            charts[canvasId].destroy();
+        }
+
+        const defaultOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        };
+
+        charts[canvasId] = new Chart(ctx, {
+            type: type,
+            data: data,
+            options: { ...defaultOptions, ...options }
+        });
+    }
+
+    function exportarExcel() {
+        const empresas = getEmpresasSelecionadas();
+        const params = new URLSearchParams();
+        empresas.forEach(e => params.append('empresas', e));
+
+        window.location.href = `/api/dashboard/export?${params.toString()}`;
+    }
+
+    async function carregarAcoes() {
+        try {
+            const response = await fetch('/api/dashboard/actions');
+            if (!response.ok) return; // Silencioso se der erro (não trava dashboard)
+
+            const data = await response.json();
+
+            // 1. Renderizar Última Pendência
+            const cardLatest = document.getElementById('latest-content');
+            const emptyLatest = document.getElementById('latest-empty');
+
+            if (data.latest) {
+                document.getElementById('latest-empresa').textContent = data.latest.empresa;
+                document.getElementById('latest-id').textContent = '#' + data.latest.id;
+                document.getElementById('latest-data').textContent = data.latest.data_abertura;
+                document.getElementById('latest-tipo').textContent = data.latest.tipo;
+                document.getElementById('latest-valor').textContent = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(data.latest.valor);
+
+                cardLatest.classList.remove('d-none');
+                emptyLatest.classList.add('d-none');
+            } else {
+                document.getElementById('latest-empresa').textContent = 'Sem atividade recente';
+                cardLatest.classList.add('d-none');
+                emptyLatest.classList.remove('d-none');
+            }
+
+            // 2. Renderizar Painel Rápido
+            const listQuick = document.getElementById('quick-list');
+            const emptyQuick = document.getElementById('quick-empty');
+
+            document.getElementById('quick-role-name').textContent = data.user_role;
+            document.getElementById('quick-count').textContent = data.quick_panel.length;
+
+            if (data.quick_panel.length > 0) {
+                listQuick.innerHTML = data.quick_panel.map(item => `
+                    <a href="${item.acao_url}" class="list-group-item list-group-item-action px-3 py-2 border-bottom-0 border-top">
+                        <div class="d-flex w-100 justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1 text-dark fw-bold">${item.empresa}</h6>
+                                <small class="text-muted">
+                                    <i class="bi bi-calendar-event me-1"></i> ${item.data}
+                                    <span class="mx-1">•</span> ${item.status}
+                                </small>
+                            </div>
+                            <button class="btn btn-sm btn-outline-primary rounded-pill">
+                                Resolver <i class="bi bi-arrow-right ms-1"></i>
+                            </button>
+                        </div>
+                    </a>
+                `).join('');
+                emptyQuick.classList.add('d-none');
+            } else {
+                listQuick.innerHTML = '';
+                emptyQuick.classList.remove('d-none');
+            }
+
+        } catch (error) {
+            console.error('Erro ao carregar ações:', error);
+        }
+    }
+</script>
+{% endblock %}
