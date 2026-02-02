@@ -56,7 +56,25 @@ def migrar():
                 print(f"   ➕ Adicionando coluna: {col_nome}")
                 cursor.execute(f"ALTER TABLE pendencia ADD COLUMN {col_nome} {col_tipo}")
 
-        # --- PASSO 3: PARAMETRIZAÇÃO VISUAL DOS SEGMENTOS ---
+        # --- PASSO 3: ALINHAMENTO DE ESTRUTURA (TABELA SEGMENTO) ---
+        print("🔍 Verificando se faltam colunas na tabela 'segmento'...")
+        cursor.execute("PRAGMA table_info(segmento)")
+        colunas_segmento_existentes = [col[1] for col in cursor.fetchall()]
+
+        colunas_segmento_necessarias = {
+            "descricao": "TEXT",
+            "cor": "VARCHAR(20) DEFAULT '#1F4E78'",
+            "icone": "VARCHAR(50) DEFAULT 'building'",
+            "ativo": "BOOLEAN DEFAULT 1",
+            "criado_em": "DATETIME"
+        }
+
+        for col_nome, col_tipo in colunas_segmento_necessarias.items():
+            if col_nome not in colunas_segmento_existentes:
+                print(f"   ➕ Adicionando coluna ao segmento: {col_nome}")
+                cursor.execute(f"ALTER TABLE segmento ADD COLUMN {col_nome} {col_tipo}")
+
+        # --- PASSO 4: PARAMETRIZAÇÃO VISUAL DOS SEGMENTOS ---
         print("🎨 Atualizando identidade visual dos Segmentos...")
         
         # Mapeamento baseado nos nomes REAIS encontrados na sua VPS
@@ -79,7 +97,7 @@ def migrar():
         for nome, (cor, icone) in estilo_segmentos.items():
             cursor.execute("UPDATE segmento SET cor = ?, icone = ? WHERE nome = ?", (cor, icone, nome))
 
-        # --- PASSO 4: NORMALIZAÇÃO DE DADOS ---
+        # --- PASSO 5: NORMALIZAÇÃO DE DADOS ---
         print("🧹 Normalizando dados antigos (2159 registros)...")
         
         # Garante que status não fiquem vazios
@@ -89,7 +107,7 @@ def migrar():
         cursor.execute("UPDATE pendencia SET data_abertura = data || ' 00:00:00' WHERE data_abertura IS NULL AND data IS NOT NULL")
         cursor.execute("UPDATE pendencia SET data_abertura = CURRENT_TIMESTAMP WHERE data_abertura IS NULL")
 
-        # --- PASSO 5: PERFORMANCE ---
+        # --- PASSO 6: PERFORMANCE ---
         print("⚡ Criando índices para o novo Dashboard...")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_pend_empresa_status ON pendencia(empresa, status)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_pend_status_tipo ON pendencia(status, tipo_pendencia)")

@@ -596,9 +596,13 @@ def nova_pendencia():
             if tipo_pendencia == 'Nota Fiscal Não Anexada' and 'nota_fiscal_arquivo' in request.files:
                 file = request.files['nota_fiscal_arquivo']
                 if file and file.filename:
-                    filename = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{file.filename}"
-                    file.save(os.path.join('static/notas_fiscais', filename))
-                    nota_fiscal_arquivo = filename
+                    # Corrigido: usando current_app.static_folder e uuid para nome único
+                    original_filename = secure_filename(file.filename)
+                    unique_filename = f"{uuid.uuid4().hex}_{original_filename}"
+                    target_path = os.path.join(current_app.static_folder, 'notas_fiscais', unique_filename)
+                    os.makedirs(os.path.dirname(target_path), exist_ok=True)
+                    file.save(target_path)
+                    nota_fiscal_arquivo = unique_filename
             
             # Validar se o usuário tem acesso à empresa selecionada
             if empresa not in empresas_usuario:
@@ -706,10 +710,13 @@ def ver_pendencia(token):
         if 'nota_fiscal_arquivo' in request.files:
             file = request.files['nota_fiscal_arquivo']
             if file and file.filename:
-                target_path = os.path.join(current_app.static_folder, 'notas_fiscais', filename)
+                # Corrigido: definindo filename e garantindo nome único
+                original_filename = secure_filename(file.filename)
+                unique_filename = f"{uuid.uuid4().hex}_{original_filename}"
+                target_path = os.path.join(current_app.static_folder, 'notas_fiscais', unique_filename)
                 os.makedirs(os.path.dirname(target_path), exist_ok=True)
                 file.save(target_path)
-                pendencia.nota_fiscal_arquivo = filename
+                pendencia.nota_fiscal_arquivo = unique_filename
         
         # Atualiza status
         pendencia.status = 'PENDENTE OPERADOR UP'
@@ -1106,9 +1113,13 @@ def editar_pendencia(id):
         if pendencia.tipo_pendencia == 'Nota Fiscal Não Anexada' and 'nota_fiscal_arquivo' in request.files:
             file = request.files['nota_fiscal_arquivo']
             if file and file.filename:
-                filename = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{file.filename}"
-                file.save(os.path.join('static/notas_fiscais', filename))
-                pendencia.nota_fiscal_arquivo = filename
+                # Corrigido: usando current_app.static_folder e uuid para nome único
+                original_filename = secure_filename(file.filename)
+                unique_filename = f"{uuid.uuid4().hex}_{original_filename}"
+                target_path = os.path.join(current_app.static_folder, 'notas_fiscais', unique_filename)
+                os.makedirs(os.path.dirname(target_path), exist_ok=True)
+                file.save(target_path)
+                pendencia.nota_fiscal_arquivo = unique_filename
         pendencia.modificado_por = 'ADIMIN UP380'
         db.session.commit()
         flash('Pendência editada com sucesso!', 'success')
@@ -1648,9 +1659,13 @@ def editar_observacao(id):
         if 'documento_cliente' in request.files:
             file = request.files['documento_cliente']
             if file and file.filename:
-                filename = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{file.filename}"
-                file.save(os.path.join('static/notas_fiscais', filename))
-                pendencia.nota_fiscal_arquivo = filename
+                # Corrigido: usando current_app.static_folder e uuid para nome único
+                original_filename = secure_filename(file.filename)
+                unique_filename = f"{uuid.uuid4().hex}_{original_filename}"
+                target_path = os.path.join(current_app.static_folder, 'notas_fiscais', unique_filename)
+                os.makedirs(os.path.dirname(target_path), exist_ok=True)
+                file.save(target_path)
+                pendencia.nota_fiscal_arquivo = unique_filename
         db.session.commit()
         # Log da alteração
         log = LogAlteracao(
@@ -2818,7 +2833,8 @@ def baixar_anexo(pendencia_id):
         flash('Nenhum anexo encontrado para esta pendência.', 'warning')
         return redirect(url_for('dashboard'))
     
-    arquivo_path = os.path.join('static/notas_fiscais', pendencia.nota_fiscal_arquivo)
+    # Corrigido: usando current_app.static_folder para garantir o caminho absoluto correto
+    arquivo_path = os.path.join(current_app.static_folder, 'notas_fiscais', pendencia.nota_fiscal_arquivo)
     if not os.path.exists(arquivo_path):
         flash('Arquivo não encontrado no servidor.', 'error')
         return redirect(url_for('dashboard'))

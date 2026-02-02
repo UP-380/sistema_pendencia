@@ -1,0 +1,1364 @@
+OFXHEADER:100
+DATA:OFXSGML
+VERSION:102
+SECURITY:NONE
+ENCODING:USASCII
+CHARSET:1252
+COMPRESSION:NONE
+OLDFILEUID:NONE
+NEWFILEUID:NONE
+<OFX>
+    <SIGNONMSGSRSV1>
+        <SONRS>
+            <STATUS>
+                <CODE>0
+                <SEVERITY>INFO
+            </STATUS>
+            <DTSERVER>20260202113850[-3:GMT]
+            <LANGUAGE>ENG
+            <FI>
+                <ORG>SANTANDER
+                <FID>SANTANDER
+            </FI>
+        </SONRS>
+    </SIGNONMSGSRSV1>
+    <BANKMSGSRSV1>
+        <STMTTRNRS>
+            <TRNUID>1
+            <STATUS>
+                <CODE>0
+                <SEVERITY>INFO
+            </STATUS>
+            <STMTRS>
+                <CURDEF>BRL
+                <BANKACCTFROM>
+                    <BANKID>033
+                    <ACCTID>3348130071525
+                    <ACCTTYPE>CHECKING
+                </BANKACCTFROM>
+                <BANKTRANLIST>
+                    <DTSTART>20260202113850[-3:GMT]
+                    <DTEND>20260202113850[-3:GMT]
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260102000000[-3:GMT]
+                        <TRNAMT>4011,09
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-VISA
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260102000000[-3:GMT]
+                        <TRNAMT>11162,92
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-MASTER
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260102000000[-3:GMT]
+                        <TRNAMT>393,65
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-ELO
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260102000000[-3:GMT]
+                        <TRNAMT>808,70
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-AMEX
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260102000000[-3:GMT]
+                        <TRNAMT>3321,48
+                        <FITID>00060202
+                        <CHECKNUM>00060202
+                        <PAYEEID>0
+                        <MEMO>TED RECEBIDA                       18727053000174
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260102000000[-3:GMT]
+                        <TRNAMT>2220,54
+                        <FITID>00070202
+                        <CHECKNUM>00070202
+                        <PAYEEID>0
+                        <MEMO>TED RECEBIDA                       18727053000174
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260102000000[-3:GMT]
+                        <TRNAMT>305,42
+                        <FITID>00080202
+                        <CHECKNUM>00080202
+                        <PAYEEID>0
+                        <MEMO>TED RECEBIDA                       18727053000174
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260102000000[-3:GMT]
+                        <TRNAMT>-1,54
+                        <FITID>00090202
+                        <CHECKNUM>00090202
+                        <PAYEEID>0
+                        <MEMO>IOF IMPOSTO OPERACOES FINANCEIRAS  PERIODO: 01/12 A 31/12/25
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260102000000[-3:GMT]
+                        <TRNAMT>-65,65
+                        <FITID>00100202
+                        <CHECKNUM>00100202
+                        <PAYEEID>0
+                        <MEMO>IOF ADICIONAL - AUTOMATICO         PERIODO: 01/12 A 31/12/25
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260102000000[-3:GMT]
+                        <TRNAMT>-22156,61
+                        <FITID>00110202
+                        <CHECKNUM>00110202
+                        <PAYEEID>0
+                        <MEMO>APLICACAO CONTAMAX
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260105000000[-3:GMT]
+                        <TRNAMT>11629,00
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-VISA
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260105000000[-3:GMT]
+                        <TRNAMT>14274,25
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-MASTER
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260105000000[-3:GMT]
+                        <TRNAMT>1404,23
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-ELO
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260105000000[-3:GMT]
+                        <TRNAMT>6592,54
+                        <FITID>00150202
+                        <CHECKNUM>00150202
+                        <PAYEEID>0
+                        <MEMO>TED RECEBIDA                       18727053000174
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260105000000[-3:GMT]
+                        <TRNAMT>-15000,00
+                        <FITID>00443594
+                        <CHECKNUM>00443594
+                        <PAYEEID>0
+                        <MEMO>PIX ENVIADO                        LONGEVITA INDUSTRIA E COM
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260105000000[-3:GMT]
+                        <TRNAMT>-18900,02
+                        <FITID>00170202
+                        <CHECKNUM>00170202
+                        <PAYEEID>0
+                        <MEMO>APLICACAO CONTAMAX
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260106000000[-3:GMT]
+                        <TRNAMT>3034,32
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-VISA
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260106000000[-3:GMT]
+                        <TRNAMT>5215,19
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-MASTER
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260106000000[-3:GMT]
+                        <TRNAMT>282,10
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-ELO
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260106000000[-3:GMT]
+                        <TRNAMT>743,66
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-AMEX
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260106000000[-3:GMT]
+                        <TRNAMT>-9087,92
+                        <FITID>00010106
+                        <CHECKNUM>00010106
+                        <PAYEEID>0
+                        <MEMO>DEBITO PAGAMENTO DE SALARIO        PAGSAL:          2 PAGTOS
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260106000000[-3:GMT]
+                        <TRNAMT>8832,84
+                        <FITID>00230202
+                        <CHECKNUM>00230202
+                        <PAYEEID>0
+                        <MEMO>TED RECEBIDA                       18727053000174
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260106000000[-3:GMT]
+                        <TRNAMT>-9020,19
+                        <FITID>00240202
+                        <CHECKNUM>00240202
+                        <PAYEEID>0
+                        <MEMO>APLICACAO CONTAMAX
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260107000000[-3:GMT]
+                        <TRNAMT>2065,70
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-VISA
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260107000000[-3:GMT]
+                        <TRNAMT>2845,29
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-MASTER
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260107000000[-3:GMT]
+                        <TRNAMT>82,45
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-AMEX
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260107000000[-3:GMT]
+                        <TRNAMT>6401,19
+                        <FITID>00280202
+                        <CHECKNUM>00280202
+                        <PAYEEID>0
+                        <MEMO>TED RECEBIDA                       18727053000174
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260107000000[-3:GMT]
+                        <TRNAMT>-15000,00
+                        <FITID>00305993
+                        <CHECKNUM>00305993
+                        <PAYEEID>0
+                        <MEMO>PIX ENVIADO                        LONGEVITA INDUSTRIA E COM
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260107000000[-3:GMT]
+                        <TRNAMT>-55000,00
+                        <FITID>00300202
+                        <CHECKNUM>00300202
+                        <PAYEEID>0
+                        <MEMO>PIX ENVIADO                        LONGEVITA FARMACIA DE MAN
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260107000000[-3:GMT]
+                        <TRNAMT>56246,20
+                        <FITID>00310202
+                        <CHECKNUM>00310202
+                        <PAYEEID>0
+                        <MEMO>RESGATE CONTAMAX AUTOMATICO
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260108000000[-3:GMT]
+                        <TRNAMT>4392,79
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-VISA
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260108000000[-3:GMT]
+                        <TRNAMT>-7,80
+                        <FITID>00330202
+                        <CHECKNUM>00330202
+                        <PAYEEID>0
+                        <MEMO>TARIFA AVULSA ENVIO PIX            07/01/2026
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260108000000[-3:GMT]
+                        <TRNAMT>3630,88
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-MASTER
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260108000000[-3:GMT]
+                        <TRNAMT>129,33
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-ELO
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260108000000[-3:GMT]
+                        <TRNAMT>3438,75
+                        <FITID>00360202
+                        <CHECKNUM>00360202
+                        <PAYEEID>0
+                        <MEMO>TED RECEBIDA                       18727053000174
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260108000000[-3:GMT]
+                        <TRNAMT>-9224,78
+                        <FITID>00370202
+                        <CHECKNUM>00370202
+                        <PAYEEID>0
+                        <MEMO>APLICACAO CONTAMAX
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260109000000[-3:GMT]
+                        <TRNAMT>2511,32
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-VISA
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260109000000[-3:GMT]
+                        <TRNAMT>4439,51
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-MASTER
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260109000000[-3:GMT]
+                        <TRNAMT>4611,40
+                        <FITID>00400202
+                        <CHECKNUM>00400202
+                        <PAYEEID>0
+                        <MEMO>TED RECEBIDA                       18727053000174
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260109000000[-3:GMT]
+                        <TRNAMT>-101,76
+                        <FITID>00410202
+                        <CHECKNUM>00410202
+                        <PAYEEID>0
+                        <MEMO>JUROS SALDO UTILIZ ATE LIMITE      PERIODO: 09/12 A 08/01/26
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260109000000[-3:GMT]
+                        <TRNAMT>-11460,47
+                        <FITID>00420202
+                        <CHECKNUM>00420202
+                        <PAYEEID>0
+                        <MEMO>APLICACAO CONTAMAX
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260112000000[-3:GMT]
+                        <TRNAMT>-2500,00
+                        <FITID>00430202
+                        <CHECKNUM>00430202
+                        <PAYEEID>0
+                        <MEMO>DEBITO AUT. FAT.CARTAO MASTER CARD FINAL 8994
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260112000000[-3:GMT]
+                        <TRNAMT>10824,55
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-VISA
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260112000000[-3:GMT]
+                        <TRNAMT>12281,11
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-MASTER
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260112000000[-3:GMT]
+                        <TRNAMT>1637,81
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-ELO
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260112000000[-3:GMT]
+                        <TRNAMT>105,08
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-AMEX
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260112000000[-3:GMT]
+                        <TRNAMT>2381,29
+                        <FITID>00480202
+                        <CHECKNUM>00480202
+                        <PAYEEID>0
+                        <MEMO>TED RECEBIDA                       18727053000174
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260112000000[-3:GMT]
+                        <TRNAMT>2854,35
+                        <FITID>00490202
+                        <CHECKNUM>00490202
+                        <PAYEEID>0
+                        <MEMO>TED RECEBIDA                       18727053000174
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260112000000[-3:GMT]
+                        <TRNAMT>65,51
+                        <FITID>00500202
+                        <CHECKNUM>00500202
+                        <PAYEEID>0
+                        <MEMO>TED RECEBIDA                       18727053000174
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260112000000[-3:GMT]
+                        <TRNAMT>-27649,70
+                        <FITID>00510202
+                        <CHECKNUM>00510202
+                        <PAYEEID>0
+                        <MEMO>APLICACAO CONTAMAX
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260113000000[-3:GMT]
+                        <TRNAMT>4518,73
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-VISA
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260113000000[-3:GMT]
+                        <TRNAMT>3087,03
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-MASTER
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260113000000[-3:GMT]
+                        <TRNAMT>684,49
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-ELO
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260113000000[-3:GMT]
+                        <TRNAMT>11931,90
+                        <FITID>00550202
+                        <CHECKNUM>00550202
+                        <PAYEEID>0
+                        <MEMO>TED RECEBIDA                       18727053000174
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260113000000[-3:GMT]
+                        <TRNAMT>-70000,00
+                        <FITID>00560202
+                        <CHECKNUM>00560202
+                        <PAYEEID>0
+                        <MEMO>PIX ENVIADO                        LONGEVITA FARMACIA DE MAN
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260113000000[-3:GMT]
+                        <TRNAMT>48335,01
+                        <FITID>00570202
+                        <CHECKNUM>00570202
+                        <PAYEEID>0
+                        <MEMO>RESGATE CONTAMAX AUTOMATICO
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260114000000[-3:GMT]
+                        <TRNAMT>4155,78
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-VISA
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260114000000[-3:GMT]
+                        <TRNAMT>4697,68
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-MASTER
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260114000000[-3:GMT]
+                        <TRNAMT>-7,80
+                        <FITID>00600202
+                        <CHECKNUM>00600202
+                        <PAYEEID>0
+                        <MEMO>TARIFA AVULSA ENVIO PIX            13/01/2026
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260114000000[-3:GMT]
+                        <TRNAMT>363,42
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-ELO
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260114000000[-3:GMT]
+                        <TRNAMT>6161,35
+                        <FITID>00620202
+                        <CHECKNUM>00620202
+                        <PAYEEID>0
+                        <MEMO>TED RECEBIDA                       18727053000174
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260114000000[-3:GMT]
+                        <TRNAMT>-13927,59
+                        <FITID>00630202
+                        <CHECKNUM>00630202
+                        <PAYEEID>0
+                        <MEMO>APLICACAO CONTAMAX
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260115000000[-3:GMT]
+                        <TRNAMT>1428,47
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-VISA
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260115000000[-3:GMT]
+                        <TRNAMT>4985,88
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-MASTER
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260115000000[-3:GMT]
+                        <TRNAMT>974,16
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-ELO
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260115000000[-3:GMT]
+                        <TRNAMT>4876,08
+                        <FITID>00670202
+                        <CHECKNUM>00670202
+                        <PAYEEID>0
+                        <MEMO>TED RECEBIDA                       18727053000174
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260115000000[-3:GMT]
+                        <TRNAMT>1177,00
+                        <FITID>00680202
+                        <CHECKNUM>00680202
+                        <PAYEEID>0
+                        <MEMO>PIX RECEBIDO                       02127487184
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260115000000[-3:GMT]
+                        <TRNAMT>-13441,59
+                        <FITID>00690202
+                        <CHECKNUM>00690202
+                        <PAYEEID>0
+                        <MEMO>APLICACAO CONTAMAX
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260116000000[-3:GMT]
+                        <TRNAMT>3484,32
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-VISA
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260116000000[-3:GMT]
+                        <TRNAMT>5481,71
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-MASTER
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260116000000[-3:GMT]
+                        <TRNAMT>2828,72
+                        <FITID>00720202
+                        <CHECKNUM>00720202
+                        <PAYEEID>0
+                        <MEMO>TED RECEBIDA                       18727053000174
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260116000000[-3:GMT]
+                        <TRNAMT>-11794,75
+                        <FITID>00730202
+                        <CHECKNUM>00730202
+                        <PAYEEID>0
+                        <MEMO>APLICACAO CONTAMAX
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260119000000[-3:GMT]
+                        <TRNAMT>418,00
+                        <FITID>00740202
+                        <CHECKNUM>00740202
+                        <PAYEEID>0
+                        <MEMO>PIX RECEBIDO                       70547588119
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260119000000[-3:GMT]
+                        <TRNAMT>14913,45
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-VISA
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260119000000[-3:GMT]
+                        <TRNAMT>15405,92
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-MASTER
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260119000000[-3:GMT]
+                        <TRNAMT>651,34
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-ELO
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260119000000[-3:GMT]
+                        <TRNAMT>271,44
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-AMEX
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260119000000[-3:GMT]
+                        <TRNAMT>2686,68
+                        <FITID>00790202
+                        <CHECKNUM>00790202
+                        <PAYEEID>0
+                        <MEMO>TED RECEBIDA                       18727053000174
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260119000000[-3:GMT]
+                        <TRNAMT>-5000,00
+                        <FITID>00181124
+                        <CHECKNUM>00181124
+                        <PAYEEID>0
+                        <MEMO>PIX ENVIADO                        LONGEVITA INDUSTRIA E COM
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260119000000[-3:GMT]
+                        <TRNAMT>-29346,83
+                        <FITID>00810202
+                        <CHECKNUM>00810202
+                        <PAYEEID>0
+                        <MEMO>APLICACAO CONTAMAX
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260120000000[-3:GMT]
+                        <TRNAMT>475,95
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-VISA
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260120000000[-3:GMT]
+                        <TRNAMT>3921,78
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-MASTER
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260120000000[-3:GMT]
+                        <TRNAMT>-585,00
+                        <FITID>00014673
+                        <CHECKNUM>00014673
+                        <PAYEEID>0
+                        <MEMO>PIX ENVIADO                        LARA MANZI PORTUGAL
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260120000000[-3:GMT]
+                        <TRNAMT>10178,13
+                        <FITID>00850202
+                        <CHECKNUM>00850202
+                        <PAYEEID>0
+                        <MEMO>TED RECEBIDA                       18727053000174
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260120000000[-3:GMT]
+                        <TRNAMT>-90000,00
+                        <FITID>00860202
+                        <CHECKNUM>00860202
+                        <PAYEEID>0
+                        <MEMO>PIX ENVIADO                        LONGEVITA FARMACIA DE MAN
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260120000000[-3:GMT]
+                        <TRNAMT>68510,88
+                        <FITID>00870202
+                        <CHECKNUM>00870202
+                        <PAYEEID>0
+                        <MEMO>RESGATE CONTAMAX AUTOMATICO
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260121000000[-3:GMT]
+                        <TRNAMT>-8000,00
+                        <FITID>00244727
+                        <CHECKNUM>00244727
+                        <PAYEEID>0
+                        <MEMO>PIX ENVIADO                        LONGEVITA INDUSTRIA E COM
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260121000000[-3:GMT]
+                        <TRNAMT>-4000,00
+                        <FITID>00480724
+                        <CHECKNUM>00480724
+                        <PAYEEID>0
+                        <MEMO>PIX ENVIADO                        LONGEVITA INDUSTRIA E COM
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260121000000[-3:GMT]
+                        <TRNAMT>4172,97
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-VISA
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260121000000[-3:GMT]
+                        <TRNAMT>5035,50
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-MASTER
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260121000000[-3:GMT]
+                        <TRNAMT>1383,85
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-ELO
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260121000000[-3:GMT]
+                        <TRNAMT>4067,73
+                        <FITID>00930202
+                        <CHECKNUM>00930202
+                        <PAYEEID>0
+                        <MEMO>TED RECEBIDA                       18727053000174
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260122000000[-3:GMT]
+                        <TRNAMT>-7,80
+                        <FITID>00940202
+                        <CHECKNUM>00940202
+                        <PAYEEID>0
+                        <MEMO>TARIFA AVULSA ENVIO PIX            20/01/2026
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260122000000[-3:GMT]
+                        <TRNAMT>2426,84
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-VISA
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260122000000[-3:GMT]
+                        <TRNAMT>4018,10
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-MASTER
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260122000000[-3:GMT]
+                        <TRNAMT>315,25
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-ELO
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260122000000[-3:GMT]
+                        <TRNAMT>3492,34
+                        <FITID>00980202
+                        <CHECKNUM>00980202
+                        <PAYEEID>0
+                        <MEMO>TED RECEBIDA                       18727053000174
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260122000000[-3:GMT]
+                        <TRNAMT>1926,56
+                        <FITID>00990202
+                        <CHECKNUM>00990202
+                        <PAYEEID>0
+                        <MEMO>TED RECEBIDA                       18727053000174
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260122000000[-3:GMT]
+                        <TRNAMT>33,42
+                        <FITID>01000202
+                        <CHECKNUM>01000202
+                        <PAYEEID>0
+                        <MEMO>TED RECEBIDA                       18727053000174
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260122000000[-3:GMT]
+                        <TRNAMT>-7000,00
+                        <FITID>00292644
+                        <CHECKNUM>00292644
+                        <PAYEEID>0
+                        <MEMO>PIX ENVIADO                        LONGEVITA INDUSTRIA E COM
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260122000000[-3:GMT]
+                        <TRNAMT>-366,50
+                        <FITID>01020202
+                        <CHECKNUM>01020202
+                        <PAYEEID>0
+                        <MEMO>APLICACAO CONTAMAX
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260123000000[-3:GMT]
+                        <TRNAMT>2500,94
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-VISA
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260123000000[-3:GMT]
+                        <TRNAMT>1731,34
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-MASTER
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260123000000[-3:GMT]
+                        <TRNAMT>187,53
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-ELO
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260123000000[-3:GMT]
+                        <TRNAMT>1364,91
+                        <FITID>01060202
+                        <CHECKNUM>01060202
+                        <PAYEEID>0
+                        <MEMO>TED RECEBIDA                       18727053000174
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260123000000[-3:GMT]
+                        <TRNAMT>-5784,72
+                        <FITID>01070202
+                        <CHECKNUM>01070202
+                        <PAYEEID>0
+                        <MEMO>APLICACAO CONTAMAX
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260126000000[-3:GMT]
+                        <TRNAMT>-6128,59
+                        <FITID>01080202
+                        <CHECKNUM>01080202
+                        <PAYEEID>0
+                        <MEMO>DEBITO AUT. FAT.CARTAO MASTER CARD FINAL 3682
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260126000000[-3:GMT]
+                        <TRNAMT>-5231,63
+                        <FITID>01090202
+                        <CHECKNUM>01090202
+                        <PAYEEID>0
+                        <MEMO>DEBITO AUT. FAT.CARTAO MASTER CARD FINAL 7644
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260126000000[-3:GMT]
+                        <TRNAMT>5785,93
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-VISA
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260126000000[-3:GMT]
+                        <TRNAMT>13398,40
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-MASTER
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260126000000[-3:GMT]
+                        <TRNAMT>2064,48
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-ELO
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260126000000[-3:GMT]
+                        <TRNAMT>2355,50
+                        <FITID>01130202
+                        <CHECKNUM>01130202
+                        <PAYEEID>0
+                        <MEMO>TED RECEBIDA                       18727053000174
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260126000000[-3:GMT]
+                        <TRNAMT>6151,23
+                        <FITID>01140202
+                        <CHECKNUM>01140202
+                        <PAYEEID>0
+                        <MEMO>RESGATE CONTAMAX AUTOMATICO
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260126000000[-3:GMT]
+                        <TRNAMT>-67,20
+                        <FITID>01150202
+                        <CHECKNUM>01150202
+                        <PAYEEID>0
+                        <MEMO>PIX ENVIADO                        INDIO DO BRASIL ARTIAGA L
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260126000000[-3:GMT]
+                        <TRNAMT>-12,00
+                        <FITID>01160202
+                        <CHECKNUM>01160202
+                        <PAYEEID>0
+                        <MEMO>PIX ENVIADO                        GS LOCADORA LTDA
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260126000000[-3:GMT]
+                        <TRNAMT>-18000,00
+                        <FITID>00124134
+                        <CHECKNUM>00124134
+                        <PAYEEID>0
+                        <MEMO>PIX ENVIADO                        LONGEVITA INDUSTRIA E COM
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260127000000[-3:GMT]
+                        <TRNAMT>4690,89
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-VISA
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260127000000[-3:GMT]
+                        <TRNAMT>4553,21
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-MASTER
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260127000000[-3:GMT]
+                        <TRNAMT>84,06
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-ELO
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260127000000[-3:GMT]
+                        <TRNAMT>373,28
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-AMEX
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260127000000[-3:GMT]
+                        <TRNAMT>-12,00
+                        <FITID>01220202
+                        <CHECKNUM>01220202
+                        <PAYEEID>0
+                        <MEMO>PIX ENVIADO                        GS LOCADORA LTDA
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260127000000[-3:GMT]
+                        <TRNAMT>6172,18
+                        <FITID>01230202
+                        <CHECKNUM>01230202
+                        <PAYEEID>0
+                        <MEMO>TED RECEBIDA                       18727053000174
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260128000000[-3:GMT]
+                        <TRNAMT>3920,20
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-VISA
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260128000000[-3:GMT]
+                        <TRNAMT>6177,60
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-MASTER
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260128000000[-3:GMT]
+                        <TRNAMT>2061,32
+                        <FITID>01260202
+                        <CHECKNUM>01260202
+                        <PAYEEID>0
+                        <MEMO>TED RECEBIDA                       18727053000174
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260128000000[-3:GMT]
+                        <TRNAMT>-67,29
+                        <FITID>01270202
+                        <CHECKNUM>01270202
+                        <PAYEEID>0
+                        <MEMO>PIX ENVIADO                        FACEBOOK SERVICOS ONLINE
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260129000000[-3:GMT]
+                        <TRNAMT>-27562,57
+                        <FITID>00343021
+                        <CHECKNUM>00343021
+                        <PAYEEID>0
+                        <MEMO>PIX ENVIADO                        VALIANT EMPRESARIAL LTDA
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260129000000[-3:GMT]
+                        <TRNAMT>1883,81
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-VISA
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260129000000[-3:GMT]
+                        <TRNAMT>2450,65
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-MASTER
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260129000000[-3:GMT]
+                        <TRNAMT>339,50
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-ELO
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260129000000[-3:GMT]
+                        <TRNAMT>2025,61
+                        <FITID>01320202
+                        <CHECKNUM>01320202
+                        <PAYEEID>0
+                        <MEMO>TED RECEBIDA                       18727053000174
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260129000000[-3:GMT]
+                        <TRNAMT>-89,00
+                        <FITID>01330202
+                        <CHECKNUM>01330202
+                        <PAYEEID>0
+                        <MEMO>PIX ENVIADO                        J RODRIGUES DA COSTA FILH
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260129000000[-3:GMT]
+                        <TRNAMT>-7000,00
+                        <FITID>00453766
+                        <CHECKNUM>00453766
+                        <PAYEEID>0
+                        <MEMO>PIX ENVIADO                        LONGEVITA INDUSTRIA E COM
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260129000000[-3:GMT]
+                        <TRNAMT>-254,00
+                        <FITID>01350202
+                        <CHECKNUM>01350202
+                        <PAYEEID>0
+                        <MEMO>PIX ENVIADO                        CARMEM LUCIA DE FARIA VAS
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260130000000[-3:GMT]
+                        <TRNAMT>-4,18
+                        <FITID>01360202
+                        <CHECKNUM>01360202
+                        <PAYEEID>0
+                        <MEMO>TARIFA AVULSA ENVIO PIX
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260130000000[-3:GMT]
+                        <TRNAMT>-129,86
+                        <FITID>01370202
+                        <CHECKNUM>01370202
+                        <PAYEEID>0
+                        <MEMO>PIX ENVIADO                        P C PAO E COMPANHIA
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260130000000[-3:GMT]
+                        <TRNAMT>1955,54
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-VISA
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260130000000[-3:GMT]
+                        <TRNAMT>3204,42
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-MASTER
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260130000000[-3:GMT]
+                        <TRNAMT>459,21
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-ELO
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260130000000[-3:GMT]
+                        <TRNAMT>3052,01
+                        <FITID>01410202
+                        <CHECKNUM>01410202
+                        <PAYEEID>0
+                        <MEMO>TED RECEBIDA                       18727053000174
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260202000000[-3:GMT]
+                        <TRNAMT>8614,42
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-VISA
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260202000000[-3:GMT]
+                        <TRNAMT>17703,16
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-MASTER
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260202000000[-3:GMT]
+                        <TRNAMT>393,66
+                        <FITID>00635316
+                        <CHECKNUM>00635316
+                        <PAYEEID>0
+                        <MEMO>PAGAMENTO CARTAO DE CREDITO        GETNET-ELO
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260202000000[-3:GMT]
+                        <TRNAMT>833,28
+                        <FITID>01450202
+                        <CHECKNUM>01450202
+                        <PAYEEID>0
+                        <MEMO>TED RECEBIDA                       18727053000174
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260202000000[-3:GMT]
+                        <TRNAMT>2210,75
+                        <FITID>01460202
+                        <CHECKNUM>01460202
+                        <PAYEEID>0
+                        <MEMO>TED RECEBIDA                       18727053000174
+                    </STMTTRN>
+                    <STMTTRN>
+                        <TRNTYPE>OTHER
+                        <DTPOSTED>20260202000000[-3:GMT]
+                        <TRNAMT>181,11
+                        <FITID>01470202
+                        <CHECKNUM>01470202
+                        <PAYEEID>0
+                        <MEMO>TED RECEBIDA                       18727053000174
+                    </STMTTRN>
+                </BANKTRANLIST>
+                <LEDGERBAL>
+                    <BALAMT>38537,09
+                    <DTASOF>20260202113850[-3:GMT]
+                </LEDGERBAL>
+            </STMTRS>
+        </STMTTRNRS>
+    </BANKMSGSRSV1>
+</OFX>
