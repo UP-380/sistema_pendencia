@@ -38,6 +38,9 @@ ALTER TABLE pendencia ADD COLUMN codigo_lancamento VARCHAR(64);
 ALTER TABLE pendencia ADD COLUMN data_competencia DATE;
 ALTER TABLE pendencia ADD COLUMN data_baixa DATE;
 ALTER TABLE pendencia ADD COLUMN natureza_sistema VARCHAR(120);
+ALTER TABLE pendencia ADD COLUMN data_resposta DATETIME;
+ALTER TABLE pendencia ADD COLUMN modificado_por VARCHAR(100);
+ALTER TABLE pendencia ADD COLUMN nota_fiscal_arquivo VARCHAR(255);
 
 -- 1.2.E. Criar tabela permissao_usuario_tipo se nao existir
 CREATE TABLE IF NOT EXISTS permissao_usuario_tipo (

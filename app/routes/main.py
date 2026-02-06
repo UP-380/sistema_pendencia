@@ -64,7 +64,7 @@ def listar_segmentos():
     Filtra segmentos conforme acesso às empresas do usuário
     """
     # Segmentos disponíveis conforme acesso às empresas
-    if session.get('usuario_tipo') in ['adm', 'supervisor']:
+    if session.get('usuario_tipo') == 'adm':
         segmentos = Segmento.query.order_by(Segmento.nome).all()
     else:
         usuario = Usuario.query.get(session['usuario_id'])
@@ -791,7 +791,7 @@ def resolver_pendencia(id):
     db.session.add(log)
     db.session.commit()
     flash('Pendência marcada como resolvida!', 'success')
-    return redirect(url_for('main.dashboard'))
+    return redirect(request.referrer or url_for('main.dashboard'))
 
 @main_bp.route('/baixar_modelo')
 def baixar_modelo():
@@ -1064,7 +1064,7 @@ def historico_importacoes():
     return render_template('historico_importacoes.html', historico=historico)
 
 @main_bp.route('/editar/<int:id>', methods=['GET', 'POST'])
-@permissao_requerida('supervisor', 'adm')
+@permissao_requerida('supervisor', 'adm', 'operador')
 def editar_pendencia(id):
     empresas_usuario = obter_empresas_para_usuario()
     if not empresas_usuario:
@@ -1076,17 +1076,32 @@ def editar_pendencia(id):
         flash('Não é possível editar uma pendência já respondida pelo cliente.', 'danger')
         return redirect(url_for('main.dashboard'))
     if request.method == 'POST':
-        campos = ['empresa', 'tipo_pendencia', 'banco', 'data', 'fornecedor_cliente', 'valor', 'observacao', 'email_cliente']
+        campos = ['empresa', 'tipo_pendencia', 'banco', 'data', 'fornecedor_cliente', 'valor', 'observacao', 'email_cliente', 
+                  'tipo_credito_debito', 'codigo_lancamento', 'natureza_sistema', 'data_competencia', 'data_baixa']
+        
+        def safe_strptime(date_str):
+            if not date_str or not date_str.strip():
+                return None
+            try:
+                return datetime.strptime(date_str, '%Y-%m-%d').date()
+            except ValueError:
+                return None
+
         valores_anteriores = {campo: getattr(pendencia, campo) for campo in campos}
         novos_valores = {
             'empresa': request.form['empresa'],
             'tipo_pendencia': request.form['tipo_pendencia'],
             'banco': request.form['banco'],
-            'data': datetime.strptime(request.form['data'], '%Y-%m-%d').date(),
+            'data': safe_strptime(request.form.get('data')),
             'fornecedor_cliente': request.form['fornecedor_cliente'],
             'valor': parse_currency_to_float(request.form['valor']),
             'observacao': request.form.get('observacao') or 'DO QUE SE TRATA?',
-            'email_cliente': request.form.get('email_cliente')
+            'email_cliente': request.form.get('email_cliente'),
+            'tipo_credito_debito': request.form.get('tipo_credito_debito'),
+            'codigo_lancamento': request.form.get('codigo_lancamento'),
+            'natureza_sistema': request.form.get('natureza_sistema'),
+            'data_competencia': safe_strptime(request.form.get('data_competencia')),
+            'data_baixa': safe_strptime(request.form.get('data_baixa'))
         }
         for campo in campos:
             if valores_anteriores[campo] != novos_valores[campo]:
@@ -1109,6 +1124,11 @@ def editar_pendencia(id):
         pendencia.valor = novos_valores['valor']
         pendencia.observacao = novos_valores['observacao']
         pendencia.email_cliente = novos_valores['email_cliente']
+        pendencia.tipo_credito_debito = novos_valores['tipo_credito_debito']
+        pendencia.codigo_lancamento = novos_valores['codigo_lancamento']
+        pendencia.natureza_sistema = novos_valores['natureza_sistema']
+        pendencia.data_competencia = novos_valores['data_competencia']
+        pendencia.data_baixa = novos_valores['data_baixa']
         # Upload de nota fiscal
         if pendencia.tipo_pendencia == 'Nota Fiscal Não Anexada' and 'nota_fiscal_arquivo' in request.files:
             file = request.files['nota_fiscal_arquivo']
@@ -1123,10 +1143,10 @@ def editar_pendencia(id):
         pendencia.modificado_por = 'ADIMIN UP380'
         db.session.commit()
         flash('Pendência editada com sucesso!', 'success')
-        return redirect(url_for('main.dashboard'))
+        return redirect(request.referrer or url_for('main.dashboard'))
     return render_template('editar_pendencia.html', pendencia=pendencia, empresas=empresas_usuario, tipos_pendencia=TIPOS_PENDENCIA)
 
-TEAMS_WEBHOOK_URL = "https://upfinance.webhook.office.com/webhookb2/7c8dacfa-6413-4b34-9659-5be33e876493@62d96e16-cfeb-4bad-8803-4a764ac7339a/IncomingWebhook/a6612b3a144d4915bf9bc1171093c8c9/9cdf59ae-5ee6-4c43-8604-31390b2d5425/V21glDBnmGcX-HxLgk_gJxnhqHC79TV9BLey3t5_DzMbU1"
+TEAMS_WEBHOOK_URL = "https://upfinance.webhook.office.com/webhookb2/7c8dacfa-6413-4b34-9659-5be33e876493@62d96e16-cfeb-4bad-8803-4a764ac7339a/IncomingWebhook/a6612b3a144d4915bf9bc1171093c8c9/9cdf59ae-5ee6-4c43-8604-31390b2d5425/V21glDBnmGcX-HxLgk_gJxnhqHC79TV3BLey3t5_DzMbU1"
 
 def notificar_teams(pendencia):
     webhook_url = TEAMS_WEBHOOK_URL
@@ -1552,7 +1572,7 @@ def supervisor_resolver_pendencia(id):
     db.session.commit()
     
     flash('Pendência resolvida com sucesso!', 'success')
-    return redirect(url_for('main.supervisor_pendencias'))
+    return redirect(request.referrer or url_for('main.supervisor_pendencias'))
 
 @main_bp.route('/supervisor/lote_resolver_pendencias', methods=['POST'])
 @permissao_requerida('supervisor', 'adm')
@@ -1587,7 +1607,7 @@ def supervisor_lote_resolver_pendencias():
     
     db.session.commit()
     flash(f'{count} pendência(s) resolvidas com sucesso!', 'success')
-    return redirect(url_for('main.supervisor_pendencias'))
+    return redirect(request.referrer or url_for('main.supervisor_pendencias'))
 
 @main_bp.route('/supervisor/recusar_devolver_operador/<int:id>', methods=['POST'])
 @permissao_requerida('supervisor', 'adm')
@@ -1643,7 +1663,7 @@ def supervisor_recusar_devolver_operador(id):
     notificar_teams_recusa_supervisor(pendencia)
     
     flash('Pendência recusada e devolvida ao operador para correção!', 'success')
-    return redirect(url_for('main.supervisor_pendencias'))
+    return redirect(request.referrer or url_for('main.supervisor_pendencias'))
 
 @main_bp.route('/editar_observacao/<int:id>', methods=['GET', 'POST'])
 @permissao_requerida('supervisor', 'adm', 'cliente', 'cliente_supervisor')
@@ -1683,7 +1703,7 @@ def editar_observacao(id):
         # Notificação para operadores
         notificar_teams_pendente_operador(pendencia)
         flash('Observação atualizada com sucesso!', 'success')
-        return redirect(url_for('main.dashboard'))
+        return redirect(request.referrer or url_for('main.dashboard'))
     return render_template('editar_observacao.html', pendencia=pendencia)
 
 @main_bp.route('/resolvidas', methods=['GET'])
@@ -2144,158 +2164,14 @@ def aprovar_pendencia(id):
     flash('Pendência aprovada com sucesso!', 'success')
     return redirect(url_for('ver_pendencia', token=pendencia.token_acesso))
 
+@main_bp.route("/relatorios/analitico", methods=["GET"])
 @main_bp.route("/relatorios/mensal", methods=["GET"])
 @permissao_requerida('supervisor', 'adm', 'operador', 'cliente_supervisor')
 def relatorio_mensal():
     """
-    Relatório mensal de pendências - resolvidas vs pendentes por mês
-    Suporta filtro por empresa específica ou múltiplas empresas
+    Central de Relatórios Analíticos - Nova experiência superior
     """
-    from sqlalchemy import func
-    from dateutil.relativedelta import relativedelta
-    from datetime import date
-    
-    def month_bounds(ref_yyyy_mm: str):
-        """Retorna início e fim do mês baseado em YYYY-MM"""
-        base = datetime.strptime(ref_yyyy_mm, "%Y-%m")
-        ini = date(base.year, base.month, 1)
-        fim = (ini + relativedelta(months=1)) - relativedelta(days=1)
-        return ini, fim
-    
-    def empresas_permitidas_ids(user):
-        """Retorna lista de IDs das empresas às quais o usuário tem acesso"""
-        empresas_usuario = obter_empresas_para_usuario()
-        empresas_objs = Empresa.query.filter(Empresa.nome.in_(empresas_usuario)).all()
-        return [e.id for e in empresas_objs]
-    
-    # --- parâmetros ---
-    ref = request.args.get("ref") or datetime.utcnow().strftime("%Y-%m")
-    try:
-        dt_ini, dt_fim = month_bounds(ref)
-    except ValueError:
-        flash('Parâmetro "ref" inválido. Use YYYY-MM.', 'danger')
-        return redirect(url_for('main.dashboard'))
-
-    empresa_id = request.args.get("empresa_id", type=int)
-    mult_empresas = request.args.getlist("empresas")  # usado no modo global (checkboxes)
-    permitidas = empresas_permitidas_ids(session.get('usuario_email', 'sistema'))
-    fmt = request.args.get("format", "html")
-    base = request.args.get("base", "pendencia")  # "pendencia" | "abertura"
-
-    # --- escopo por empresa ---
-    empresas_alvo = []
-    if empresa_id:
-        if empresa_id not in permitidas:
-            flash('Você não tem acesso a esta empresa.', 'danger')
-            return redirect(url_for('main.dashboard'))
-        empresas_alvo = [empresa_id]
-    elif mult_empresas:
-        empresas_alvo = [int(x) for x in mult_empresas if int(x) in permitidas]
-    else:
-        # global: todas as permitidas
-        empresas_alvo = permitidas
-
-    # map id -> nome (Pendencia.empresa é string)
-    emps = {e.id: e.nome for e in Empresa.query.filter(Empresa.id.in_(empresas_alvo)).all()}
-    if not emps:
-        flash('Nenhuma empresa selecionada ou permitida.', 'danger')
-        return redirect(url_for('main.dashboard'))
-
-    # --- Base de cálculo do mês ---
-    if base == "abertura":
-        filtro_data = (func.date(Pendencia.data_abertura) >= dt_ini) & (func.date(Pendencia.data_abertura) <= dt_fim)
-    else:
-        filtro_data = (func.date(Pendencia.data) >= dt_ini) & (func.date(Pendencia.data) <= dt_fim)
-
-    q = Pendencia.query.filter(filtro_data, Pendencia.empresa.in_(list(emps.values())))
-
-    # --- agregados principais ---
-    por_status = (
-        q.with_entities(Pendencia.empresa, Pendencia.status, func.count(Pendencia.id))
-         .group_by(Pendencia.empresa, Pendencia.status).all()
-    )
-    resolvidas_no_mes = (
-        db.session.query(Pendencia.empresa, func.count(Pendencia.id))
-        .filter(Pendencia.status == "RESOLVIDA",
-                func.date(Pendencia.data_resposta) >= dt_ini,
-                func.date(Pendencia.data_resposta) <= dt_fim,
-                Pendencia.empresa.in_(list(emps.values())))
-        .group_by(Pendencia.empresa).all()
-    )
-
-    # --- montar payload ---
-    agg_status = {}  # {empresa_nome: {status: qtde}}
-    for emp, st, qt in por_status:
-        agg_status.setdefault(emp, {})[st] = qt
-
-    agg_resolvidas = dict(resolvidas_no_mes)  # {empresa_nome: qtde}
-
-    payload = {
-        "ref": ref,
-        "base": base,
-        "intervalo": {"inicio": dt_ini.isoformat(), "fim": dt_fim.isoformat()},
-        "empresas": list(emps.values()),
-        "por_status": agg_status,
-        "resolvidas_no_mes": agg_resolvidas
-    }
-
-    # --- logging ---
-    log = LogAlteracao(
-        pendencia_id=0,  # 0 indica que é uma alteração de sistema
-        usuario=session.get('usuario_email', 'sistema'),
-        tipo_usuario=session.get('usuario_tipo', 'sistema'),
-        data_hora=now_brazil(),
-        acao="view",
-        campo_alterado="relatorio_mensal",
-        valor_anterior=None,
-        valor_novo=f"ref={ref}; empresa_id={empresa_id}; empresas={','.join(map(str, empresas_alvo))}; base={base}"
-    )
-    db.session.add(log)
-    db.session.commit()
-
-    # --- formatos ---
-    if fmt == "json":
-        return jsonify(payload)
-
-    if fmt == "csv":
-        # CSV com dados agregados por empresa
-        buf = io.StringIO()
-        w = csv.writer(buf, lineterminator="\n")
-        w.writerow(["Relatório mensal de pendências", ref])
-        w.writerow([f"Período: {dt_ini.strftime('%d/%m/%Y')} a {dt_fim.strftime('%d/%m/%Y')}"])
-        w.writerow([f"Base: {'Data de Abertura' if base == 'abertura' else 'Data da Pendência'}"])
-        w.writerow([f"Empresas: {', '.join(emps.values())}"])
-        w.writerow([])
-        
-        # Por empresa
-        for empresa_nome in emps.values():
-            w.writerow([f"Empresa: {empresa_nome}"])
-            w.writerow(["Status", "Quantidade"])
-            if empresa_nome in agg_status:
-                for status, qtde in agg_status[empresa_nome].items():
-                    w.writerow([status, qtde])
-            w.writerow(["Resolvidas no mês", agg_resolvidas.get(empresa_nome, 0)])
-            w.writerow([])
-
-        resp = Response(buf.getvalue(), mimetype='text/csv')
-        nome_arq = f"relatorio_mensal_{ref}_{','.join(emps.values())}.csv"
-        resp.headers["Content-Disposition"] = f"attachment; filename={nome_arq}"
-        return resp
-
-    # formato HTML (default)
-    empresas_lista = Empresa.query.filter(Empresa.id.in_(permitidas)).all()
-    empresas_selecionadas = list(emps.keys())
-    empresa_bloqueada = (empresa_id is not None)
-    
-    return render_template("relatorio_mensal.html",
-                           payload=payload,
-                           ref=ref,
-                           base=base,
-                           empresas_lista=empresas_lista,
-                           empresas_selecionadas=empresas_selecionadas,
-                           empresa_bloqueada=empresa_bloqueada,
-                           dt_ini=dt_ini,
-                           dt_fim=dt_fim)
+    return render_template("dashboard_relatorios.html")
 
 @main_bp.route('/relatorio_operadores')
 @permissao_requerida('adm', 'supervisor', 'cliente_supervisor')
@@ -2596,7 +2472,7 @@ def nova_empresa():
         else:
             flash(f'Empresa "{nome}" criada, mas houve um problema na integração automática.', 'warning')
         
-        return redirect(url_for('gerenciar_empresas'))
+        return redirect(url_for('main.gerenciar_empresas'))
     
     # GET - Buscar segmentos para o formulário
     segmentos = Segmento.query.order_by(Segmento.nome).all()
@@ -2620,22 +2496,41 @@ def editar_empresa(id):
         empresa_existente = Empresa.query.filter_by(nome=nome).first()
         if empresa_existente and empresa_existente.id != empresa.id:
             flash('Já existe outra empresa com este nome.', 'danger')
-            return redirect(url_for('editar_empresa', id=id))
+            return redirect(url_for('main.editar_empresa', id=id))
         
         # Validar se segmento existe (se fornecido)
-        if segmento_id and segmento_id != '':
-            segmento = Segmento.query.get(int(segmento_id))
-            if not segmento:
+        if segmento_id and segmento_id != '' and segmento_id != 'None':
+            segmento_obj = Segmento.query.get(int(segmento_id))
+            if not segmento_obj:
                 flash('Segmento inválido.', 'danger')
-                return redirect(url_for('editar_empresa', id=id))
+                return redirect(url_for('main.editar_empresa', id=id))
+        
+        # Guardar nome antigo para atualização em cascata
+        nome_antigo = empresa.nome
+        novo_nome = nome.strip()
         
         # Atualizar empresa
-        empresa.nome = nome
-        empresa.segmento_id = int(segmento_id) if segmento_id and segmento_id != '' else None
+        empresa.nome = novo_nome
+        empresa.segmento_id = int(segmento_id) if segmento_id and segmento_id != '' and segmento_id != 'None' else None
+        
+        # Se o nome mudou, atualizar pendências em cascata
+        if nome_antigo != novo_nome:
+            print(f"🔄 RENOMEANDO: '{nome_antigo}' -> '{novo_nome}'. Atualizando pendências...")
+            try:
+                # Atualiza todas as pendências que usam o nome antigo como string
+                total_atualizado = Pendencia.query.filter_by(empresa=nome_antigo).update({Pendencia.empresa: novo_nome})
+                print(f"✅ Sucesso: {total_atualizado} pendências atualizadas.")
+                flash(f'Empresa renomeada e {total_atualizado} pendências atualizadas com sucesso!', 'success')
+            except Exception as e:
+                db.session.rollback()
+                print(f"❌ ERRO na atualização em cascata: {str(e)}")
+                flash(f'Erro ao atualizar pendências vinculadas: {str(e)}', 'danger')
+                return redirect(url_for('main.editar_empresa', id=id))
         
         db.session.commit()
-        flash(f'Empresa "{nome}" atualizada com sucesso!', 'success')
-        return redirect(url_for('gerenciar_empresas'))
+        if nome_antigo == novo_nome:
+            flash(f'Empresa "{novo_nome}" atualizada com sucesso!', 'success')
+        return redirect(url_for('main.gerenciar_empresas'))
     
     # GET - Buscar segmentos para o formulário
     segmentos = Segmento.query.order_by(Segmento.nome).all()
@@ -2668,7 +2563,7 @@ def deletar_empresa(id):
     if total_pendencias > 0:
         print(f"BLOQUEADO: Empresa tem {total_pendencias} pendências")
         flash(f'Não é possível excluir a empresa "{empresa.nome}" pois ela possui {total_pendencias} pendência(s) associada(s). Exclua as pendências primeiro.', 'danger')
-        return redirect(url_for('gerenciar_empresas'))
+        return redirect(url_for('main.gerenciar_empresas'))
     
     # Usuários vinculados não impedem a exclusão
     # Remove manualmente os vínculos antes de deletar
@@ -2697,7 +2592,7 @@ def deletar_empresa(id):
         print(f"❌ ERRO ao excluir: {str(e)}")
         flash(f'Erro ao excluir empresa: {str(e)}', 'danger')
     
-    return redirect(url_for('gerenciar_empresas'))
+    return redirect(url_for('main.gerenciar_empresas'))
 
 # ============================================================================
 # ROTAS ADMINISTRATIVAS DE SEGMENTOS
@@ -2730,19 +2625,19 @@ def novo_segmento():
         
         if not nome:
             flash('Nome do segmento é obrigatório.', 'danger')
-            return redirect(url_for('novo_segmento'))
+            return redirect(url_for('main.novo_segmento'))
         
         # Verificar se já existe
         if Segmento.query.filter_by(nome=nome).first():
             flash('Já existe um segmento com este nome.', 'warning')
-            return redirect(url_for('novo_segmento'))
+            return redirect(url_for('main.novo_segmento'))
         
         novo_seg = Segmento(nome=nome)
         db.session.add(novo_seg)
         db.session.commit()
         
         flash(f'Segmento "{nome}" criado com sucesso!', 'success')
-        return redirect(url_for('gerenciar_segmentos'))
+        return redirect(url_for('main.gerenciar_segmentos'))
     
     return render_template('admin/form_segmento.html', segmento=None)
 
@@ -2757,13 +2652,13 @@ def editar_segmento(id):
         
         if not nome:
             flash('Nome do segmento é obrigatório.', 'danger')
-            return redirect(url_for('editar_segmento', id=id))
+            return redirect(url_for('main.editar_segmento', id=id))
         
         segmento.nome = nome
         db.session.commit()
         
         flash(f'Segmento "{nome}" atualizado com sucesso!', 'success')
-        return redirect(url_for('gerenciar_segmentos'))
+        return redirect(url_for('main.gerenciar_segmentos'))
     
     return render_template('admin/form_segmento.html', segmento=segmento)
 
@@ -2777,7 +2672,17 @@ def deletar_segmento(id):
     total_empresas = Empresa.query.filter_by(segmento_id=segmento.id).count()
     if total_empresas > 0:
         flash(f'Não é possível deletar o segmento "{segmento.nome}" pois existem {total_empresas} empresas vinculadas.', 'danger')
-        return redirect(url_for('gerenciar_segmentos'))
+        return redirect(url_for('main.gerenciar_segmentos'))
+    
+    try:
+        db.session.delete(segmento)
+        db.session.commit()
+        flash(f'Segmento "{segmento.nome}" removido com sucesso!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Erro ao remover segmento: {str(e)}', 'danger')
+    
+    return redirect(url_for('main.gerenciar_segmentos'))
     
     nome = segmento.nome
     db.session.delete(segmento)
@@ -2797,11 +2702,7 @@ def deletar_pendencia(id):
     db.session.delete(pendencia)
     db.session.commit()
     flash('Pendência removida com sucesso!', 'success')
-    # Recupera filtros do formulário
-    empresa = request.form.get('empresa')
-    tipo_pendencia = request.form.get('tipo_pendencia')
-    busca = request.form.get('busca')
-    return redirect(url_for('main.dashboard', empresa=empresa, tipo_pendencia=tipo_pendencia, busca=busca))
+    return redirect(request.referrer or url_for('main.dashboard'))
 
 @main_bp.route('/acesso_negado')
 def acesso_negado():

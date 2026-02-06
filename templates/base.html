@@ -87,8 +87,15 @@
             flex-direction: column;
         }
 
-        .sidebar:hover {
+        .sidebar:hover,
+        .sidebar.open {
             width: 280px;
+        }
+
+        /* Garantir que o conteúdo empurre quando o sidebar expandir */
+        .sidebar:hover+.main-content,
+        .sidebar.open+.main-content {
+            margin-left: 280px;
         }
 
         .sidebar-content {
@@ -275,6 +282,8 @@
             min-height: 100vh;
             transition: margin-left 0.3s ease;
             padding: 2rem;
+            position: relative;
+            z-index: 1;
         }
 
         /* Sidebar Footer (Logout) */
@@ -469,8 +478,8 @@
                         id="relatoriosSubmenu">
                         <a href="{{ url_for('main.relatorio_mensal') }}"
                             class="sidebar-item sidebar-submenu-item {{ 'active' if request.endpoint == 'main.relatorio_mensal' else '' }}">
-                            <i class="bi bi-calendar3"></i>
-                            <span class="sidebar-text">Mensal</span>
+                            <i class="bi bi-bar-chart-line"></i>
+                            <span class="sidebar-text">Analítico</span>
                         </a>
                     </div>
                 </div>

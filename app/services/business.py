@@ -10,14 +10,16 @@ EMPRESAS_CACHE = [] # Fallback or keep logical ref if needed, but preferable to 
 def obter_empresas_para_usuario():
     """
     Retorna a lista de empresas baseada no tipo de usuário e permissões.
-    Para adm/supervisor: todas as empresas
-    Para operador/cliente: apenas empresas permitidas
+    Para adm: todas as empresas
+    Para supervisor/operador/cliente: apenas empresas permitidas vinculadas no cadastro
     """
-    if session.get('usuario_tipo') in ['adm', 'supervisor']:
-        # Admin e Supervisor veem todas as empresas
+    tipo_usuario = session.get('usuario_tipo')
+    
+    if tipo_usuario == 'adm':
+        # Apenas Admin vê todas as empresas globalmente
         return [empresa.nome for empresa in Empresa.query.order_by(Empresa.nome).all()]
     else:
-        # Operador e cliente veem apenas suas empresas permitidas
+        # Supervisor, Operador e cliente veem apenas suas empresas vinculadas
         usuario_id = session.get('usuario_id')
         if not usuario_id:
             return []
@@ -44,8 +46,8 @@ def pode_atuar_como_supervisor():
 def usuario_tem_acesso(email_usuario, empresa_id):
     """
     Verifica se um usuário tem acesso a uma empresa específica.
-    Admin e supervisor têm acesso a todas as empresas.
-    Operador e cliente têm acesso apenas às empresas vinculadas.
+    Admin tem acesso a todas as empresas.
+    Supervisor, Operador e cliente têm acesso apenas às empresas vinculadas.
     """
     if not email_usuario:
         return False
@@ -54,12 +56,12 @@ def usuario_tem_acesso(email_usuario, empresa_id):
     if not usuario:
         return False
     
-    # Admin e supervisor têm acesso a todas as empresas
-    if usuario.tipo in ['adm', 'supervisor']:
+    # Admin tem acesso a todas as empresas globalmente
+    if usuario.tipo == 'adm':
         return True
     
-    # Operador e cliente precisam ter a empresa vinculada
-    if usuario.tipo in ['operador', 'cliente']:
+    # Supervisor, Operador e cliente precisam ter a empresa vinculada
+    if usuario.tipo in ['supervisor', 'operador', 'cliente']:
         empresa = Empresa.query.get(empresa_id)
         if empresa and empresa in usuario.empresas:
             return True
@@ -84,7 +86,7 @@ def notificar_teams_nova_empresa(empresa):
     }
     
     try:
-        response = requests.post(webhook_url, json=message)
+        response = requests.post(webhook_url, json=message, timeout=10)
         response.raise_for_status()
     except Exception as e:
         print(f"Erro ao enviar notificação Teams: {e}")

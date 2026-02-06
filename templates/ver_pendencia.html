@@ -10,13 +10,14 @@
                 <h2 class="card-title mb-0">Pendência #{{ pendencia.id }}</h2>
                 <div>
                     {% if request.args.get('next') %}
-                        <a href="{{ request.args.get('next') }}" class="btn btn-secondary btn-sm">
-                            <i class="bi bi-arrow-left"></i> Voltar
-                        </a>
+                    <a href="{{ request.args.get('next') }}" class="btn btn-secondary btn-sm">
+                        <i class="bi bi-arrow-left"></i> Voltar
+                    </a>
                     {% else %}
-                        <a href="{{ url_for('main.dashboard', empresa=pendencia.empresa) }}" class="btn btn-secondary btn-sm">
-                            <i class="bi bi-arrow-left"></i> Voltar
-                        </a>
+                    <a href="{{ url_for('main.dashboard', empresa=pendencia.empresa) }}"
+                        class="btn btn-secondary btn-sm">
+                        <i class="bi bi-arrow-left"></i> Voltar
+                    </a>
                     {% endif %}
                 </div>
             </div>
@@ -26,51 +27,51 @@
                     <dl class="row">
                         <dt class="col-sm-3">Empresa:</dt>
                         <dd class="col-sm-9">{{ pendencia.empresa }}</dd>
-                        
+
                         <dt class="col-sm-3">Tipo:</dt>
                         <dd class="col-sm-9">{{ pendencia.tipo_pendencia }}</dd>
-                        
+
                         <dt class="col-sm-3">Banco:</dt>
                         <dd class="col-sm-9">{{ pendencia.banco or '—' }}</dd>
-                        
+
                         <dt class="col-sm-3">Data da Pendência:</dt>
                         <dd class="col-sm-9">
                             {% if pendencia.data %}
-                                {{ pendencia.data.strftime('%d/%m/%Y') }}
+                            {{ pendencia.data.strftime('%d/%m/%Y') }}
                             {% else %}
-                                <span class="text-muted">—</span>
+                            <span class="text-muted">—</span>
                             {% endif %}
                         </dd>
-                        
+
                         <dt class="col-sm-3">Data de Abertura:</dt>
                         <dd class="col-sm-9">{{ pendencia.data_abertura.strftime('%d/%m/%Y %H:%M') }}</dd>
-                        
+
                         <dt class="col-sm-3">Fornecedor/Cliente:</dt>
                         <dd class="col-sm-9">{{ pendencia.fornecedor_cliente }}</dd>
-                        
+
                         <dt class="col-sm-3">Valor:</dt>
                         <dd class="col-sm-9">R$ {{ "%.2f"|format(pendencia.valor) }}</dd>
-                        
+
                         {% if pendencia.codigo_lancamento %}
                         <dt class="col-sm-3">Código do Lançamento:</dt>
                         <dd class="col-sm-9">{{ pendencia.codigo_lancamento }}</dd>
                         {% endif %}
-                        
+
                         {% if pendencia.data_competencia %}
                         <dt class="col-sm-3">Data Competência:</dt>
                         <dd class="col-sm-9">{{ pendencia.data_competencia.strftime('%d/%m/%Y') }}</dd>
                         {% endif %}
-                        
+
                         {% if pendencia.data_baixa %}
                         <dt class="col-sm-3">Data da Baixa:</dt>
                         <dd class="col-sm-9">{{ pendencia.data_baixa.strftime('%d/%m/%Y') }}</dd>
                         {% endif %}
-                        
+
                         {% if pendencia.natureza_sistema %}
                         <dt class="col-sm-3">Natureza no Sistema:</dt>
                         <dd class="col-sm-9">{{ pendencia.natureza_sistema }}</dd>
                         {% endif %}
-                        
+
                         <dt class="col-sm-3">Status:</dt>
                         <dd class="col-sm-9">
                             <span class="badge {% if pendencia.status == 'PENDENTE CLIENTE' %}bg-warning
@@ -81,19 +82,20 @@
                                 {{ pendencia.status }}
                             </span>
                         </dd>
-                        
+
                         <dt class="col-sm-3">Observação:</dt>
                         <dd class="col-sm-9">{{ pendencia.observacao }}</dd>
-                        
+
                         {% if pendencia.natureza_operacao %}
                         <dt class="col-sm-3">Natureza de Operação:</dt>
                         <dd class="col-sm-9">{{ pendencia.natureza_operacao }}</dd>
                         {% endif %}
-                        
+
                         {% if pendencia.nota_fiscal_arquivo %}
                         <dt class="col-sm-3">Anexo:</dt>
                         <dd class="col-sm-9">
-                            <a href="{{ url_for('main.baixar_anexo', pendencia_id=pendencia.id) }}" class="btn btn-sm btn-outline-primary">
+                            <a href="{{ url_for('main.baixar_anexo', pendencia_id=pendencia.id) }}"
+                                class="btn btn-sm btn-outline-primary">
                                 <i class="bi bi-download"></i> Baixar Anexo
                             </a>
                         </dd>
@@ -151,20 +153,25 @@
                         </button>
                     </div>
                     <div class="card-body">
-                        <pre class="mb-0" style="white-space:pre-wrap; font-family:inherit; max-height: 200px; overflow-y: auto;">{{ ultima_resposta.valor_novo | e }}</pre>
+                        <pre class="mb-0"
+                            style="white-space:pre-wrap; font-family:inherit; max-height: 200px; overflow-y: auto;">{{ ultima_resposta.valor_novo | e }}</pre>
                     </div>
-                    
+
                     {% if historico_respostas|length > 1 %}
                     <div class="card-footer bg-light">
                         <a class="small" data-bs-toggle="collapse" href="#histResp" aria-expanded="false">
-                            <i class="bi bi-clock-history"></i> Ver histórico de respostas ({{ historico_respostas|length }})
+                            <i class="bi bi-clock-history"></i> Ver histórico de respostas ({{
+                            historico_respostas|length }})
                         </a>
                         <div class="collapse mt-2" id="histResp">
                             <ul class="list-unstyled mb-0">
                                 {% for r in historico_respostas %}
                                 <li class="mb-2">
                                     <div class="small text-muted">{{ r.data_hora|datetime_local }}</div>
-                                    <div><pre style="white-space:pre-wrap; font-family:inherit; font-size: 0.9em;">{{ r.valor_novo | e }}</pre></div>
+                                    <div>
+                                        <pre
+                                            style="white-space:pre-wrap; font-family:inherit; font-size: 0.9em;">{{ r.valor_novo | e }}</pre>
+                                    </div>
                                     <hr class="my-2">
                                 </li>
                                 {% endfor %}
@@ -179,44 +186,48 @@
                 <div class="mb-4">
                     <h4>
                         {% if pendencia.status == 'PENDENTE COMPLEMENTO CLIENTE' %}
-                            <i class="bi bi-plus-circle text-warning"></i> Complementar Resposta
+                        <i class="bi bi-plus-circle text-warning"></i> Complementar Resposta
                         {% else %}
-                            <i class="bi bi-chat-dots"></i> Responder Pendência
+                        <i class="bi bi-chat-dots"></i> Responder Pendência
                         {% endif %}
                     </h4>
-                    <form method="POST" action="{{ url_for('main.ver_pendencia', token=pendencia.token_acesso) }}" enctype="multipart/form-data">
-<input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                        <input type="hidden" name="empresa" value="{{ request.args.get('empresa', pendencia.empresa) }}">
-                        <input type="hidden" name="tipo_pendencia" value="{{ request.args.get('tipo_pendencia', pendencia.tipo_pendencia) }}">
+                    <form method="POST" action="{{ url_for('main.ver_pendencia', token=pendencia.token_acesso) }}"
+                        enctype="multipart/form-data">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                        <input type="hidden" name="empresa"
+                            value="{{ request.args.get('empresa', pendencia.empresa) }}">
+                        <input type="hidden" name="tipo_pendencia"
+                            value="{{ request.args.get('tipo_pendencia', pendencia.tipo_pendencia) }}">
                         <input type="hidden" name="busca" value="{{ request.args.get('busca', '') }}">
                         <div class="mb-3">
                             <label for="resposta" class="form-label">
                                 {% if pendencia.status == 'PENDENTE COMPLEMENTO CLIENTE' %}
-                                    Complemento da Resposta
+                                Complemento da Resposta
                                 {% else %}
-                                    Sua Resposta
+                                Sua Resposta
                                 {% endif %}
                             </label>
-                            <textarea class="form-control" id="resposta" name="resposta" rows="4" required 
-                                      placeholder="{% if pendencia.status == 'PENDENTE COMPLEMENTO CLIENTE' %}Adicione as informações solicitadas pelo operador...{% else %}Por favor, explique do que se trata esta pendência...{% endif %}"></textarea>
+                            <textarea class="form-control" id="resposta" name="resposta" rows="4" required
+                                placeholder="{% if pendencia.status == 'PENDENTE COMPLEMENTO CLIENTE' %}Adicione as informações solicitadas pelo operador...{% else %}Por favor, explique do que se trata esta pendência...{% endif %}"></textarea>
                             <div class="form-text">
                                 {% if pendencia.status == 'PENDENTE COMPLEMENTO CLIENTE' %}
-                                    Adicione as informações ou documentos que estavam faltando.
+                                Adicione as informações ou documentos que estavam faltando.
                                 {% else %}
-                                    Por favor, explique do que se trata esta pendência.
+                                Por favor, explique do que se trata esta pendência.
                                 {% endif %}
                             </div>
                         </div>
                         <div class="mb-3">
                             <label for="nota_fiscal_arquivo" class="form-label">Anexar Documento (PDF, JPG, PNG)</label>
-                            <input type="file" class="form-control" id="nota_fiscal_arquivo" name="nota_fiscal_arquivo" accept=".pdf,.jpg,.jpeg,.png">
+                            <input type="file" class="form-control" id="nota_fiscal_arquivo" name="nota_fiscal_arquivo"
+                                accept=".pdf,.jpg,.jpeg,.png">
                         </div>
                         <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-send"></i> 
+                            <i class="bi bi-send"></i>
                             {% if pendencia.status == 'PENDENTE COMPLEMENTO CLIENTE' %}
-                                Enviar Complemento
+                            Enviar Complemento
                             {% else %}
-                                Enviar Resposta
+                            Enviar Resposta
                             {% endif %}
                         </button>
                     </form>
@@ -224,10 +235,11 @@
                 {% endif %}
 
                 <!-- Seção para Operador e Supervisor atuarem em PENDENTE OPERADOR UP -->
-                {% if pendencia.status == 'PENDENTE OPERADOR UP' and session.get('usuario_tipo') in ['operador', 'supervisor'] %}
+                {% if pendencia.status == 'PENDENTE OPERADOR UP' and session.get('usuario_tipo') in ['operador',
+                'supervisor'] %}
                 <div class="mb-4">
                     <h4>
-                        <i class="bi bi-gear text-info"></i> 
+                        <i class="bi bi-gear text-info"></i>
                         Ações do Operador
                         {% if session.get('usuario_tipo') == 'supervisor' %}
                         <span class="badge bg-warning ms-2">
@@ -235,19 +247,21 @@
                         </span>
                         {% endif %}
                     </h4>
-                    
+
                     <!-- Formulário para informar Natureza da Operação -->
                     <div class="card mb-3">
                         <div class="card-header">
                             <h5 class="mb-0">Informar Natureza da Operação</h5>
                         </div>
                         <div class="card-body">
-                            <form method="POST" action="{{ url_for('main.informar_natureza_operacao', id=pendencia.id) }}">
-<input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                            <form method="POST"
+                                action="{{ url_for('main.informar_natureza_operacao', id=pendencia.id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                 <div class="mb-3">
                                     <label for="natureza_operacao" class="form-label">Natureza da Operação</label>
-                                    <textarea class="form-control" id="natureza_operacao" name="natureza_operacao" rows="3" 
-                                              placeholder="Descreva a natureza da operação..." required>{{ pendencia.natureza_operacao or '' }}</textarea>
+                                    <textarea class="form-control" id="natureza_operacao" name="natureza_operacao"
+                                        rows="3" placeholder="Descreva a natureza da operação..."
+                                        required>{{ pendencia.natureza_operacao or '' }}</textarea>
                                 </div>
                                 <button type="submit" class="btn btn-info">
                                     <i class="bi bi-save"></i> Salvar Natureza da Operação
@@ -265,15 +279,18 @@
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-md-6">
-                                    <form method="POST" action="{{ url_for('main.aceitar_resposta_cliente', id=pendencia.id) }}" style="display:inline;">
-<input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                    <form method="POST"
+                                        action="{{ url_for('main.aceitar_resposta_cliente', id=pendencia.id) }}"
+                                        style="display:inline;">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                         <button type="submit" class="btn btn-success w-100">
                                             <i class="bi bi-check-circle"></i> Aceitar e Enviar para Supervisor
                                         </button>
                                     </form>
                                 </div>
                                 <div class="col-md-6">
-                                    <button type="button" class="btn btn-danger w-100" data-bs-toggle="modal" data-bs-target="#modalRecusarResposta">
+                                    <button type="button" class="btn btn-danger w-100" data-bs-toggle="modal"
+                                        data-bs-target="#modalRecusarResposta">
                                         <i class="bi bi-x-circle"></i> Recusar e Devolver ao Cliente
                                     </button>
                                 </div>
@@ -284,33 +301,41 @@
                 </div>
 
                 <!-- Modal para Recusar Resposta -->
-                <div class="modal fade" id="modalRecusarResposta" tabindex="-1" aria-labelledby="modalRecusarRespostaLabel" aria-hidden="true">
+                <div class="modal fade" id="modalRecusarResposta" tabindex="-1"
+                    aria-labelledby="modalRecusarRespostaLabel" aria-hidden="true">
                     <div class="modal-dialog">
                         <div class="modal-content">
                             <div class="modal-header">
                                 <h5 class="modal-title" id="modalRecusarRespostaLabel">
                                     <i class="bi bi-exclamation-triangle text-danger"></i> Recusar Resposta do Cliente
                                 </h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
                             </div>
-                            <form method="POST" action="{{ url_for('main.recusar_resposta_cliente', id=pendencia.id) }}">
-<input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                            <form method="POST"
+                                action="{{ url_for('main.recusar_resposta_cliente', id=pendencia.id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                 <div class="modal-body">
                                     <div class="alert alert-warning">
                                         <i class="bi bi-info-circle"></i>
-                                        <strong>Atenção:</strong> Ao recusar a resposta, a pendência será devolvida ao cliente para complementação.
+                                        <strong>Atenção:</strong> Ao recusar a resposta, a pendência será devolvida ao
+                                        cliente para complementação.
                                     </div>
                                     <div class="mb-3">
-                                        <label for="motivo_recusa" class="form-label">Motivo da Recusa <span class="text-danger">*</span></label>
-                                        <textarea class="form-control" id="motivo_recusa" name="motivo_recusa" rows="4" 
-                                                  placeholder="Explique o motivo da recusa e quais informações estão faltando..." required></textarea>
+                                        <label for="motivo_recusa" class="form-label">Motivo da Recusa <span
+                                                class="text-danger">*</span></label>
+                                        <textarea class="form-control" id="motivo_recusa" name="motivo_recusa" rows="4"
+                                            placeholder="Explique o motivo da recusa e quais informações estão faltando..."
+                                            required></textarea>
                                         <div class="form-text">
-                                            Este motivo será enviado ao cliente para que ele possa complementar a resposta.
+                                            Este motivo será enviado ao cliente para que ele possa complementar a
+                                            resposta.
                                         </div>
                                     </div>
                                 </div>
                                 <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                    <button type="button" class="btn btn-secondary"
+                                        data-bs-dismiss="modal">Cancelar</button>
                                     <button type="submit" class="btn btn-danger">
                                         <i class="bi bi-x-circle"></i> Confirmar Recusa
                                     </button>
@@ -322,8 +347,9 @@
                 {% endif %}
 
                 {% if session.get('usuario_tipo') == 'adm' and pendencia.status != 'RESOLVIDA' %}
-                <form method="post" action="{{ url_for('main.aprovar_pendencia', id=pendencia.id) }}" style="display:inline;">
-<input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <form method="post" action="{{ url_for('main.aprovar_pendencia', id=pendencia.id) }}"
+                    style="display:inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                     <button type="submit" class="btn btn-success">
                         <i class="bi bi-check-circle"></i> Aprovar Pendência
                     </button>
@@ -336,15 +362,15 @@
 
 {% if ultima_resposta %}
 <script>
-document.getElementById('btnUsarComoBase')?.addEventListener('click', function(){
-    const txt = `{{ (ultima_resposta.valor_novo or '') | replace('\n','\\n') | replace('"','\\"') }}`;
-    const ta = document.querySelector('textarea[name="resposta"]');
-    if(ta){ 
-        ta.value = txt; 
-        ta.focus(); 
-        ta.setSelectionRange(ta.value.length, ta.value.length); 
-    }
-});
+    document.getElementById('btnUsarComoBase')?.addEventListener('click', function () {
+        const txt = `{{ (ultima_resposta.valor_novo or '') | replace('\n','\\n') | replace('"','\\"') }}`;
+        const ta = document.querySelector('textarea[name="resposta"]');
+        if (ta) {
+            ta.value = txt;
+            ta.focus();
+            ta.setSelectionRange(ta.value.length, ta.value.length);
+        }
+    });
 </script>
 {% endif %}
-{% endblock %} 
+{% endblock %}

@@ -1,0 +1,501 @@
+{% extends "base.html" %}
+{% block title %}Central de Relatórios Analíticos - UP380{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="fw-bold text-dark mb-0">
+                <i class="bi bi-graph-up-arrow me-2" style="color: #0e3b6f;"></i>Central de Relatórios Analíticos
+            </h4>
+            <p class="text-muted mb-0 small">Análise detalhada e exportação de indicadores históricos</p>
+        </div>
+        <div class="d-flex gap-2 align-items-center flex-wrap">
+            <!-- Flatpickr CSS -->
+            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+            <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+            <script src="https://npmcdn.com/flatpickr/dist/l10n/pt.js"></script>
+
+            <!-- Filtro Período Abertura -->
+            <div class="input-group input-group-sm" style="width: 250px;">
+                <span class="input-group-text bg-white"><i class="bi bi-calendar-event"></i></span>
+                <input type="text" id="filtroPeriodoAbertura" class="form-control" placeholder="Período Criação">
+            </div>
+
+            <!-- Filtro Data Pendência -->
+            <div class="input-group input-group-sm" style="width: 250px;">
+                <span class="input-group-text bg-white"><i class="bi bi-calendar-check"></i></span>
+                <input type="text" id="filtroPeriodoPendencia" class="form-control" placeholder="Período da Pendência">
+            </div>
+
+            <!-- Filtro Multi-Select -->
+            <div class="dropdown">
+                <button class="btn btn-white border dropdown-toggle d-flex align-items-center gap-2" type="button"
+                    id="dropdownEmpresas" onclick="toggleDropdownManual(event)" aria-expanded="false"
+                    style="background-color: #fff;">
+                    <i class="bi bi-building"></i>
+                    <span id="labelEmpresas">Todas as Empresas</span>
+                </button>
+                <div class="dropdown-menu p-2" aria-labelledby="dropdownEmpresas"
+                    style="max-height: 400px; overflow-y: auto; width: 300px; z-index: 9999;">
+
+                    <!-- Campo de Busca -->
+                    <div class="px-2 mb-2 sticky-top bg-white pt-1 pb-2" style="z-index: 10;">
+                        <input type="text" id="inputBuscaEmpresa" class="form-control form-control-sm"
+                            placeholder="Buscar empresa..." autocomplete="off">
+                    </div>
+
+                    <div class="form-check mb-2 ms-3">
+                        <input class="form-check-input filter-checkbox" type="checkbox" value="todas" id="chk-todas"
+                            checked>
+                        <label class="form-check-label fw-bold" for="chk-todas">
+                            Todas as Empresas
+                        </label>
+                    </div>
+
+                    <div class="dropdown-divider"></div>
+
+                    <div id="listaEmpresas" class="px-2">
+                        <div class="text-center text-muted"><small>Carregando...</small></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botões de Ação -->
+            <div class="d-flex gap-2">
+                <button class="btn btn-primary d-flex align-items-center gap-2" onclick="gerarRelatorio()">
+                    <i class="bi bi-play-fill"></i> Gerar Relatório
+                </button>
+                <button class="btn btn-outline-secondary" onclick="limparFiltros()">
+                    <i class="bi bi-eraser"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loading" class="text-center py-5" style="display: none;">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-2 text-muted">Processando dados analíticos...</p>
+    </div>
+
+    <!-- Report Content -->
+    <div id="reportContent">
+        <!-- Dashboard Summary Row -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm h-100 kpi-card">
+                    <div class="card-body py-3">
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="icon-box bg-primary-subtle text-primary me-3">
+                                <i class="bi bi-clipboard-data"></i>
+                            </div>
+                            <h6 class="text-muted mb-0 small fw-bold">TOTAL GERAL</h6>
+                        </div>
+                        <h3 class="fw-bold mb-0" id="kpiTotal">0</h3>
+                        <p class="text-muted small mb-0 mt-2">Pendências no período</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm h-100 kpi-card">
+                    <div class="card-body py-3">
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="icon-box bg-success-subtle text-success me-3">
+                                <i class="bi bi-check2-circle"></i>
+                            </div>
+                            <h6 class="text-muted mb-0 small fw-bold">TAXA DE RESOLUÇÃO</h6>
+                        </div>
+                        <h3 class="fw-bold mb-0" id="kpiTaxa">0%</h3>
+                        <div class="progress mt-2" style="height: 6px;">
+                            <div id="kpiProgress" class="progress-bar bg-success" role="progressbar" style="width: 0%">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm h-100 kpi-card">
+                    <div class="card-body py-3">
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="icon-box bg-info-subtle text-info me-3">
+                                <i class="bi bi-hourglass-split"></i>
+                            </div>
+                            <h6 class="text-muted mb-0 small fw-bold">SLA MÉDIO</h6>
+                        </div>
+                        <h3 class="fw-bold mb-0" id="kpiSla">0d</h3>
+                        <p class="text-muted small mb-0 mt-2">Tempo médio de resposta</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm h-100 kpi-card">
+                    <div class="card-body py-3 text-center">
+                        <button
+                            class="btn btn-success w-100 h-100 d-flex flex-column align-items-center justify-content-center gap-2"
+                            onclick="exportarRelatorio()">
+                            <i class="bi bi-file-earmark-excel fs-4"></i>
+                            <span class="fw-bold">Exportar XLSX Detalhado</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Table -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0 text-dark">Listagem Analítica de Pendências</h6>
+                <div class="d-flex gap-2">
+                    <input type="text" id="buscaTabela" class="form-control form-control-sm"
+                        placeholder="Pesquisar nesta lista..." style="width: 250px;">
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive" style="max-height: 600px;">
+                    <table class="table table-hover align-middle mb-0" id="tabelaRelatorio">
+                        <thead class="bg-light sticky-top">
+                            <tr style="font-size: 0.8rem; text-transform: uppercase; color: #6c757d;">
+                                <th>ID</th>
+                                <th>Empresa</th>
+                                <th>Abertura</th>
+                                <th>Tipo</th>
+                                <th>Fornecedor/Cliente</th>
+                                <th class="text-end">Valor</th>
+                                <th>Status</th>
+                                <th>Resolução</th>
+                                <th>Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="listaCorpo">
+                            <!-- Injetado via JS -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="tabelaVazia" class="text-center py-5 d-none">
+                    <i class="bi bi-search text-muted fs-1 opacity-25"></i>
+                    <p class="text-muted mt-3">Nenhum dado encontrado para os filtros aplicados.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .kpi-card {
+        transition: transform 0.2s;
+    }
+
+    .kpi-card:hover {
+        transform: translateY(-3px);
+    }
+
+    .icon-box {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+    }
+
+    #tabelaRelatorio th {
+        font-weight: 700;
+        border-bottom: 2px solid #f3f4f6;
+    }
+
+    #tabelaRelatorio td {
+        font-size: 0.9rem;
+        padding: 12px 8px;
+    }
+
+    .status-badge {
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        display: inline-block;
+    }
+</style>
+
+<script>
+    let pickerAbertura;
+    let pickerPendencia;
+    let empresasDisponiveisGlobal = [];
+
+    document.addEventListener('DOMContentLoaded', async function () {
+        try {
+            // Inicializar Flatpickrs
+            pickerAbertura = flatpickr("#filtroPeriodoAbertura", {
+                mode: "range",
+                dateFormat: "Y-m-d",
+                altInput: true,
+                altFormat: "d/m/Y",
+                locale: "pt",
+                defaultDate: [new Date(new Date().setDate(new Date().getDate() - 30)), new Date()]
+            });
+
+            pickerPendencia = flatpickr("#filtroPeriodoPendencia", {
+                mode: "range",
+                dateFormat: "Y-m-d",
+                altInput: true,
+                altFormat: "d/m/Y",
+                locale: "pt"
+            });
+
+            await carregarEmpresas();
+
+            // Busca instantânea na tabela
+            document.getElementById('buscaTabela').addEventListener('keyup', function (e) {
+                const termo = e.target.value.toLowerCase();
+                const rows = document.querySelectorAll('#listaCorpo tr');
+                rows.forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    row.style.display = text.includes(termo) ? '' : 'none';
+                });
+            });
+
+            gerarRelatorio();
+        } catch (e) {
+            console.error("Erro na inicialização:", e);
+        }
+    });
+
+    async function carregarEmpresas() {
+        try {
+            const response = await fetch('/api/dashboard/metrics?only_companies=true');
+            const data = await response.json();
+            if (data.allowed_empresas) {
+                empresasDisponiveisGlobal = data.allowed_empresas;
+                renderizarListaEmpresas(data.allowed_empresas);
+            }
+        } catch (e) { console.error("Erro ao carregar empresas:", e); }
+    }
+
+    function renderizarListaEmpresas(empresas) {
+        const container = document.getElementById('listaEmpresas');
+        container.innerHTML = '';
+
+        if (!empresas || empresas.length === 0) {
+            container.innerHTML = '<div class="text-center text-muted p-2"><small>Nenhuma empresa</small></div>';
+            return;
+        }
+
+        empresas.forEach(emp => {
+            const div = document.createElement('div');
+            div.className = 'form-check mb-1 d-flex align-items-center item-empresa';
+
+            const checkbox = document.createElement('input');
+            checkbox.className = 'form-check-input filter-checkbox-item me-2';
+            checkbox.type = 'checkbox';
+            checkbox.value = emp;
+            checkbox.id = `chk-${emp.replace(/\s+/g, '-')}`;
+            checkbox.style.marginTop = '0';
+
+            const label = document.createElement('label');
+            label.className = 'form-check-label small text-truncate';
+            label.htmlFor = checkbox.id;
+            label.textContent = emp;
+            label.title = emp;
+
+            div.appendChild(checkbox);
+            div.appendChild(label);
+            container.appendChild(div);
+        });
+
+        setupDropdownLogic();
+    }
+
+    function setupDropdownLogic() {
+        const chkTodas = document.getElementById('chk-todas');
+        const chkItems = document.querySelectorAll('.filter-checkbox-item');
+        const searchInput = document.getElementById('inputBuscaEmpresa');
+
+        chkTodas.addEventListener('change', (e) => {
+            chkItems.forEach(chk => {
+                chk.checked = false;
+                chk.disabled = e.target.checked;
+                chk.parentElement.classList.toggle('opacity-50', e.target.checked);
+            });
+            document.getElementById('labelEmpresas').textContent = e.target.checked ? 'Todas as Empresas' : 'Selecione...';
+        });
+
+        chkItems.forEach(chk => {
+            chk.addEventListener('change', () => {
+                if (chkTodas.checked) chkTodas.checked = false;
+                const sel = Array.from(chkItems).filter(c => c.checked).length;
+                if (sel === 0) {
+                    chkTodas.checked = true;
+                    chkItems.forEach(c => { c.disabled = true; c.parentElement.classList.add('opacity-50'); });
+                    document.getElementById('labelEmpresas').textContent = 'Todas as Empresas';
+                }
+                else {
+                    document.getElementById('labelEmpresas').textContent = `${sel} Selecionada(s)`;
+                }
+            });
+            // Init state
+            chk.disabled = true;
+            chk.parentElement.classList.add('opacity-50');
+        });
+
+        // Search logic
+        searchInput.addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            const items = document.querySelectorAll('.dropdown-menu .item-empresa');
+            items.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                item.style.display = text.includes(term) ? 'flex' : 'none';
+            });
+        });
+
+        // Impede fechar ao clicar dentro do menu
+        document.querySelector('.dropdown-menu').addEventListener('click', (e) => {
+            if (e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'LABEL') {
+                e.stopPropagation();
+            }
+        });
+    }
+
+    function toggleDropdownManual(event) {
+        event.stopPropagation();
+        const menu = event.currentTarget.nextElementSibling;
+        menu.classList.toggle('show');
+        menu.style.display = menu.classList.contains('show') ? 'block' : 'none';
+    }
+
+    document.addEventListener('click', () => {
+        document.querySelectorAll('.dropdown-menu.show').forEach(m => { m.classList.remove('show'); m.style.display = 'none'; });
+    });
+
+    async function gerarRelatorio() {
+        const loading = document.getElementById('loading');
+        const content = document.getElementById('reportContent');
+        loading.style.display = 'block';
+        content.style.display = 'none';
+
+        try {
+            const empresas = getEmpresas();
+            const params = new URLSearchParams();
+            empresas.forEach(e => params.append('empresas', e));
+
+            if (pickerAbertura.selectedDates.length === 2) {
+                params.append('start_abertura', pickerAbertura.selectedDates[0].toISOString().split('T')[0]);
+                params.append('end_abertura', pickerAbertura.selectedDates[1].toISOString().split('T')[0]);
+            }
+            if (pickerPendencia.selectedDates.length === 2) {
+                params.append('start_pendencia', pickerPendencia.selectedDates[0].toISOString().split('T')[0]);
+                params.append('end_pendencia', pickerPendencia.selectedDates[1].toISOString().split('T')[0]);
+            }
+
+            const response = await fetch(`/api/dashboard/details?type=full_report&${params.toString()}`);
+            const data = await response.json();
+
+            console.log("Analytics Data Received:", data);
+
+            renderizarRelatorio(data);
+
+            loading.style.display = 'none';
+            content.style.display = 'block';
+        } catch (e) {
+            console.error(e);
+            alert("Erro ao carregar relatório analítico.");
+            loading.style.display = 'none';
+        }
+    }
+
+    function getEmpresas() {
+        if (document.getElementById('chk-todas').checked) return ['todas'];
+        return Array.from(document.querySelectorAll('.filter-checkbox-item:checked')).map(c => c.value);
+    }
+
+    function renderizarRelatorio(data) {
+        const corpo = document.getElementById('listaCorpo');
+        const empty = document.getElementById('tabelaVazia');
+        corpo.innerHTML = '';
+
+        if (!data.data || data.data.length === 0) {
+            empty.classList.remove('d-none');
+            // Reset KPIs
+            document.getElementById('kpiTotal').textContent = '0';
+            document.getElementById('kpiTaxa').textContent = '0%';
+            document.getElementById('kpiProgress').style.width = '0%';
+            document.getElementById('kpiSla').textContent = '0d';
+            return;
+        }
+        empty.classList.add('d-none');
+
+        let totalSla = 0;
+        let resolvidas = 0;
+
+        data.data.forEach(p => {
+            if (p.Status === 'RESOLVIDA') resolvidas++;
+            if (p.SLA) totalSla += p.SLA;
+
+            corpo.innerHTML += `
+                <tr>
+                    <td><span class="text-muted small">#${p.ID}</span></td>
+                    <td><div class="fw-bold text-dark">${p.Empresa}</div></td>
+                    <td><div class="small">${p['Data Abertura']}</div></td>
+                    <td><span class="badge bg-light text-dark border-0 shadow-none px-2 py-1" style="font-size: 0.7rem; background-color: #f8f9fa !important;">${p.Tipo}</span></td>
+                    <td class="text-truncate" style="max-width: 200px;">${p['Fornecedor/Cliente']}</td>
+                    <td class="text-end fw-bold">R$ ${(p.Valor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                    <td><span class="status-badge ${getStatusClass(p.Status)}">${p.Status}</span></td>
+                    <td><div class="small text-muted">${p['Data Baixa'] || '-'}</div></td>
+                    <td><a href="/pendencia/${p.Token}" class="btn btn-sm btn-light border-0 shadow-none"><i class="bi bi-eye text-primary"></i></a></td>
+                </tr>
+            `;
+        });
+
+        // KPIs
+        document.getElementById('kpiTotal').textContent = data.data.length;
+        const taxa = Math.round((resolvidas / data.data.length) * 100) || 0;
+        document.getElementById('kpiTaxa').textContent = `${taxa}%`;
+        document.getElementById('kpiProgress').style.width = `${taxa}%`;
+        const slaAvg = resolvidas > 0 ? Math.round(totalSla / resolvidas) : 0;
+        document.getElementById('kpiSla').textContent = `${slaAvg}d`;
+    }
+
+    function getStatusClass(st) {
+        if (!st) return 'bg-secondary-subtle text-secondary';
+        const s = st.toUpperCase();
+        if (s === 'RESOLVIDA') return 'bg-success-subtle text-success';
+        if (s.includes('CLIENTE')) return 'bg-warning-subtle text-warning';
+        return 'bg-danger-subtle text-danger';
+    }
+
+    function exportarRelatorio() {
+        const empresas = getEmpresas();
+        const params = new URLSearchParams();
+        empresas.forEach(e => params.append('empresas', e));
+
+        if (pickerAbertura.selectedDates.length === 2) {
+            params.append('start_abertura', pickerAbertura.selectedDates[0].toISOString().split('T')[0]);
+            params.append('end_abertura', pickerAbertura.selectedDates[1].toISOString().split('T')[0]);
+        }
+        if (pickerPendencia.selectedDates.length === 2) {
+            params.append('start_pendencia', pickerPendencia.selectedDates[0].toISOString().split('T')[0]);
+            params.append('end_pendencia', pickerPendencia.selectedDates[1].toISOString().split('T')[0]);
+        }
+
+        window.location.href = `/api/dashboard/export?${params.toString()}`;
+    }
+
+    function limparFiltros() {
+        if (pickerAbertura) pickerAbertura.clear();
+        if (pickerPendencia) pickerPendencia.clear();
+        const chkTodas = document.getElementById('chk-todas');
+        if (chkTodas) {
+            chkTodas.checked = true;
+            document.getElementById('labelEmpresas').textContent = 'Todas as Empresas';
+        }
+        document.querySelectorAll('.filter-checkbox-item').forEach(chk => {
+            chk.checked = false;
+            chk.disabled = true;
+            chk.parentElement.classList.add('opacity-50');
+        });
+        gerarRelatorio();
+    }
+</script>
+{% endblock %}

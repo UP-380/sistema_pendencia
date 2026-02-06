@@ -23,33 +23,36 @@
                             <p><strong>Status:</strong> {{ pendencia.status }}</p>
                             <p><strong>Tipo:</strong> {{ pendencia.tipo_pendencia }}</p>
                             {% if pendencia.nota_fiscal_arquivo %}
-                                <p><strong>Anexo:</strong> 
-                                    <a href="{{ url_for('main.baixar_anexo', pendencia_id=pendencia.id) }}" class="btn btn-sm btn-outline-primary">
-                                        <i class="bi bi-download"></i> Baixar Anexo
-                                    </a>
-                                </p>
+                            <p><strong>Anexo:</strong>
+                                <a href="{{ url_for('main.baixar_anexo', pendencia_id=pendencia.id) }}"
+                                    class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-download"></i> Baixar Anexo
+                                </a>
+                            </p>
                             {% else %}
-                                <p><strong>Anexo:</strong> <span class="text-muted">Nenhum anexo</span></p>
+                            <p><strong>Anexo:</strong> <span class="text-muted">Nenhum anexo</span></p>
                             {% endif %}
                         </div>
                     </div>
                 </div>
-                
+
                 <form method="POST" enctype="multipart/form-data">
-<input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                     <div class="mb-3">
                         <label for="observacao" class="form-label">Explique do que se trata esta pendência</label>
-                        <textarea class="form-control" id="observacao" name="observacao" rows="4" required>{{ pendencia.observacao }}</textarea>
+                        <textarea class="form-control" id="observacao" name="observacao" rows="4"
+                            required>{{ pendencia.observacao }}</textarea>
                     </div>
                     <div class="mb-3">
                         <label for="documento_cliente" class="form-label">Anexar Documento (PDF, JPG, PNG)</label>
-                        <input type="file" class="form-control" id="documento_cliente" name="documento_cliente" accept=".pdf,.jpg,.jpeg,.png">
+                        <input type="file" class="form-control" id="documento_cliente" name="documento_cliente"
+                            accept=".pdf,.jpg,.jpeg,.png">
                     </div>
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-primary">
                             <i class="bi bi-send"></i> Enviar
                         </button>
-                        <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary">
+                        <a href="javascript:history.back()" class="btn btn-secondary">
                             <i class="bi bi-x-circle"></i> Cancelar
                         </a>
                     </div>
@@ -58,4 +61,4 @@
         </div>
     </div>
 </div>
-{% endblock %} 
+{% endblock %}

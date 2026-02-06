@@ -11,12 +11,13 @@
             </div>
             <div class="card-body">
                 <form method="POST" enctype="multipart/form-data">
-<input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                     <div class="mb-3">
                         <label for="empresa" class="form-label">Empresa</label>
                         <select class="form-select" id="empresa" name="empresa" required>
                             {% for emp in empresas %}
-                                <option value="{{ emp }}" {% if emp == pendencia.empresa %}selected{% endif %}>{{ emp }}</option>
+                            <option value="{{ emp }}" {% if emp==pendencia.empresa %}selected{% endif %}>{{ emp }}
+                            </option>
                             {% endfor %}
                         </select>
                     </div>
@@ -24,53 +25,98 @@
                         <label for="tipo_pendencia" class="form-label">Tipo de Pendência</label>
                         <select class="form-select" id="tipo_pendencia" name="tipo_pendencia" required>
                             {% for tipo in tipos_pendencia %}
-                            <option value="{{ tipo }}" {% if tipo == pendencia.tipo_pendencia %}selected{% endif %}>{{ tipo }}</option>
+                            <option value="{{ tipo }}" {% if tipo==pendencia.tipo_pendencia %}selected{% endif %}>{{
+                                tipo }}</option>
                             {% endfor %}
                         </select>
                     </div>
                     <div class="mb-3">
                         <label for="banco" class="form-label">Banco</label>
-                        <input type="text" class="form-control" id="banco" name="banco" value="{{ pendencia.banco }}" required>
+                        <input type="text" class="form-control" id="banco" name="banco" value="{{ pendencia.banco }}"
+                            required>
                     </div>
                     <div class="mb-3">
                         <label for="data" class="form-label">Data</label>
-                        <input type="date" class="form-control" id="data" name="data" value="{{ pendencia.data.strftime('%Y-%m-%d') }}" required>
+                        <input type="date" class="form-control" id="data" name="data"
+                            value="{{ pendencia.data.strftime('%Y-%m-%d') }}" required>
                     </div>
                     <div class="mb-3">
                         <label for="fornecedor_cliente" class="form-label">Fornecedor/Cliente</label>
-                        <input type="text" class="form-control" id="fornecedor_cliente" name="fornecedor_cliente" value="{{ pendencia.fornecedor_cliente }}" required>
+                        <input type="text" class="form-control" id="fornecedor_cliente" name="fornecedor_cliente"
+                            value="{{ pendencia.fornecedor_cliente }}" required>
                     </div>
-                    <div class="mb-3">
+                    <div class="mb-3" id="grp_valor">
                         <label for="valor" class="form-label">Valor</label>
-                        <input type="text" class="form-control" id="valor" name="valor" value="{{ 'R$ {:,.2f}'.format(pendencia.valor).replace(',', '_').replace('.', ',').replace('_', '.') }}" oninput="formatarMoeda(this)" required>
+                        <input type="text" class="form-control" id="valor" name="valor"
+                            value="{{ 'R$ {:,.2f}'.format(pendencia.valor).replace(',', '_').replace('.', ',').replace('_', '.') }}"
+                            oninput="formatarMoeda(this)" required>
                     </div>
-                    <div class="mb-3">
+                    <div class="mb-3" id="grp_tipo_credito_debito" style="display:none;">
+                        <label for="tipo_credito_debito" class="form-label">Tipo de Lançamento</label>
+                        <select class="form-select" id="tipo_credito_debito" name="tipo_credito_debito">
+                            <option value="">Selecione...</option>
+                            <option value="CREDITO" {% if pendencia.tipo_credito_debito=='CREDITO' %}selected{% endif
+                                %}>Crédito</option>
+                            <option value="DEBITO" {% if pendencia.tipo_credito_debito=='DEBITO' %}selected{% endif %}>
+                                Débito</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3" id="grp_codigo" style="display:none;">
+                        <label for="codigo_lancamento" class="form-label">Código do Lançamento</label>
+                        <input type="text" class="form-control" id="codigo_lancamento" name="codigo_lancamento"
+                            value="{{ pendencia.codigo_lancamento or '' }}">
+                    </div>
+
+                    <div class="mb-3" id="grp_data_competencia" style="display:none;">
+                        <label for="data_competencia" class="form-label">Data Competência</label>
+                        <input type="date" class="form-control" id="data_competencia" name="data_competencia"
+                            value="{{ pendencia.data_competencia.strftime('%Y-%m-%d') if pendencia.data_competencia else '' }}">
+                    </div>
+
+                    <div class="mb-3" id="grp_data_baixa" style="display:none;">
+                        <label for="data_baixa" class="form-label">Data da Baixa</label>
+                        <input type="date" class="form-control" id="data_baixa" name="data_baixa"
+                            value="{{ pendencia.data_baixa.strftime('%Y-%m-%d') if pendencia.data_baixa else '' }}">
+                    </div>
+
+                    <div class="mb-3" id="grp_natureza_sistema" style="display:none;">
+                        <label for="natureza_sistema" class="form-label">Natureza Atual no Sistema</label>
+                        <input type="text" class="form-control" id="natureza_sistema" name="natureza_sistema"
+                            value="{{ pendencia.natureza_sistema or '' }}" placeholder="Ex.: Serviços - 3.01.02">
+                    </div>
+
+                    <div class="mb-3" id="grp_obs">
                         <label for="observacao" class="form-label">Observação</label>
-                        <input type="text" class="form-control" id="observacao" name="observacao" value="{{ pendencia.observacao }}">
+                        <input type="text" class="form-control" id="observacao" name="observacao"
+                            value="{{ pendencia.observacao }}">
                     </div>
                     <div class="mb-3">
                         <label for="email_cliente" class="form-label">E-mail do Cliente (opcional)</label>
-                        <input type="email" class="form-control" id="email_cliente" name="email_cliente" value="{{ pendencia.email_cliente }}">
+                        <input type="email" class="form-control" id="email_cliente" name="email_cliente"
+                            value="{{ pendencia.email_cliente }}">
                     </div>
                     <div class="mb-3" id="nota_fiscal_upload" style="display:none;">
                         <label for="nota_fiscal_arquivo" class="form-label">Anexar Nota Fiscal (PDF, JPG, PNG)</label>
-                        <input type="file" class="form-control" id="nota_fiscal_arquivo" name="nota_fiscal_arquivo" accept=".pdf,.jpg,.jpeg,.png">
+                        <input type="file" class="form-control" id="nota_fiscal_arquivo" name="nota_fiscal_arquivo"
+                            accept=".pdf,.jpg,.jpeg,.png">
                         {% if pendencia.nota_fiscal_arquivo %}
-                            <div class="mt-2">
-                                <strong>Anexo atual:</strong> 
-                                <a href="{{ url_for('main.baixar_anexo', pendencia_id=pendencia.id) }}" 
-                                   class="btn btn-sm btn-outline-primary">
-                                    <i class="bi bi-download"></i> Baixar Anexo Atual
-                                </a>
-                                <small class="text-muted d-block">Selecione um novo arquivo para substituir o anexo atual.</small>
-                            </div>
+                        <div class="mt-2">
+                            <strong>Anexo atual:</strong>
+                            <a href="{{ url_for('main.baixar_anexo', pendencia_id=pendencia.id) }}"
+                                class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-download"></i> Baixar Anexo Atual
+                            </a>
+                            <small class="text-muted d-block">Selecione um novo arquivo para substituir o anexo
+                                atual.</small>
+                        </div>
                         {% endif %}
                     </div>
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-primary">
                             <i class="bi bi-save"></i> Salvar Alterações
                         </button>
-                        <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary">
+                        <a href="javascript:history.back()" class="btn btn-secondary">
                             <i class="bi bi-x-circle"></i> Cancelar
                         </a>
                     </div>
@@ -80,36 +126,131 @@
     </div>
 </div>
 <script>
-document.getElementById('tipo_pendencia').addEventListener('change', function() {
-    var uploadDiv = document.getElementById('nota_fiscal_upload');
-    if (this.value === 'Documento Não Anexado' || this.value === 'Nota Fiscal Não Anexada') {
-        uploadDiv.style.display = 'block';
-    } else {
-        uploadDiv.style.display = 'none';
-    }
-});
+    // Configuração de campos por tipo de pendência (Sincronizado com nova_pendencia.html)
+    const tipoConfig = {
+        "Cartão de Crédito Não Identificado": {
+            show: ["grp_data", "grp_fornecedor", "grp_valor", "grp_obs", "grp_banco"],
+            hide: ["grp_data_competencia", "grp_data_baixa", "grp_codigo", "grp_natureza_sistema", "grp_tipo_credito_debito"],
+            required: ["banco", "data", "valor"]
+        },
+        "Pagamento Não Identificado": {
+            show: ["grp_data", "grp_fornecedor", "grp_valor", "grp_obs", "grp_banco"],
+            hide: ["grp_data_competencia", "grp_data_baixa", "grp_codigo", "grp_natureza_sistema", "grp_tipo_credito_debito"],
+            required: ["banco", "data", "valor"]
+        },
+        "Recebimento Não Identificado": {
+            show: ["grp_data", "grp_fornecedor", "grp_valor", "grp_obs", "grp_banco"],
+            hide: ["grp_data_competencia", "grp_data_baixa", "grp_codigo", "grp_natureza_sistema", "grp_tipo_credito_debito"],
+            required: ["banco", "data", "valor"]
+        },
+        "Documento Não Anexado": {
+            show: ["grp_fornecedor", "grp_valor", "grp_obs", "grp_data", "grp_banco"],
+            hide: ["grp_data_competencia", "grp_data_baixa", "grp_codigo", "grp_natureza_sistema", "grp_tipo_credito_debito"],
+            required: ["fornecedor_cliente", "valor", "data"]
+        },
+        "Nota Fiscal Não Anexada": {
+            show: ["grp_fornecedor", "grp_valor", "grp_obs", "grp_data", "grp_banco"],
+            hide: ["grp_data_competencia", "grp_data_baixa", "grp_codigo", "grp_natureza_sistema", "grp_tipo_credito_debito"],
+            required: ["fornecedor_cliente", "valor", "data"]
+        },
+        "Lançamento Não Encontrado em Extrato": {
+            show: ["grp_data", "grp_fornecedor", "grp_valor", "grp_codigo", "grp_obs", "grp_tipo_credito_debito", "grp_banco"],
+            hide: ["grp_data_competencia", "grp_data_baixa", "grp_natureza_sistema"],
+            required: ["banco", "data", "fornecedor_cliente", "valor", "tipo_credito_debito"]
+        },
+        "Lançamento Não Encontrado em Sistema": {
+            show: ["grp_fornecedor", "grp_valor", "grp_data", "grp_obs", "grp_tipo_credito_debito", "grp_banco"],
+            hide: ["grp_data_competencia", "grp_data_baixa", "grp_natureza_sistema", "grp_codigo"],
+            required: ["fornecedor_cliente", "valor", "data", "tipo_credito_debito"]
+        },
+        "Natureza Errada": {
+            show: ["grp_fornecedor", "grp_valor", "grp_codigo", "grp_obs", "grp_data", "grp_natureza_sistema", "grp_banco"],
+            hide: ["grp_data_competencia", "grp_data_baixa", "grp_tipo_credito_debito"],
+            required: ["fornecedor_cliente", "valor", "codigo_lancamento", "data"]
+        },
+        "Competência Errada": {
+            show: ["grp_fornecedor", "grp_valor", "grp_codigo", "grp_obs", "grp_data_competencia", "grp_banco"],
+            hide: ["grp_data_baixa", "grp_data", "grp_natureza_sistema", "grp_tipo_credito_debito"],
+            required: ["fornecedor_cliente", "valor", "codigo_lancamento", "data_competencia"]
+        },
+        "Data da Baixa Errada": {
+            show: ["grp_fornecedor", "grp_valor", "grp_codigo", "grp_obs", "grp_data_baixa", "grp_banco"],
+            hide: ["grp_data", "grp_data_competencia", "grp_natureza_sistema", "grp_tipo_credito_debito"],
+            required: ["banco", "data_baixa", "fornecedor_cliente", "valor", "codigo_lancamento"]
+        }
+    };
 
-// Função para formatação de moeda BRL
-function formatarMoeda(input) {
-    let valor = input.value.replace(/\D/g, '');
-    if (!valor) {
-        input.value = 'R$ 0,00';
-        return;
+    function applyTipoConfig(tipo) {
+        const config = tipoConfig[tipo] || { show: [], hide: [], required: [] };
+
+        // All possible field groups that can be shown/hidden
+        const allGroups = [
+            "grp_banco", "grp_data", "grp_fornecedor", "grp_valor", "grp_obs",
+            "grp_tipo_credito_debito", "grp_codigo", "grp_data_competencia",
+            "grp_data_baixa", "grp_natureza_sistema"
+        ];
+
+        // Hide all groups first
+        allGroups.forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.style.display = 'none';
+            }
+        });
+
+        // Then show only the relevant ones
+        config.show.forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.style.display = 'block';
+            }
+        });
+
+        // Configurar campos obrigatórios
+        const allFields = [
+            'fornecedor_cliente', 'valor', 'codigo_lancamento', 'data',
+            'data_competencia', 'data_baixa', 'banco', 'tipo_credito_debito',
+            'observacao', 'email_cliente', 'nota_fiscal_arquivo', 'natureza_sistema'
+        ];
+        allFields.forEach(field => {
+            const element = document.getElementById(field);
+            if (element) {
+                element.required = config.required.includes(field);
+            }
+        });
+
+        // Mostrar/ocultar upload de nota fiscal
+        const uploadDiv = document.getElementById('nota_fiscal_upload');
+        if (uploadDiv) {
+            uploadDiv.style.display = (tipo === 'Nota Fiscal Não Anexada' || tipo === 'Documento Não Anexado') ? 'block' : 'none';
+        }
     }
-    let numero = parseInt(valor) / 100;
-    input.value = numero.toLocaleString('pt-BR', {
-        style: 'currency',
-        currency: 'BRL',
-        minimumFractionDigits: 2
+
+    document.getElementById('tipo_pendencia').addEventListener('change', function () {
+        applyTipoConfig(this.value);
     });
-}
 
-// Aplicar configuração inicial para upload de nota fiscal
-document.addEventListener('DOMContentLoaded', function() {
-    const tipoSelect = document.getElementById('tipo_pendencia');
-    if (tipoSelect && (tipoSelect.value === 'Documento Não Anexado' || tipoSelect.value === 'Nota Fiscal Não Anexada')) {
-        document.getElementById('nota_fiscal_upload').style.display = 'block';
+    // Função para formatação de moeda BRL
+    function formatarMoeda(input) {
+        let valor = input.value.replace(/\D/g, '');
+        if (!valor) {
+            input.value = 'R$ 0,00';
+            return;
+        }
+        let numero = parseInt(valor) / 100;
+        input.value = numero.toLocaleString('pt-BR', {
+            style: 'currency',
+            currency: 'BRL',
+            minimumFractionDigits: 2
+        });
     }
-});
+
+    // Aplicar configuração inicial
+    document.addEventListener('DOMContentLoaded', function () {
+        const tipoSelect = document.getElementById('tipo_pendencia');
+        if (tipoSelect && tipoSelect.value) {
+            applyTipoConfig(tipoSelect.value);
+        }
+    });
 </script>
-{% endblock %} 
+{% endblock %}

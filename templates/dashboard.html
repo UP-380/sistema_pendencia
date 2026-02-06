@@ -923,11 +923,15 @@
                     <i class="bi bi-x-circle"></i> Fechar
                 </button>
 
-                {# Botões para ADMIN e SUPERVISOR #}
-                {% if session['usuario_tipo'] in ['adm', 'supervisor'] %}
+                {# Botão Editar: Disponível para ADM, Supervisor e Operador, mas sumir se houver resposta #}
+                {% if session['usuario_tipo'] in ['adm', 'supervisor', 'operador'] and not pendencia.resposta_cliente %}
                 <a href="{{ url_for('main.editar_pendencia', id=pendencia.id) }}" class="btn btn-warning">
                     <i class="bi bi-pencil"></i> Editar
                 </a>
+                {% endif %}
+
+                {# Botões de Gestão: Apenas ADM e SUPERVISOR #}
+                {% if session['usuario_tipo'] in ['adm', 'supervisor'] %}
                 <a href="{{ url_for('main.resolver_pendencia', id=pendencia.id) }}" class="btn btn-success"
                     onclick="return confirm('Deseja marcar esta pendência como resolvida?')">
                     <i class="bi bi-check-circle"></i> Resolver

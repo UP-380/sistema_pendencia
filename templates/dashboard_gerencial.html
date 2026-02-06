@@ -59,12 +59,17 @@
                         <!-- Preenchido via JS -->
                         <div class="text-center text-muted"><small>Carregando...</small></div>
                     </div>
-
-                    <div class="dropdown-divider"></div>
-                    <div class="px-2 pb-1">
-                        <button class="btn btn-sm btn-primary w-100" onclick="aplicarFiltros()">Aplicar Filtros</button>
-                    </div>
                 </div>
+            </div>
+
+            <!-- Botões de Ação -->
+            <div class="d-flex gap-2">
+                <button class="btn btn-primary d-flex align-items-center gap-2" onclick="aplicarFiltros()">
+                    <i class="bi bi-filter"></i> Aplicar Filtros
+                </button>
+                <button class="btn btn-outline-secondary d-flex align-items-center gap-2" onclick="limparFiltros()">
+                    <i class="bi bi-eraser"></i> Limpar
+                </button>
             </div>
 
             <!-- Export Button -->
@@ -716,6 +721,28 @@
             document.getElementById('loading').style.display = 'none';
         }
     });
+
+    async function limparFiltros() {
+        // 1. Limpar Calendários
+        if (pickerAbertura) pickerAbertura.clear();
+        if (pickerPendencia) pickerPendencia.clear();
+
+        // 2. Resetar Checkboxes de Empresas
+        const chkTodas = document.getElementById('chk-todas');
+        const chkItems = document.querySelectorAll('.filter-checkbox-item');
+
+        if (chkTodas) {
+            chkTodas.checked = true;
+            document.getElementById('labelEmpresas').textContent = 'Todas as Empresas';
+        }
+        chkItems.forEach(chk => {
+            chk.checked = false;
+            chk.disabled = true;
+        });
+
+        // 3. Aplicar
+        await aplicarFiltros();
+    }
 
     async function aplicarFiltros() {
         const loading = document.getElementById('loading');
