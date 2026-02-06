@@ -445,227 +445,7 @@
     </div>
 </div>
 
-<!-- Modal de Ajuda -->
-<div class="modal fade" id="modalAjuda" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title"><i class="bi bi-question-circle"></i> Ajuda - Painel do Supervisor</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <h6><i class="bi bi-lightbulb"></i> Dicas Rápidas</h6>
-                        <ul class="list-unstyled">
-                            <li><i class="bi bi-check text-success"></i> Use os filtros para encontrar pendências
-                                específicas</li>
-                            <li><i class="bi bi-check text-success"></i> Pendências com valor alto aparecem destacadas
-                            </li>
-                            <li><i class="bi bi-check text-success"></i> Pendências atrasadas são marcadas em vermelho
-                            </li>
-                            <li><i class="bi bi-check text-success"></i> Clique nos cards para filtrar rapidamente</li>
-                        </ul>
-                    </div>
-                    <div class="col-md-6">
-                        <h6><i class="bi bi-gear"></i> Funcionalidades</h6>
-                        <ul class="list-unstyled">
-                            <li><i class="bi bi-eye"></i> <strong>Ver Detalhes:</strong> Visualizar informações
-                                completas</li>
-                            <li><i class="bi bi-clock-history"></i> <strong>Histórico:</strong> Ver logs de alterações
-                            </li>
-                            <li><i class="bi bi-check-circle"></i> <strong>Resolver:</strong> Marcar como resolvida</li>
-                            <li><i class="bi bi-check-circle"></i> <strong>Lote:</strong> Resolver múltiplas pendências
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
-<!-- Modais para cada pendência -->
-{% for pendencia in pendencias %}
-<div class="modal fade" id="modalPendencia{{ pendencia.id }}" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title">
-                    <i class="bi bi-file-earmark-text"></i> Pendência #{{ pendencia.id }} - {{ pendencia.empresa }}
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
-                <div class="row">
-                    <!-- Informações da Pendência -->
-                    <div class="col-12">
-                        <div class="card">
-                            <div class="card-header py-2">
-                                <h6 class="mb-0 small"><i class="bi bi-info-circle"></i> Informações da Pendência</h6>
-                            </div>
-                            <div class="card-body py-2">
-                                <div class="row mb-1 small">
-                                    <div class="col-4"><strong>Empresa:</strong></div>
-                                    <div class="col-8">{{ pendencia.empresa }}</div>
-                                </div>
-                                <div class="row mb-1 small">
-                                    <div class="col-4"><strong>Tipo:</strong></div>
-                                    <div class="col-8">{{ pendencia.tipo_pendencia }}</div>
-                                </div>
-                                <div class="row mb-1 small">
-                                    <div class="col-4"><strong>Banco:</strong></div>
-                                    <div class="col-8">{{ pendencia.banco }}</div>
-                                </div>
-                                <div class="row mb-1 small">
-                                    <div class="col-4"><strong>Data:</strong></div>
-                                    <div class="col-8">{% if pendencia.data %}{{ pendencia.data.strftime('%d/%m/%Y')
-                                        }}{% else %}{{ pendencia.data_abertura.strftime('%d/%m/%Y %H:%M') }}{% endif %}
-                                    </div>
-                                </div>
-                                <div class="row mb-1 small">
-                                    <div class="col-4"><strong>Fornecedor:</strong></div>
-                                    <div class="col-8">{{ pendencia.fornecedor_cliente }}</div>
-                                </div>
-                                <div class="row mb-1">
-                                    <div class="col-4 small"><strong>Valor:</strong></div>
-                                    <div class="col-8">
-                                        <span class="text-primary fw-bold">R$ {{ "%.2f"|format(pendencia.valor)
-                                            }}</span>
-                                    </div>
-                                </div>
-                                <div class="row mb-1 small">
-                                    <div class="col-4"><strong>Observação:</strong></div>
-                                    <div class="col-8"
-                                        style="word-wrap: break-word; max-height: 80px; overflow-y: auto;">{{
-                                        pendencia.observacao }}</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Resposta do Cliente e Natureza -->
-                    <div class="col-12 mt-3">
-                        <!-- Resposta do Cliente -->
-                        <div class="card mb-2">
-                            <div class="card-header bg-success text-white py-2">
-                                <h6 class="mb-0 small"><i class="bi bi-chat-dots"></i> Resposta do Cliente</h6>
-                            </div>
-                            <div class="card-body py-2" style="max-height: 120px; overflow-y: auto;">
-                                {% if pendencia.resposta_cliente %}
-                                <p class="mb-1 small" style="word-wrap: break-word; white-space: pre-wrap;">{{
-                                    pendencia.resposta_cliente }}</p>
-                                <small class="text-muted">
-                                    <i class="bi bi-clock"></i> Respondido em: {{
-                                    pendencia.data_resposta.strftime('%d/%m/%Y %H:%M') if pendencia.data_resposta else
-                                    'N/A' }}
-                                </small>
-                                {% else %}
-                                <p class="text-muted mb-0 small">Nenhuma resposta do cliente.</p>
-                                {% endif %}
-                            </div>
-                        </div>
-
-                        <!-- Natureza de Operação -->
-                        <div class="card mb-2">
-                            <div class="card-header bg-info text-white py-2">
-                                <h6 class="mb-0 small"><i class="bi bi-gear"></i> Natureza de Operação</h6>
-                            </div>
-                            <div class="card-body py-2" style="max-height: 120px; overflow-y: auto;">
-                                {% if pendencia.natureza_operacao %}
-                                <p class="mb-0 small" style="word-wrap: break-word; white-space: pre-wrap;">{{
-                                    pendencia.natureza_operacao }}</p>
-                                {% else %}
-                                <p class="text-muted mb-0 small">Natureza de operação não informada.</p>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                    <i class="bi bi-x-circle"></i> Fechar
-                </button>
-                <button type="button" class="btn btn-info" onclick="verHistorico({{ pendencia.id }})">
-                    <i class="bi bi-clock-history"></i> Ver Histórico
-                </button>
-                <form method="POST" action="{{ url_for('main.supervisor_resolver_pendencia', id=pendencia.id) }}"
-                    style="display: inline;">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                    <button type="submit" class="btn btn-success"
-                        onclick="return confirm('Deseja resolver esta pendência?')">
-                        <i class="bi bi-check-circle"></i> Resolver Pendência
-                    </button>
-                </form>
-                <button type="button" class="btn btn-warning" data-bs-toggle="modal"
-                    data-bs-target="#modalRecusa{{ pendencia.id }}">
-                    <i class="bi bi-x-circle"></i> Recusar e Devolver
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal de Recusa -->
-<div class="modal fade" id="modalRecusa{{ pendencia.id }}" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-warning text-dark">
-                <h5 class="modal-title">
-                    <i class="bi bi-exclamation-triangle"></i> Recusar e Devolver ao Operador
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="alert alert-warning">
-                    <i class="bi bi-info-circle"></i>
-                    <strong>Atenção:</strong> Esta ação irá recusar a pendência e devolvê-la ao operador para correção.
-                </div>
-                <form method="POST"
-                    action="{{ url_for('main.supervisor_recusar_devolver_operador', id=pendencia.id) }}">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                    <div class="mb-3">
-                        <label for="motivo_recusa_supervisor" class="form-label">
-                            <strong>Motivo da Recusa *</strong>
-                        </label>
-                        <textarea class="form-control" id="motivo_recusa_supervisor" name="motivo_recusa_supervisor"
-                            rows="4" required
-                            placeholder="Informe o motivo da recusa (ex: Natureza da operação incorreta, informações insuficientes, etc.)"></textarea>
-                        <div class="form-text">
-                            Este motivo será registrado no histórico e enviado ao operador.
-                        </div>
-                    </div>
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-warning"
-                            onclick="return confirm('Confirmar recusa e devolução ao operador?')">
-                            <i class="bi bi-x-circle"></i> Confirmar Recusa e Devolução
-                        </button>
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                            <i class="bi bi-x-circle"></i> Cancelar
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-{% endfor %}
-
-<!-- Modal de Histórico -->
-<div class="modal fade" id="modalHistorico" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title"><i class="bi bi-clock-history"></i> Histórico da Pendência</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body" id="historicoContent">
-                <!-- Conteúdo será carregado via AJAX -->
-            </div>
-        </div>
-    </div>
-</div>
 
 <style>
     .cursor-pointer {
@@ -894,4 +674,228 @@
         });
     });
 </script>
+{% endblock %}
+
+{% block modals %}
+<!-- Modal de Ajuda -->
+<div class="modal fade" id="modalAjuda" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-question-circle"></i> Ajuda - Painel do Supervisor</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-lightbulb"></i> Dicas Rápidas</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="bi bi-check text-success"></i> Use os filtros para encontrar pendências
+                                específicas</li>
+                            <li><i class="bi bi-check text-success"></i> Pendências com valor alto aparecem destacadas
+                            </li>
+                            <li><i class="bi bi-check text-success"></i> Pendências atrasadas são marcadas em vermelho
+                            </li>
+                            <li><i class="bi bi-check text-success"></i> Clique nos cards para filtrar rapidamente</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-gear"></i> Funcionalidades</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="bi bi-eye"></i> <strong>Ver Detalhes:</strong> Visualizar informações
+                                completas</li>
+                            <li><i class="bi bi-clock-history"></i> <strong>Histórico:</strong> Ver logs de alterações
+                            </li>
+                            <li><i class="bi bi-check-circle"></i> <strong>Resolver:</strong> Marcar como resolvida</li>
+                            <li><i class="bi bi-check-circle"></i> <strong>Lote:</strong> Resolver múltiplas pendências
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modais para cada pendência -->
+{% for pendencia in pendencias %}
+<div class="modal fade" id="modalPendencia{{ pendencia.id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-file-earmark-text"></i> Pendência #{{ pendencia.id }} - {{ pendencia.empresa }}
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                <div class="row">
+                    <!-- Informações da Pendência -->
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header py-2">
+                                <h6 class="mb-0 small"><i class="bi bi-info-circle"></i> Informações da Pendência</h6>
+                            </div>
+                            <div class="card-body py-2">
+                                <div class="row mb-1 small">
+                                    <div class="col-4"><strong>Empresa:</strong></div>
+                                    <div class="col-8">{{ pendencia.empresa }}</div>
+                                </div>
+                                <div class="row mb-1 small">
+                                    <div class="col-4"><strong>Tipo:</strong></div>
+                                    <div class="col-8">{{ pendencia.tipo_pendencia }}</div>
+                                </div>
+                                <div class="row mb-1 small">
+                                    <div class="col-4"><strong>Banco:</strong></div>
+                                    <div class="col-8">{{ pendencia.banco }}</div>
+                                </div>
+                                <div class="row mb-1 small">
+                                    <div class="col-4"><strong>Data:</strong></div>
+                                    <div class="col-8">{% if pendencia.data %}{{ pendencia.data.strftime('%d/%m/%Y')
+                                        }}{% else %}{{ pendencia.data_abertura.strftime('%d/%m/%Y %H:%M') }}{% endif %}
+                                    </div>
+                                </div>
+                                <div class="row mb-1 small">
+                                    <div class="col-4"><strong>Fornecedor:</strong></div>
+                                    <div class="col-8">{{ pendencia.fornecedor_cliente }}</div>
+                                </div>
+                                <div class="row mb-1">
+                                    <div class="col-4 small"><strong>Valor:</strong></div>
+                                    <div class="col-8">
+                                        <span class="text-primary fw-bold">R$ {{ "%.2f"|format(pendencia.valor)
+                                            }}</span>
+                                    </div>
+                                </div>
+                                <div class="row mb-1 small">
+                                    <div class="col-4"><strong>Observação:</strong></div>
+                                    <div class="col-8"
+                                        style="word-wrap: break-word; max-height: 80px; overflow-y: auto;">{{
+                                        pendencia.observacao }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Resposta do Cliente e Natureza -->
+                    <div class="col-12 mt-3">
+                        <!-- Resposta do Cliente -->
+                        <div class="card mb-2">
+                            <div class="card-header bg-success text-white py-2">
+                                <h6 class="mb-0 small"><i class="bi bi-chat-dots"></i> Resposta do Cliente</h6>
+                            </div>
+                            <div class="card-body py-2" style="max-height: 120px; overflow-y: auto;">
+                                {% if pendencia.resposta_cliente %}
+                                <p class="mb-1 small" style="word-wrap: break-word; white-space: pre-wrap;">{{
+                                    pendencia.resposta_cliente }}</p>
+                                <small class="text-muted">
+                                    <i class="bi bi-clock"></i> Respondido em: {{
+                                    pendencia.data_resposta.strftime('%d/%m/%Y %H:%M') if pendencia.data_resposta else
+                                    'N/A' }}
+                                </small>
+                                {% else %}
+                                <p class="text-muted mb-0 small">Nenhuma resposta do cliente.</p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Natureza de Operação -->
+                        <div class="card mb-2">
+                            <div class="card-header bg-info text-white py-2">
+                                <h6 class="mb-0 small"><i class="bi bi-gear"></i> Natureza de Operação</h6>
+                            </div>
+                            <div class="card-body py-2" style="max-height: 120px; overflow-y: auto;">
+                                {% if pendencia.natureza_operacao %}
+                                <p class="mb-0 small" style="word-wrap: break-word; white-space: pre-wrap;">{{
+                                    pendencia.natureza_operacao }}</p>
+                                {% else %}
+                                <p class="text-muted mb-0 small">Natureza de operação não informada.</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> Fechar
+                </button>
+                <button type="button" class="btn btn-info" onclick="verHistorico({{ pendencia.id }})">
+                    <i class="bi bi-clock-history"></i> Ver Histórico
+                </button>
+                <form method="POST" action="{{ url_for('main.supervisor_resolver_pendencia', id=pendencia.id) }}"
+                    style="display: inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <button type="submit" class="btn btn-success"
+                        onclick="return confirm('Deseja resolver esta pendência?')">
+                        <i class="bi bi-check-circle"></i> Resolver Pendência
+                    </button>
+                </form>
+                <button type="button" class="btn btn-warning" data-bs-toggle="modal"
+                    data-bs-target="#modalRecusa{{ pendencia.id }}">
+                    <i class="bi bi-x-circle"></i> Recusar e Devolver
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Recusa -->
+<div class="modal fade" id="modalRecusa{{ pendencia.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle"></i> Recusar e Devolver ao Operador
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>Atenção:</strong> Esta ação irá recusar a pendência e devolvê-la ao operador para correção.
+                </div>
+                <form method="POST"
+                    action="{{ url_for('main.supervisor_recusar_devolver_operador', id=pendencia.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <div class="mb-3">
+                        <label for="motivo_recusa_supervisor" class="form-label">
+                            <strong>Motivo da Recusa *</strong>
+                        </label>
+                        <textarea class="form-control" id="motivo_recusa_supervisor" name="motivo_recusa_supervisor"
+                            rows="4" required
+                            placeholder="Informe o motivo da recusa (ex: Natureza da operação incorreta, informações insuficientes, etc.)"></textarea>
+                        <div class="form-text">
+                            Este motivo será registrado no histórico e enviado ao operador.
+                        </div>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-warning"
+                            onclick="return confirm('Confirmar recusa e devolução ao operador?')">
+                            <i class="bi bi-x-circle"></i> Confirmar Recusa e Devolução
+                        </button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<!-- Modal de Histórico -->
+<div class="modal fade" id="modalHistorico" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-clock-history"></i> Histórico da Pendência</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="historicoContent">
+                <!-- Conteúdo será carregado via AJAX -->
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

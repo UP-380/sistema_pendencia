@@ -410,7 +410,6 @@
         }
     }
 </style>
-</style>
 <div class="filtro-sticky">
     <form method="get" class="row g-2 align-items-end mb-4">
         <input type="hidden" name="empresa" value="{{ empresa_filtro }}">
@@ -582,7 +581,288 @@
     </a>
 </div>
 
-{# MODAIS DE RESPOSTA DO CLIENTE - DEVEM FICAR DENTRO DO BLOCO CONTENT #}
+<script>
+    // Configuração de colunas por tipo de pendência
+    const tipoColumns = {
+        "Natureza Errada": ["tipo", "fornecedor_cliente", "valor", "codigo_lancamento", "data", "observacao", "status", "modificado_por"],
+        "Competência Errada": ["tipo", "fornecedor_cliente", "valor", "codigo_lancamento", "data_competencia", "observacao", "status", "modificado_por"],
+        "Data da Baixa Errada": ["tipo", "banco", "fornecedor_cliente", "valor", "codigo_lancamento", "data_baixa", "observacao", "status", "modificado_por"],
+        "Cartão de Crédito Não Identificado": ["tipo", "banco", "data", "fornecedor_cliente", "valor", "observacao", "status", "modificado_por"],
+        "Pagamento Não Identificado": ["tipo", "banco", "data", "fornecedor_cliente", "valor", "observacao", "status", "modificado_por"],
+        "Recebimento Não Identificado": ["tipo", "banco", "data", "fornecedor_cliente", "valor", "observacao", "status", "modificado_por"],
+        "Nota Fiscal Não Anexada": ["tipo", "banco", "data", "fornecedor_cliente", "valor", "observacao", "status", "modificado_por"],
+        "Nota Fiscal Não Identificada": ["tipo", "banco", "fornecedor_cliente", "valor", "observacao", "status", "modificado_por"]
+    };
+
+    const columnLabels = {
+        "tipo": "Tipo",
+        "banco": "Banco",
+        "data": "Data da Pendência",
+        "data_abertura": "Data de Abertura",
+        "fornecedor_cliente": "Fornecedor/Cliente",
+        "valor": "Valor",
+        "codigo_lancamento": "Código",
+        "data_competencia": "Data Comp.",
+        "data_baixa": "Data Baixa",
+        "observacao": "Observação",
+        "status": "Status",
+        "modificado_por": "Modificado por"
+    };
+
+    // Função para atualizar as colunas da tabela
+    function updateTableColumns(tipo) {
+        const columns = tipoColumns[tipo] || ["tipo", "banco", "data", "fornecedor_cliente", "valor", "observacao", "status", "modificado_por"];
+        const thead = document.querySelector('table thead tr');
+        const tbody = document.querySelector('table tbody');
+
+        // Atualizar cabeçalho
+        let headerHTML = '';
+        columns.forEach(col => {
+            headerHTML += `<th>${columnLabels[col]}</th>`;
+        });
+        headerHTML += '<th>Anexo</th><th>Ações</th>';
+        thead.innerHTML = headerHTML;
+
+        // Recarregar a página para atualizar os dados
+        const currentUrl = new URL(window.location);
+        currentUrl.searchParams.set('tipo_pendencia', tipo);
+        window.location.href = currentUrl.toString();
+    }
+
+    // Event listener para mudança de tipo
+    const tipoPendenciaEl = document.getElementById('tipo_pendencia');
+    if (tipoPendenciaEl) {
+        tipoPendenciaEl.addEventListener('change', function () {
+            updateTableColumns(this.value);
+        });
+    }
+
+    // Função para usar resposta anterior como base
+    function usarComoBase(pendenciaId) {
+        const modal = document.getElementById('modalComplementar' + pendenciaId);
+        if (!modal) return;
+        const pre = modal.querySelector('pre');
+        if (!pre) return;
+        const respostaAnterior = pre.textContent;
+        const textarea = document.getElementById('resposta' + pendenciaId);
+
+        if (textarea) {
+            textarea.value = respostaAnterior;
+            textarea.focus();
+            textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        initExcelFilters();
+    });
+
+    function initExcelFilters() {
+        const table = document.querySelector('.table');
+        if (!table) return;
+
+        // Headers excluding actions/anexo
+        const headers = Array.from(table.querySelectorAll('thead th'));
+
+        headers.forEach((header, colIndex) => {
+            const text = header.innerText.trim();
+            if (['Ações', 'Anexo', 'Modificado por', ''].includes(text)) return;
+
+            // Add Icon
+            const icon = document.createElement('i');
+            icon.className = 'bi bi-funnel-fill filter-icon';
+            icon.onclick = (e) => {
+                e.stopPropagation();
+                toggleFilterDropdown(colIndex, header, icon);
+            };
+            header.appendChild(icon);
+        });
+
+        // Close on click outside
+        document.addEventListener('click', () => closeAllDropdowns());
+    }
+
+    const activeFilters = {};
+
+    function toggleFilterDropdown(colIndex, header, icon) {
+        const existing = document.getElementById('filter-dropdown-' + colIndex);
+        if (existing) {
+            existing.remove();
+            return;
+        }
+
+        closeAllDropdowns();
+
+        // Create Dropdown
+        const dropdown = document.createElement('div');
+        dropdown.id = 'filter-dropdown-' + colIndex;
+        dropdown.className = 'filter-dropdown';
+
+        dropdown.style.top = '100%';
+        dropdown.style.left = '0';
+
+        // 1. Get Unique Values
+        const rows = Array.from(document.querySelectorAll('tbody tr'));
+        let values = new Set();
+        rows.forEach(row => {
+            if (row.cells[colIndex]) {
+                let val = row.cells[colIndex].innerText.trim();
+                if (val && !val.includes('Nenhuma pendência')) values.add(val);
+            }
+        });
+
+        values = Array.from(values).sort();
+
+        // 2. Search Input
+        const search = document.createElement('input');
+        search.className = 'filter-search';
+        search.placeholder = 'Buscar...';
+        search.onclick = (e) => e.stopPropagation();
+        search.oninput = (e) => {
+            const term = e.target.value.toLowerCase();
+            const container = dropdown.querySelector('.filter-options');
+            container.querySelectorAll('.filter-option').forEach(opt => {
+                opt.style.display = opt.innerText.toLowerCase().includes(term) ? 'flex' : 'none';
+            });
+        };
+        dropdown.appendChild(search);
+
+        // 3. Options
+        const optionsContainer = document.createElement('div');
+        optionsContainer.className = 'filter-options';
+
+        values.forEach(val => {
+            const label = document.createElement('label');
+            label.className = 'filter-option';
+            label.onclick = (e) => e.stopPropagation();
+
+            const cb = document.createElement('input');
+            cb.type = 'checkbox';
+            cb.value = val;
+            cb.checked = true;
+
+            if (activeFilters[colIndex]) {
+                cb.checked = activeFilters[colIndex].includes(val);
+            }
+
+            label.appendChild(cb);
+            label.appendChild(document.createTextNode(val));
+            optionsContainer.appendChild(label);
+        });
+        dropdown.appendChild(optionsContainer);
+
+        // 4. Actions
+        const actions = document.createElement('div');
+        actions.className = 'filter-actions';
+
+        const btnClear = document.createElement('button');
+        btnClear.className = 'btn btn-sm btn-link text-danger p-0';
+        btnClear.innerText = 'Limpar';
+        btnClear.onclick = (e) => {
+            e.stopPropagation();
+            delete activeFilters[colIndex];
+            header.querySelector('.filter-icon').classList.remove('active');
+            applyFilters();
+            closeAllDropdowns();
+        };
+
+        const btnApply = document.createElement('button');
+        btnApply.className = 'btn btn-sm btn-primary py-0 px-2';
+        btnApply.innerText = 'OK';
+        btnApply.onclick = (e) => {
+            e.stopPropagation();
+            const selected = Array.from(optionsContainer.querySelectorAll('input:checked')).map(cb => cb.value);
+            activeFilters[colIndex] = selected;
+            header.querySelector('.filter-icon').classList.add('active');
+            applyFilters();
+            closeAllDropdowns();
+        };
+
+        actions.appendChild(btnClear);
+        actions.appendChild(btnApply);
+        dropdown.appendChild(actions);
+
+        header.appendChild(dropdown);
+    }
+
+    function closeAllDropdowns() {
+        document.querySelectorAll('.filter-dropdown').forEach(d => d.remove());
+    }
+
+    function applyFilters() {
+        const rows = document.querySelectorAll('tbody tr');
+        rows.forEach(row => {
+            if (row.cells.length < 2) return; // Skip empty rows
+            let show = true;
+            for (const [colIndex, validValues] of Object.entries(activeFilters)) {
+                const cell = row.cells[colIndex];
+                if (!cell) continue;
+                const val = cell.innerText.trim();
+                if (!validValues.includes(val)) {
+                    show = false;
+                    break;
+                }
+            }
+            row.style.display = show ? '' : 'none';
+        });
+    }
+
+    // Função para transição segura entre modais (evita bug de backdrop travado)
+    function abrirModalComplementar(pendenciaId) {
+        const modalVerificarEl = document.getElementById('modalVerificar' + pendenciaId);
+        const modalCompEl = document.getElementById('modalComplementar' + pendenciaId);
+
+        if (!modalCompEl) return;
+
+        const modalVerificar = bootstrap.Modal.getOrCreateInstance(modalVerificarEl);
+        const modalComp = bootstrap.Modal.getOrCreateInstance(modalCompEl);
+
+        if (modalVerificarEl && modalVerificarEl.classList.contains('show')) {
+            modalVerificarEl.addEventListener('hidden.bs.modal', function onHidden() {
+                modalComp.show();
+                modalVerificarEl.removeEventListener('hidden.bs.modal', onHidden);
+            }, { once: true });
+            modalVerificar.hide();
+        } else {
+            modalComp.show();
+        }
+    }
+
+    function abrirModalResponder(pendenciaId) {
+        const modalVerificarEl = document.getElementById('modalVerificar' + pendenciaId);
+        const modalRespEl = document.getElementById('modalResponder' + pendenciaId);
+
+        if (!modalRespEl) return;
+
+        const modalVerificar = bootstrap.Modal.getOrCreateInstance(modalVerificarEl);
+        const modalResp = bootstrap.Modal.getOrCreateInstance(modalRespEl);
+
+        if (modalVerificarEl && modalVerificarEl.classList.contains('show')) {
+            modalVerificarEl.addEventListener('hidden.bs.modal', function onHidden() {
+                modalResp.show();
+                modalVerificarEl.removeEventListener('hidden.bs.modal', onHidden);
+            }, { once: true });
+            modalVerificar.hide();
+        } else {
+            modalResp.show();
+        }
+    }
+
+    // Limpeza global de backdrops órfãos ao fechar qualquer modal
+    document.addEventListener('hidden.bs.modal', function () {
+        setTimeout(() => {
+            if (document.querySelectorAll('.modal.show').length === 0) {
+                document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
+                document.body.classList.remove('modal-open');
+                document.body.style.paddingRight = '';
+            }
+        }, 300);
+    });
+</script>
+{% endblock %}
+
+{% block modals %}
+{# MODAIS DE RESPOSTA DO CLIENTE #}
 {% for pendencia in pendencias %}
 {% if session['usuario_tipo'] in ['cliente', 'cliente_supervisor'] and pendencia.status in ['PENDENTE CLIENTE',
 'Pendente Cliente'] %}
@@ -735,7 +1015,7 @@
                                 {% if pendencia.banco %}
                                 <div class="row mb-2">
                                     <div class="col-md-4"><strong>Banco:</strong></div>
-                                    <div class="col-md-8">{{ pendencia.banco }}</div>
+                                    <div class="col-md-8">{{ pendencia.banco or '—' }}</div>
                                 </div>
                                 {% endif %}
                                 <div class="row mb-2">
@@ -967,75 +1247,6 @@
 </div>
 {% endfor %}
 
-
-
-<script>
-    // Configuração de colunas por tipo de pendência
-    const tipoColumns = {
-        "Natureza Errada": ["tipo", "fornecedor_cliente", "valor", "codigo_lancamento", "data", "observacao", "status", "modificado_por"],
-        "Competência Errada": ["tipo", "fornecedor_cliente", "valor", "codigo_lancamento", "data_competencia", "observacao", "status", "modificado_por"],
-        "Data da Baixa Errada": ["tipo", "banco", "fornecedor_cliente", "valor", "codigo_lancamento", "data_baixa", "observacao", "status", "modificado_por"],
-        "Cartão de Crédito Não Identificado": ["tipo", "banco", "data", "fornecedor_cliente", "valor", "observacao", "status", "modificado_por"],
-        "Pagamento Não Identificado": ["tipo", "banco", "data", "fornecedor_cliente", "valor", "observacao", "status", "modificado_por"],
-        "Recebimento Não Identificado": ["tipo", "banco", "data", "fornecedor_cliente", "valor", "observacao", "status", "modificado_por"],
-        "Nota Fiscal Não Anexada": ["tipo", "banco", "data", "fornecedor_cliente", "valor", "observacao", "status", "modificado_por"],
-        "Nota Fiscal Não Identificada": ["tipo", "banco", "fornecedor_cliente", "valor", "observacao", "status", "modificado_por"]
-    };
-
-    const columnLabels = {
-        "tipo": "Tipo",
-        "banco": "Banco",
-        "data": "Data da Pendência",
-        "data_abertura": "Data de Abertura",
-        "fornecedor_cliente": "Fornecedor/Cliente",
-        "valor": "Valor",
-        "codigo_lancamento": "Código",
-        "data_competencia": "Data Comp.",
-        "data_baixa": "Data Baixa",
-        "observacao": "Observação",
-        "status": "Status",
-        "modificado_por": "Modificado por"
-    };
-
-    // Função para atualizar as colunas da tabela
-    function updateTableColumns(tipo) {
-        const columns = tipoColumns[tipo] || ["tipo", "banco", "data", "fornecedor_cliente", "valor", "observacao", "status", "modificado_por"];
-        const thead = document.querySelector('table thead tr');
-        const tbody = document.querySelector('table tbody');
-
-        // Atualizar cabeçalho
-        let headerHTML = '';
-        columns.forEach(col => {
-            headerHTML += `<th>${columnLabels[col]}</th>`;
-        });
-        headerHTML += '<th>Anexo</th><th>Ações</th>';
-        thead.innerHTML = headerHTML;
-
-        // Recarregar a página para atualizar os dados
-        const currentUrl = new URL(window.location);
-        currentUrl.searchParams.set('tipo_pendencia', tipo);
-        window.location.href = currentUrl.toString();
-    }
-
-    // Event listener para mudança de tipo
-    document.getElementById('tipo_pendencia').addEventListener('change', function () {
-        updateTableColumns(this.value);
-    });
-
-    // Função para usar resposta anterior como base
-    function usarComoBase(pendenciaId) {
-        const modal = document.getElementById('modalComplementar' + pendenciaId);
-        const respostaAnterior = modal.querySelector('pre').textContent;
-        const textarea = document.getElementById('resposta' + pendenciaId);
-
-        if (textarea) {
-            textarea.value = respostaAnterior;
-            textarea.focus();
-            textarea.setSelectionRange(textarea.value.length, textarea.value.length);
-        }
-    }
-</script>
-
 {# MODAIS PARA OPERADOR RESPONDER PENDÊNCIA #}
 {% for pendencia in pendencias %}
 {% if session['usuario_tipo'] in ['adm', 'operador'] and pendencia.status == 'PENDENTE OPERADOR UP' %}
@@ -1072,297 +1283,4 @@
 </div>
 {% endif %}
 {% endfor %}
-</tbody>
-</table>
-</div>
-</div>
-</div>
-
-<style>
-    .filter-icon {
-        cursor: pointer;
-        color: #adb5bd;
-        margin-left: 5px;
-        opacity: 0.5;
-        transition: 0.2s;
-    }
-
-    .filter-icon:hover,
-    .filter-icon.active {
-        color: #0e3b6f;
-        opacity: 1;
-    }
-
-    .filter-dropdown {
-        position: absolute;
-        z-index: 1050;
-        background: white;
-        border: 1px solid #ddd;
-        padding: 10px;
-        border-radius: 6px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        min-width: 220px;
-    }
-
-    .filter-search {
-        width: 100%;
-        padding: 6px;
-        margin-bottom: 8px;
-        border: 1px solid #dee2e6;
-        border-radius: 4px;
-        font-size: 0.9rem;
-    }
-
-    .filter-options {
-        max-height: 250px;
-        overflow-y: auto;
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-    }
-
-    .filter-option {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 0.9rem;
-        cursor: pointer;
-        padding: 2px 0;
-    }
-
-    .filter-option:hover {
-        background: #f8f9fa;
-    }
-
-    .filter-actions {
-        margin-top: 10px;
-        padding-top: 8px;
-        border-top: 1px solid #eee;
-        display: flex;
-        justify-content: space-between;
-        gap: 10px;
-    }
-
-    th {
-        position: relative;
-    }
-
-    /* Anchor for absolute dropdown */
-</style>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        initExcelFilters();
-    });
-
-    function initExcelFilters() {
-        const table = document.querySelector('.table');
-        if (!table) return;
-
-        // Headers excluding actions/anexo
-        const headers = Array.from(table.querySelectorAll('thead th'));
-
-        headers.forEach((header, colIndex) => {
-            const text = header.innerText.trim();
-            if (['Ações', 'Anexo', 'Modificado por', ''].includes(text)) return;
-
-            // Add Icon
-            const icon = document.createElement('i');
-            icon.className = 'bi bi-funnel-fill filter-icon';
-            icon.onclick = (e) => {
-                e.stopPropagation();
-                toggleFilterDropdown(colIndex, header, icon);
-            };
-            header.appendChild(icon);
-        });
-
-        // Close on click outside
-        document.addEventListener('click', () => closeAllDropdowns());
-    }
-
-    function toggleFilterDropdown(colIndex, header, icon) {
-        const existing = document.getElementById('filter-dropdown-' + colIndex);
-        if (existing) {
-            existing.remove();
-            return;
-        }
-
-        closeAllDropdowns();
-
-        // Create Dropdown
-        const dropdown = document.createElement('div');
-        dropdown.id = 'filter-dropdown-' + colIndex;
-        dropdown.className = 'filter-dropdown';
-
-        // Position (handling table overflow)
-        // For simplicity, we append to body or header. Header is safer if relative.
-        // Let's append to header. 
-        // Header needs position: relative (added in CSS).
-        dropdown.style.top = '100%';
-        dropdown.style.left = '0';
-
-        // 1. Get Unique Values
-        const rows = Array.from(document.querySelectorAll('tbody tr'));
-        let values = new Set();
-        rows.forEach(row => {
-            if (row.cells[colIndex]) {
-                let val = row.cells[colIndex].innerText.trim();
-                if (val) values.add(val);
-            }
-        });
-        values = Array.from(values).sort();
-
-        // 2. Search Input
-        const search = document.createElement('input');
-        search.className = 'filter-search';
-        search.placeholder = 'Buscar...';
-        search.onclick = (e) => e.stopPropagation();
-        search.oninput = (e) => {
-            const term = e.target.value.toLowerCase();
-            optionsContainer.querySelectorAll('.filter-option').forEach(opt => {
-                opt.style.display = opt.innerText.toLowerCase().includes(term) ? 'flex' : 'none';
-            });
-        };
-        dropdown.appendChild(search);
-
-        // 3. Options
-        const optionsContainer = document.createElement('div');
-        optionsContainer.className = 'filter-options';
-
-        values.forEach(val => {
-            const label = document.createElement('label');
-            label.className = 'filter-option';
-            label.onclick = (e) => e.stopPropagation();
-
-            const cb = document.createElement('input');
-            cb.type = 'checkbox';
-            cb.value = val;
-            cb.checked = true; // Default selected? Or check active filters?
-
-            // Check if currently filtered
-            if (activeFilters[colIndex]) {
-                cb.checked = activeFilters[colIndex].includes(val);
-            }
-
-            label.appendChild(cb);
-            label.appendChild(document.createTextNode(val));
-            optionsContainer.appendChild(label);
-        });
-        dropdown.appendChild(optionsContainer);
-
-        // 4. Actions
-        const actions = document.createElement('div');
-        actions.className = 'filter-actions';
-
-        const btnClear = document.createElement('button');
-        btnClear.className = 'btn btn-sm btn-link text-danger p-0';
-        btnClear.innerText = 'Limpar';
-        btnClear.onclick = (e) => {
-            e.stopPropagation();
-            delete activeFilters[colIndex];
-            header.querySelector('.filter-icon').classList.remove('active');
-            applyFilters();
-            closeAllDropdowns();
-        };
-
-        const btnApply = document.createElement('button');
-        btnApply.className = 'btn btn-sm btn-primary py-0 px-2';
-        btnApply.innerText = 'OK';
-        btnApply.onclick = (e) => {
-            e.stopPropagation();
-            const selected = Array.from(optionsContainer.querySelectorAll('input:checked')).map(cb => cb.value);
-            activeFilters[colIndex] = selected;
-            header.querySelector('.filter-icon').classList.add('active');
-            applyFilters();
-            closeAllDropdowns();
-        };
-
-        actions.appendChild(btnClear);
-        actions.appendChild(btnApply);
-        dropdown.appendChild(actions);
-
-        header.appendChild(dropdown);
-    }
-
-    const activeFilters = {};
-
-    function closeAllDropdowns() {
-        document.querySelectorAll('.filter-dropdown').forEach(d => d.remove());
-    }
-
-    function applyFilters() {
-        const rows = document.querySelectorAll('tbody tr');
-        rows.forEach(row => {
-            let show = true;
-            for (const [colIndex, validValues] of Object.entries(activeFilters)) {
-                const cell = row.cells[colIndex];
-                if (!cell) continue;
-                const val = cell.innerText.trim();
-                if (!validValues.includes(val)) {
-                    show = false;
-                    break;
-                }
-            }
-            row.style.display = show ? '' : 'none';
-        });
-    }
-
-    // Função para transição segura entre modais (evita bug de backdrop travado)
-    function abrirModalComplementar(pendenciaId) {
-        const modalVerificarEl = document.getElementById('modalVerificar' + pendenciaId);
-        const modalCompEl = document.getElementById('modalComplementar' + pendenciaId);
-
-        if (!modalCompEl) {
-            console.error('Modal complementar não encontrado no DOM para ID:', pendenciaId);
-            // Tenta abrir o modalResponder se for o caso, ou apenas alerta
-            return;
-        }
-
-        const modalVerificar = bootstrap.Modal.getOrCreateInstance(modalVerificarEl);
-        const modalComp = bootstrap.Modal.getOrCreateInstance(modalCompEl);
-
-        if (modalVerificarEl.classList.contains('show')) {
-            modalVerificarEl.addEventListener('hidden.bs.modal', function onHidden() {
-                modalComp.show();
-                modalVerificarEl.removeEventListener('hidden.bs.modal', onHidden);
-            }, { once: true });
-            modalVerificar.hide();
-        } else {
-            modalComp.show();
-        }
-    }
-
-    // Função para transição segura para o modal de resposta
-    function abrirModalResponder(pendenciaId) {
-        const modalVerificarEl = document.getElementById('modalVerificar' + pendenciaId);
-        const modalRespEl = document.getElementById('modalResponder' + pendenciaId);
-
-        if (!modalRespEl) return;
-
-        const modalVerificar = bootstrap.Modal.getOrCreateInstance(modalVerificarEl);
-        const modalResp = bootstrap.Modal.getOrCreateInstance(modalRespEl);
-
-        if (modalVerificarEl.classList.contains('show')) {
-            modalVerificarEl.addEventListener('hidden.bs.modal', function onHidden() {
-                modalResp.show();
-                modalVerificarEl.removeEventListener('hidden.bs.modal', onHidden);
-            }, { once: true });
-            modalVerificar.hide();
-        } else {
-            modalResp.show();
-        }
-    }
-
-    // Limpeza global de backdrops órfãos ao fechar qualquer modal
-    document.addEventListener('hidden.bs.modal', function () {
-        setTimeout(() => {
-            if (document.querySelectorAll('.modal.show').length === 0) {
-                document.querySelectorAll('.modal-backdrop').forEach(b => b.remove());
-                document.body.classList.remove('modal-open');
-                document.body.style.paddingRight = '';
-            }
-        }, 300); // Atraso maior para garantir transições
-    });
-</script>
-
 {% endblock %}

@@ -178,62 +178,7 @@
     {% endif %}
 </div>
 
-<!-- Modal de Filtros -->
-<div class="modal fade" id="filtroModal" tabindex="-1" aria-labelledby="filtroModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="filtroModalLabel"><i class="bi bi-funnel me-2"></i>Filtros Avançados</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form action="{{ url_for('main.pre_dashboard') }}" method="GET">
-                <div class="modal-body">
-                    <div class="row g-3">
-                        <!-- Segmentos -->
-                        <div class="col-md-12">
-                            <label class="form-label fw-bold">Segmentos</label>
-                            <select class="form-select" name="segmentos" multiple size="4">
-                                {% for segmento in segmentos_disponiveis %}
-                                <option value="{{ segmento.id }}" {% if segmento.id|string in
-                                    request.args.getlist('segmentos') %}selected{% endif %}>
-                                    {{ segmento.nome }}
-                                </option>
-                                {% endfor %}
-                            </select>
-                            <div class="form-text">Segure Ctrl para selecionar múltiplos.</div>
-                        </div>
 
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Data Abertura (Início)</label>
-                            <input type="date" class="form-control" name="data_abertura_inicio"
-                                value="{{ request.args.get('data_abertura_inicio', '') }}">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Data Abertura (Fim)</label>
-                            <input type="date" class="form-control" name="data_abertura_fim"
-                                value="{{ request.args.get('data_abertura_fim', '') }}">
-                        </div>
-
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Data Resolução (Início)</label>
-                            <input type="date" class="form-control" name="data_resolucao_inicio"
-                                value="{{ request.args.get('data_resolucao_inicio', '') }}">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Data Resolução (Fim)</label>
-                            <input type="date" class="form-control" name="data_resolucao_fim"
-                                value="{{ request.args.get('data_resolucao_fim', '') }}">
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Aplicar Filtros</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
@@ -302,4 +247,63 @@
         cursor: pointer;
     }
 </style>
+{% endblock %}
+
+{% block modals %}
+<!-- Modal de Filtros -->
+<div class="modal fade" id="filtroModal" tabindex="-1" aria-labelledby="filtroModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="filtroModalLabel"><i class="bi bi-funnel me-2"></i>Filtros Avançados</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('main.pre_dashboard') }}" method="GET">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <!-- Segmentos -->
+                        <div class="col-md-12">
+                            <label class="form-label fw-bold">Segmentos</label>
+                            <select class="form-select" name="segmentos" multiple size="4">
+                                {% for segmento in segmentos_disponiveis %}
+                                <option value="{{ segmento.id }}" {% if segmento.id|string in
+                                    request.args.getlist('segmentos') %}selected{% endif %}>
+                                    {{ segmento.nome }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Segure Ctrl para selecionar múltiplos.</div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Data Abertura (Início)</label>
+                            <input type="date" class="form-control" name="data_abertura_inicio"
+                                value="{{ request.args.get('data_abertura_inicio', '') }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Data Abertura (Fim)</label>
+                            <input type="date" class="form-control" name="data_abertura_fim"
+                                value="{{ request.args.get('data_abertura_fim', '') }}">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Data Resolução (Início)</label>
+                            <input type="date" class="form-control" name="data_resolucao_inicio"
+                                value="{{ request.args.get('data_resolucao_inicio', '') }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Data Resolução (Fim)</label>
+                            <input type="date" class="form-control" name="data_resolucao_fim"
+                                value="{{ request.args.get('data_resolucao_fim', '') }}">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Aplicar Filtros</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 {% endblock %}

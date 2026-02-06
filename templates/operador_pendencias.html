@@ -364,6 +364,10 @@
         });
     </script>
 
+
+    {% endblock %}
+
+    {% block modals %}
     {# MODAIS DE HISTÓRICO #}
     {% for pendencia in pendencias %}
     <div class="modal fade" id="modalHistorico{{ pendencia.id }}" tabindex="-1"
