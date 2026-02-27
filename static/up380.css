@@ -766,19 +766,19 @@ input:focus, select:focus, textarea:focus {
         position: fixed;
         top: 0;
         left: 0;
-        width: 20px; /* Largura da área sensível */
+        width: 20px; /* Largura da ï¿½rea sensï¿½vel */
         height: 100vh;
         z-index: 1002;
         cursor: pointer;
         background: transparent;
     }
 
-    /* Quando o menu está fechado, ele fica escondido */
+    /* Quando o menu estï¿½ fechado, ele fica escondido */
     .sidebar.closed {
         transform: translateX(-100%);
     }
 
-    /* Ajuste para quando está aberto via hover */
+    /* Ajuste para quando estï¿½ aberto via hover */
     .sidebar:not(.closed) {
         box-shadow: 4px 0 24px rgba(27, 54, 93, 0.25);
     }
@@ -788,7 +788,7 @@ input:focus, select:focus, textarea:focus {
    MINI SIDEBAR (DESKTOP) - REPLACES HOVER TRIGGER
    ============================================ */
 @media (min-width: 769px) {
-    /* O trigger antigo não é mais necessário, escondemos ele se ainda existir */
+    /* O trigger antigo nï¿½o ï¿½ mais necessï¿½rio, escondemos ele se ainda existir */
     .sidebar-hover-trigger {
         display: none !important;
     }
@@ -812,7 +812,7 @@ input:focus, select:focus, textarea:focus {
         opacity: 0;
     }
 
-    /* Centraliza ícones */
+    /* Centraliza ï¿½cones */
     .sidebar.closed .sidebar-menu-link,
     .sidebar.closed .sidebar-submenu-link {
         justify-content: center;
@@ -826,15 +826,15 @@ input:focus, select:focus, textarea:focus {
         font-size: 1.5rem;
     }
 
-    /* Ajuste da margem do conteúdo principal quando sidebar está mini */
+    /* Ajuste da margem do conteï¿½do principal quando sidebar estï¿½ mini */
     .main-content.sidebar-closed {
         margin-left: 70px !important;
     }
 
-    /* Sidebar aberto sempre sobrepõe se expandir, ou empurra?
+    /* Sidebar aberto sempre sobrepï¿½e se expandir, ou empurra?
        O pedido foi 'aparecendo apenas os emojis'.
        Geralmente expande 'por cima' (z-index) ou empurra.
-       Como a lógica anterior era 'overlay' no hover, vamos manter 'por cima' para não quebrar layout fluido */
+       Como a lï¿½gica anterior era 'overlay' no hover, vamos manter 'por cima' para nï¿½o quebrar layout fluido */
     .sidebar.open {
         width: 280px;
         z-index: 1001;
