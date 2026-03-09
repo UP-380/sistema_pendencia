@@ -1,20 +1,54 @@
-#!/usr/bin/env python3
-"""
-Script de inicialização do banco de dados.
-
-Este script:
-1. Cria todas as tabelas necessárias
-2. Cria usuários iniciais (admin e cliente padrão)
-3. Migra empresas da lista EMPRESAS para o modelo Empresa
-4. Configura permissões padrão para todos os tipos de usuário
-5. Cria estrutura de segmentos (opcional)
-
-Execute este script após clonar o repositório ou após atualizações que modifiquem o schema.
-"""
-
-from app import app, db, criar_usuarios_iniciais, migrar_empresas_existentes, configurar_permissoes_padrao
-from app import Segmento, Empresa, Usuario, PermissaoUsuarioTipo
+from app import create_app
+from app.extensions import db
+from app.models import Usuario, Empresa, Segmento, PermissaoUsuarioTipo
+from app.routes.main import configurar_permissoes_padrao
+from werkzeug.security import generate_password_hash
 import sys
+import os
+
+app = create_app()
+
+def criar_usuarios_iniciais():
+    """Cria os usuários iniciais do sistema se não existirem"""
+    # Usuário Admin
+    admin_email = 'adm.pendencia@up380.com.br'
+    admin = Usuario.query.filter_by(email=admin_email).first()
+    if not admin:
+        admin = Usuario(
+            email=admin_email,
+            senha_hash=generate_password_hash('Finance.@2'),
+            tipo='adm',
+            ativo=True
+        )
+        db.session.add(admin)
+        print(f"  ✅ Usuário Admin ({admin_email}) criado.")
+    else:
+        print(f"  ⏭️  Usuário Admin ({admin_email}) já existe.")
+
+    # Usuário Cliente Teste
+    cliente_email = 'cliente.teste@example.com'
+    cliente = Usuario.query.filter_by(email=cliente_email).first()
+    if not cliente:
+        cliente = Usuario(
+            email=cliente_email,
+            senha_hash=generate_password_hash('Cliente.@123'),
+            tipo='cliente',
+            ativo=True
+        )
+        db.session.add(cliente)
+        print(f"  ✅ Usuário Cliente ({cliente_email}) criado.")
+    
+    db.session.commit()
+
+def migrar_empresas_existentes():
+    """Garante que pelo menos uma empresa de exemplo exista no banco"""
+    if Empresa.query.count() == 0:
+        empresa = Empresa(nome='ALIANZE')
+        db.session.add(empresa)
+        db.session.commit()
+        print("  ✅ Empresa ALIANZE criada como exemplo.")
+    else:
+        print("  ⏭️  Empresas já existem no banco.")
 
 def verificar_banco():
     """Verifica o estado atual do banco de dados"""
@@ -43,6 +77,11 @@ def inicializar_banco():
         print("\n🔄 Criando estruturas do banco de dados...")
         
         try:
+            # Criar pasta instance se não existir (para o SQLite)
+            if not os.path.exists(app.instance_path):
+                os.makedirs(app.instance_path)
+                print(f"✅ Pasta {app.instance_path} criada!")
+
             # Criar todas as tabelas
             db.create_all()
             print("✅ Tabelas criadas com sucesso!")
@@ -99,38 +138,37 @@ def main():
     print("Sistema de Pendências UP380")
     print("=" * 80)
     
-    # Verificar estado atual
-    banco_ok = verificar_banco()
+    # Verificar se o banco de dados existe fisicamente (SQLite)
+    db_path = os.path.join(app.instance_path, 'pendencias.db')
+    db_exists = os.path.exists(db_path)
+    
+    # Verificar estado atual (tabelas)
+    banco_ok = verificar_banco() if db_exists else False
     
     if banco_ok:
         print("\n✅ Banco de dados já está inicializado!")
-        resposta = input("\nDeseja reconfigurar as estruturas? (sim/não): ").strip().lower()
-        
-        if resposta not in ['sim', 's', 'yes', 'y']:
-            print("\n💡 Nenhuma alteração realizada.")
-            print("   Para criar segmentos, execute: python migrate_adicionar_segmentos.py")
-            print("   Para migrar tipos de pendência, execute: python migrate_nota_fiscal_para_documento.py")
+        # Se estiver rodando em um ambiente que permite input, pergunta. 
+        # Caso contrário, poderíamos usar argumentos de linha de comando.
+        try:
+            resposta = input("\nDeseja reconfigurar/atualizar as estruturas? (sim/não): ").strip().lower()
+            if resposta not in ['sim', 's', 'yes', 'y']:
+                print("\n💡 Nenhuma alteração realizada.")
+                return
+        except EOFError:
+            print("\n💡 Ambiente não interativo detectado. Pulando atualização.")
             return
     
     # Inicializar/reconfigurar
     print("\n⚠️  Iniciando processo de inicialização/reconfiguração...")
     print("    Isso criará todas as tabelas e configurações necessárias.")
     
-    if banco_ok:
-        resposta = input("\nTem certeza? (sim/não): ").strip().lower()
-        if resposta not in ['sim', 's', 'yes', 'y']:
-            print("❌ Operação cancelada.")
-            return
-    
     # Executar inicialização
     if not inicializar_banco():
         print("\n❌ Falha na inicialização do banco de dados!")
         sys.exit(1)
     
-    # Perguntar sobre segmentos
-    resposta = input("\nDeseja criar segmentos básicos? (sim/não): ").strip().lower()
-    if resposta in ['sim', 's', 'yes', 'y']:
-        criar_segmentos_basicos()
+    # Criar segmentos default sem perguntar se for a primeira vez
+    criar_segmentos_basicos()
     
     # Verificar resultado final
     verificar_banco()
@@ -144,10 +182,9 @@ def main():
     print("     Senha: Finance.@2")
     print("  2. Configure segmentos e associe empresas (se aplicável)")
     print("  3. Crie usuários adicionais conforme necessário")
-    print("\n💡 Scripts de migração disponíveis:")
-    print("  • python migrate_adicionar_segmentos.py")
-    print("  • python migrate_nota_fiscal_para_documento.py")
-    print("  • python migrate_cliente_supervisor.py")
+
+if __name__ == '__main__':
+    main()
 
 if __name__ == '__main__':
     main()

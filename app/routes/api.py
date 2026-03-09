@@ -53,8 +53,6 @@ def api_login():
             
     return jsonify({'success': False, 'message': 'E-mail ou senha inválidos.'}), 401
 
-    return jsonify({'success': False, 'message': 'E-mail ou senha inválidos.'}), 401
-
 @api_bp.route('/empresas', methods=['GET'])
 @api_auth_required
 def api_empresas():

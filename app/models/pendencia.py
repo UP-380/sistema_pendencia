@@ -3,6 +3,14 @@ from datetime import datetime
 import secrets
 
 class Pendencia(db.Model):
+    # Constantes de Status
+    STATUS_PENDENTE_CLIENTE = 'PENDENTE CLIENTE'
+    STATUS_PENDENTE_OPERADOR = 'PENDENTE OPERADOR UP'
+    STATUS_PENDENTE_SUPERVISOR = 'PENDENTE SUPERVISOR UP'
+    STATUS_COMPLEMENTO_CLIENTE = 'PENDENTE COMPLEMENTO CLIENTE'
+    STATUS_DEVOLVIDA_OPERADOR = 'DEVOLVIDA AO OPERADOR'
+    STATUS_RESOLVIDA = 'RESOLVIDA'
+
     id = db.Column(db.Integer, primary_key=True)
     empresa = db.Column(db.String(50), nullable=False, index=True)
     tipo_pendencia = db.Column(db.String(30), nullable=False, index=True)

@@ -34,4 +34,13 @@ class Config:
     MAIL_DEFAULT_SENDER = os.getenv('MAIL_DEFAULT_SENDER')
 
     # Webhook Teams
-    TEAMS_WEBHOOK_URL = "https://upfinance.webhook.office.com/webhookb2/7c8dacfa-6413-4b34-9659-5be33e876493@62d96e16-cfeb-4bad-8803-4a764ac7339a/IncomingWebhook/a6612b3a144d4915bf9bc1171093c8c9/9cdf59ae-5ee6-4c43-8604-31390b2d5425/V21glDBnmGcX-HxLgk_gJxnhqHC79TV9BLey3t5_DzMbU1"
+    TEAMS_WEBHOOK_URL = os.getenv('TEAMS_WEBHOOK_URL', "https://upfinance.webhook.office.com/webhookb2/7c8dacfa-6413-4b34-9659-5be33e876493@62d96e16-cfeb-4bad-8803-4a764ac7339a/IncomingWebhook/a6612b3a144d4915bf9bc1171093c8c9/9cdf59ae-5ee6-4c43-8604-31390b2d5425/V21glDBnmGcX-HxLgk_gJxnhqHC79TV3BLey3t5_DzMbU1")
+
+    # Configuração Iframe ClickUp
+    IFRAME_CLICKUP = """
+    <iframe class="clickup-embed clickup-dynamic-height"
+            src="https://forms.clickup.com/9007138778/f/8cdw1yu-193593/AZ6310ZHFCSW9ANQGA"
+            width="100%" height="100%"
+            style="background: transparent; border: 1px solid #ccc;"></iframe>
+    <script async src="https://app-cdn.clickup.com/assets/js/forms-embed/v1.js"></script>
+    """

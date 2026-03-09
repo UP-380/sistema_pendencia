@@ -4,8 +4,6 @@ from werkzeug.security import generate_password_hash
 from datetime import datetime, timedelta
 import os
 import json
-import os
-import json
 import uuid
 import pandas as pd
 import io
@@ -30,25 +28,17 @@ TIPOS_PENDENCIA = list(TIPO_RULES.keys())
 
 main_bp = Blueprint('main', __name__)
 
-# Iframe clickup configuration should be moved to context processor or config, defining here for compatibility used in routes/templates
-iframe_clickup = """
-<iframe class="clickup-embed clickup-dynamic-height"
-        src="https://forms.clickup.com/9007138778/f/8cdw1yu-193593/AZ6310ZHFCSW9ANQGA"
-        width="100%" height="100%"
-        style="background: transparent; border: 1px solid #ccc;"></iframe>
-<script async src="https://app-cdn.clickup.com/assets/js/forms-embed/v1.js"></script>
-"""
+# Iframe clickup configuration now moved to Config
 
 @main_bp.context_processor
 def inject_globals():
     return {
-        'iframe_clickup': iframe_clickup,
+        'iframe_clickup': current_app.config.get('IFRAME_CLICKUP'),
         'today_str': now_brazil().strftime('%Y-%m-%d'),
         'current_month': now_brazil().strftime('%Y-%m'),
         'now_brazil': now_brazil,
         'pode_atuar_como_operador': pode_atuar_como_operador,
         'pode_atuar_como_supervisor': pode_atuar_como_supervisor,
-        # Re-export filters if used as functions in templates (though filters are better)
     }
 
 # Rotas de Segmentos
@@ -775,18 +765,18 @@ def resolver_pendencia(id):
     pendencia = Pendencia.query.get_or_404(id)
     valor_anterior = pendencia.status
     pendencia.status = 'RESOLVIDA'
-    pendencia.modificado_por = 'ADIMIN UP380'
+    pendencia.modificado_por = session.get('usuario_email', 'Sistema')
     db.session.commit()
     # Log da resolução
     log = LogAlteracao(
         pendencia_id=pendencia.id,
-        usuario=session.get('usuario_email', 'ADIMIN UP380'),
-        tipo_usuario='admin',
+        usuario=session.get('usuario_email', 'Sistema'),
+        tipo_usuario=session.get('usuario_tipo', 'sistema'),
         data_hora=now_brazil(),
         acao='Resolução de Pendência',
         campo_alterado='status',
         valor_anterior=valor_anterior,
-        valor_novo='Resolvida'
+        valor_novo='RESOLVIDA'
     )
     db.session.add(log)
     db.session.commit()
@@ -1079,20 +1069,12 @@ def editar_pendencia(id):
         campos = ['empresa', 'tipo_pendencia', 'banco', 'data', 'fornecedor_cliente', 'valor', 'observacao', 'email_cliente', 
                   'tipo_credito_debito', 'codigo_lancamento', 'natureza_sistema', 'data_competencia', 'data_baixa']
         
-        def safe_strptime(date_str):
-            if not date_str or not date_str.strip():
-                return None
-            try:
-                return datetime.strptime(date_str, '%Y-%m-%d').date()
-            except ValueError:
-                return None
-
         valores_anteriores = {campo: getattr(pendencia, campo) for campo in campos}
         novos_valores = {
             'empresa': request.form['empresa'],
             'tipo_pendencia': request.form['tipo_pendencia'],
             'banco': request.form['banco'],
-            'data': safe_strptime(request.form.get('data')),
+            'data': parse_date_or_none(request.form.get('data')),
             'fornecedor_cliente': request.form['fornecedor_cliente'],
             'valor': parse_currency_to_float(request.form['valor']),
             'observacao': request.form.get('observacao') or 'DO QUE SE TRATA?',
@@ -1100,14 +1082,14 @@ def editar_pendencia(id):
             'tipo_credito_debito': request.form.get('tipo_credito_debito'),
             'codigo_lancamento': request.form.get('codigo_lancamento'),
             'natureza_sistema': request.form.get('natureza_sistema'),
-            'data_competencia': safe_strptime(request.form.get('data_competencia')),
-            'data_baixa': safe_strptime(request.form.get('data_baixa'))
+            'data_competencia': parse_date_or_none(request.form.get('data_competencia')),
+            'data_baixa': parse_date_or_none(request.form.get('data_baixa'))
         }
         for campo in campos:
             if valores_anteriores[campo] != novos_valores[campo]:
                 log = LogAlteracao(
                     pendencia_id=pendencia.id,
-                    usuario=session.get('usuario_email', 'ADIMIN UP380'),
+                    usuario=session.get('usuario_email', 'Sistema'),
                     tipo_usuario='admin',
                     data_hora=now_brazil(),
                     acao='Edição de Pendência',
@@ -1140,29 +1122,13 @@ def editar_pendencia(id):
                 os.makedirs(os.path.dirname(target_path), exist_ok=True)
                 file.save(target_path)
                 pendencia.nota_fiscal_arquivo = unique_filename
-        pendencia.modificado_por = 'ADIMIN UP380'
+        pendencia.modificado_por = session.get('usuario_email', 'Sistema')
         db.session.commit()
         flash('Pendência editada com sucesso!', 'success')
         return redirect(request.referrer or url_for('main.dashboard'))
     return render_template('editar_pendencia.html', pendencia=pendencia, empresas=empresas_usuario, tipos_pendencia=TIPOS_PENDENCIA)
 
-TEAMS_WEBHOOK_URL = "https://upfinance.webhook.office.com/webhookb2/7c8dacfa-6413-4b34-9659-5be33e876493@62d96e16-cfeb-4bad-8803-4a764ac7339a/IncomingWebhook/a6612b3a144d4915bf9bc1171093c8c9/9cdf59ae-5ee6-4c43-8604-31390b2d5425/V21glDBnmGcX-HxLgk_gJxnhqHC79TV3BLey3t5_DzMbU1"
-
-def notificar_teams(pendencia):
-    webhook_url = TEAMS_WEBHOOK_URL
-    if not webhook_url:
-        return
-    mensagem = {
-        "title": "Pendência Atualizada pelo Cliente",
-        "text": (
-            f"O cliente <b>USUARIO</b> informou sobre a pendência <b>ID {pendencia.id}</b>:<br>"
-            f"<b>Empresa:</b> {pendencia.empresa}<br>"
-            f"<b>Fornecedor/Cliente:</b> {pendencia.fornecedor_cliente}<br>"
-            f"<b>Valor:</b> R$ {pendencia.valor:.2f}<br>"
-            f"<b>Observação:</b> {pendencia.observacao}<br><br>"
-            f"<b>@Luiz Marcelo</b> (luiz.marcelo@up380.com.br) verifique esta atualização!"
-        )
-    }
+# Notificações Teams agora utilizam app.services.notifications
 
 
 @main_bp.route('/operador/pendencias')
