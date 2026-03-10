@@ -33,9 +33,12 @@
             <div class="dropdown">
                 <button class="btn btn-white border dropdown-toggle d-flex align-items-center gap-2" type="button"
                     id="dropdownEmpresas" onclick="toggleDropdownManual(event)" aria-expanded="false"
-                    style="background-color: #fff;">
-                    <i class="bi bi-building"></i>
-                    <span id="labelEmpresas">Todas as Empresas</span>
+                    style="background-color: #fff; width: 280px; justify-content: space-between;">
+                    <div class="d-flex align-items-center gap-2 text-truncate">
+                        <i class="bi bi-building"></i>
+                        <span id="labelEmpresas" class="text-truncate" style="max-width: 180px;">Todas as
+                            Empresas</span>
+                    </div>
                 </button>
                 <div class="dropdown-menu p-2" aria-labelledby="dropdownEmpresas"
                     style="max-height: 400px; overflow-y: auto; width: 300px; z-index: 9999;">
@@ -218,6 +221,16 @@
         font-weight: 600;
         display: inline-block;
     }
+
+    /* Fixed widths for filters */
+    #dropdownEmpresas {
+        flex-shrink: 0;
+    }
+
+    #labelEmpresas {
+        display: inline-block;
+        vertical-align: middle;
+    }
 </style>
 
 <script>
@@ -352,9 +365,7 @@
 
         // Impede fechar ao clicar dentro do menu
         document.querySelector('.dropdown-menu').addEventListener('click', (e) => {
-            if (e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'LABEL') {
-                e.stopPropagation();
-            }
+            e.stopPropagation();
         });
     }
 
