@@ -1,10 +1,12 @@
 from app.extensions import db
 from datetime import datetime
 import secrets
+from sqlalchemy import CheckConstraint
 
 class Pendencia(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    empresa = db.Column(db.String(50), nullable=False, index=True)
+    empresa_id = db.Column(db.Integer, db.ForeignKey('empresa.id'), nullable=False, index=True)
+    empresa = db.relationship('Empresa', backref='pendencias', lazy=True)
     tipo_pendencia = db.Column(db.String(30), nullable=False, index=True)
     banco = db.Column(db.String(50), nullable=True)
     data = db.Column(db.Date, nullable=True)  # Data da Pendência (informada pelo usuário)
@@ -14,10 +16,20 @@ class Pendencia(db.Model):
     observacao = db.Column(db.String(300), default='DO QUE SE TRATA?')
     resposta_cliente = db.Column(db.String(300))
     email_cliente = db.Column(db.String(120), nullable=True, index=True)
-    status = db.Column(db.String(50), default='PENDENTE CLIENTE', index=True)
+    status = db.Column(
+        db.String(50), 
+        CheckConstraint(
+            "status IN ('PENDENTE CLIENTE', 'PENDENTE OPERADOR UP', 'PENDENTE SUPERVISOR UP', 'PENDENTE COMPLEMENTO CLIENTE', 'DEVOLVIDA AO OPERADOR', 'RESOLVIDA')",
+            name='ck_pendencia_status'
+        ), 
+        nullable=False, 
+        default='PENDENTE CLIENTE', 
+        index=True
+    )
     token_acesso = db.Column(db.String(100), unique=True, default=lambda: secrets.token_urlsafe(16), index=True)
     data_resposta = db.Column(db.DateTime)
-    modificado_por = db.Column(db.String(50))
+    modificado_por_id = db.Column(db.Integer, db.ForeignKey('usuario.id'))
+    modificador = db.relationship('Usuario', backref='pendencias_modificadas', foreign_keys=[modificado_por_id])
     nota_fiscal_arquivo = db.Column(db.String(300))  # Caminho do arquivo da nota fiscal
     natureza_operacao = db.Column(db.String(500))  # Campo para Natureza de Operação
     motivo_recusa = db.Column(db.String(500))  # Campo para motivo da recusa pelo operador
@@ -32,7 +44,7 @@ class Pendencia(db.Model):
     
     # Índices compostos para performance
     __table_args__ = (
-        db.Index('idx_pendencia_empresa_status', 'empresa', 'status'),
+        db.Index('idx_pendencia_empresa_status', 'empresa_id', 'status'),
         db.Index('idx_pendencia_status_tipo', 'status', 'tipo_pendencia'),
     )
 
@@ -40,7 +52,8 @@ class Pendencia(db.Model):
 class LogAlteracao(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     pendencia_id = db.Column(db.Integer, db.ForeignKey('pendencia.id'), nullable=False)
-    usuario = db.Column(db.String(120), nullable=False)
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuario.id'), nullable=False)
+    usuario_rel = db.relationship('Usuario', backref='logs', lazy=True)
     tipo_usuario = db.Column(db.String(50), nullable=False)
     data_hora = db.Column(db.DateTime, nullable=False)
     acao = db.Column(db.String(100), nullable=False)
@@ -51,7 +64,8 @@ class LogAlteracao(db.Model):
 class Importacao(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nome_arquivo = db.Column(db.String(200), nullable=False)
-    usuario = db.Column(db.String(120), nullable=False)
+    usuario_id = db.Column(db.Integer, db.ForeignKey('usuario.id'), nullable=False)
+    usuario_rel = db.relationship('Usuario', backref='importacoes', lazy=True)
     data_hora = db.Column(db.DateTime, nullable=False)
     status = db.Column(db.String(30), nullable=False)
     mensagem_erro = db.Column(db.String(500))

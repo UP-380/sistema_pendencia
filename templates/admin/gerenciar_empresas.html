@@ -21,7 +21,7 @@
             Nova Empresa
         </a>
     </div>
-    
+
     {% if empresas_info|length == 0 %}
     <div class="alert alert-info">
         <i class="bi bi-info-circle me-2"></i>
@@ -32,17 +32,17 @@
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover table-striped mb-0">
-        <thead>
-            <tr>
+                    <thead>
+                        <tr>
                             <th style="width: 80px;">ID</th>
-                <th>Nome</th>
+                            <th>Nome</th>
                             <th style="width: 200px;">Segmento</th>
                             <th style="width: 120px;">Usuários</th>
                             <th style="width: 120px;">Pendências</th>
                             <th style="width: 200px;">Ações</th>
-            </tr>
-        </thead>
-        <tbody>
+                        </tr>
+                    </thead>
+                    <tbody>
                         {% for info in empresas_info %}
                         {% set empresa = info.empresa %}
                         {% set total_pendencias = info.total_pendencias %}
@@ -68,7 +68,8 @@
                             </td>
                             <td>
                                 {% if empresa.usuarios|length > 0 %}
-                                <span class="badge bg-info" title="{{ empresa.usuarios|length }} usuário(s) vinculado(s)">
+                                <span class="badge bg-info"
+                                    title="{{ empresa.usuarios|length }} usuário(s) vinculado(s)">
                                     <i class="bi bi-people me-1"></i>
                                     {{ empresa.usuarios|length }}
                                 </span>
@@ -94,46 +95,39 @@
                             </td>
                             <td>
                                 <div class="btn-group" role="group">
-                                    <a href="{{ url_for('main.editar_empresa', id=empresa.id) }}" 
-                                       class="btn btn-sm btn-warning"
-                                       title="Editar empresa">
+                                    <a href="{{ url_for('main.editar_empresa', id=empresa.id) }}"
+                                        class="btn btn-sm btn-warning" title="Editar empresa">
                                         <i class="bi bi-pencil me-1"></i>Editar
                                     </a>
                                     {% set total_usuarios = empresa.usuarios|length %}
                                     {% if total_pendencias > 0 or total_usuarios > 0 %}
-                                    <button type="button" 
-                                            class="btn btn-sm btn-danger" 
-                                            data-nome="{{ empresa.nome }}"
-                                            data-pendencias="{{ total_pendencias }}"
-                                            data-usuarios="{{ total_usuarios }}"
-                                            onclick="mostrarMotivoNaoPodeExcluir(this)"
-                                            title="Não é possível excluir - possui vínculos">
+                                    <button type="button" class="btn btn-sm btn-danger" data-nome="{{ empresa.nome }}"
+                                        data-pendencias="{{ total_pendencias }}" data-usuarios="{{ total_usuarios }}"
+                                        onclick="mostrarMotivoNaoPodeExcluir(this)"
+                                        title="Não é possível excluir - possui vínculos">
                                         <i class="bi bi-trash me-1"></i>Excluir
                                     </button>
                                     {% else %}
-                                    <button type="button" 
-                                            class="btn btn-sm btn-danger"
-                                            data-id="{{ empresa.id }}"
-                                            data-nome="{{ empresa.nome }}"
-                                            onclick="confirmarDelecaoEmpresa(this)"
-                                            title="Excluir empresa">
+                                    <button type="button" class="btn btn-sm btn-danger" data-id="{{ empresa.id }}"
+                                        data-nome="{{ empresa.nome }}" onclick="confirmarDelecaoEmpresa(this)"
+                                        title="Excluir empresa">
                                         <i class="bi bi-trash me-1"></i>Excluir
                                     </button>
                                     {% endif %}
                                 </div>
                             </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
         <div class="card-footer text-muted">
             <i class="bi bi-info-circle me-2"></i>
             Total de empresas: <strong>{{ empresas_info|length }}</strong>
         </div>
     </div>
-    
+
     <!-- Resumo por Segmento -->
     <div class="row mt-4">
         <div class="col-md-12">
@@ -149,14 +143,14 @@
                         {% set empresas_sem_segmento = empresas_info|selectattr('empresa.segmento', 'none')|list %}
                         {% set empresas_por_segmento = {} %}
                         {% for info in empresas_info %}
-                            {% if info.empresa.segmento %}
-                                {% if info.empresa.segmento.nome not in empresas_por_segmento %}
-                                    {% set _ = empresas_por_segmento.update({info.empresa.segmento.nome: []}) %}
-                                {% endif %}
-                                {% set _ = empresas_por_segmento[info.empresa.segmento.nome].append(info.empresa) %}
-                            {% endif %}
+                        {% if info.empresa.segmento %}
+                        {% if info.empresa.segmento.nome not in empresas_por_segmento %}
+                        {% set _ = empresas_por_segmento.update({info.empresa.segmento.nome: []}) %}
+                        {% endif %}
+                        {% set _ = empresas_por_segmento[info.empresa.segmento.nome].append(info.empresa) %}
+                        {% endif %}
                         {% endfor %}
-                        
+
                         {% for segmento_nome, empresas_seg in empresas_por_segmento.items() %}
                         <div class="col-md-3 mb-3">
                             <div class="card bg-primary text-white">
@@ -167,7 +161,7 @@
                             </div>
                         </div>
                         {% endfor %}
-                        
+
                         {% if empresas_sem_segmento|length > 0 %}
                         <div class="col-md-3 mb-3">
                             <div class="card bg-secondary text-white">
@@ -195,7 +189,8 @@
                     <i class="bi bi-exclamation-triangle me-2"></i>
                     Confirmar Exclusão
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <p>Tem certeza que deseja excluir a empresa <strong id="nomeEmpresaExcluir"></strong>?</p>
@@ -210,7 +205,7 @@
                     Cancelar
                 </button>
                 <form id="formDelecaoEmpresa" method="POST" style="display: inline;">
-<input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                     <button type="submit" class="btn btn-danger">
                         <i class="bi bi-trash me-2"></i>
                         Sim, Excluir
@@ -233,7 +228,8 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p>A empresa <strong id="nomeEmpresaImpedida"></strong> não pode ser excluída pelos seguintes motivos:</p>
+                <p>A empresa <strong id="nomeEmpresaImpedida"></strong> não pode ser excluída pelos seguintes motivos:
+                </p>
                 <div id="motivosImpedimento"></div>
                 <div class="alert alert-info mt-3">
                     <i class="bi bi-info-circle me-2"></i>
@@ -256,51 +252,51 @@
 </div>
 
 <script>
-function confirmarDelecaoEmpresa(button) {
-    var id = button.getAttribute('data-id');
-    var nome = button.getAttribute('data-nome');
-    
-    console.log('ID da empresa:', id);
-    console.log('Nome da empresa:', nome);
-    console.log('Action que será setada:', '/deletar_empresa/' + id);
-    
-    document.getElementById('nomeEmpresaExcluir').textContent = nome;
-    document.getElementById('formDelecaoEmpresa').action = '/deletar_empresa/' + id;
-    
-    console.log('Action setada no form:', document.getElementById('formDelecaoEmpresa').action);
-    
-    var modal = new bootstrap.Modal(document.getElementById('modalConfirmarDelecao'));
-    modal.show();
-}
+    function confirmarDelecaoEmpresa(button) {
+        var id = button.getAttribute('data-id');
+        var nome = button.getAttribute('data-nome');
 
-function mostrarMotivoNaoPodeExcluir(button) {
-    var nome = button.getAttribute('data-nome');
-    var totalPendencias = parseInt(button.getAttribute('data-pendencias'));
-    var totalUsuarios = parseInt(button.getAttribute('data-usuarios'));
-    
-    document.getElementById('nomeEmpresaImpedida').textContent = nome;
-    
-    var motivos = '';
-    if (totalPendencias > 0) {
-        motivos += '<div class="alert alert-danger">';
-        motivos += '<i class="bi bi-file-text me-2"></i>';
-        motivos += '<strong>' + totalPendencias + ' pendência(s) vinculada(s)</strong>';
-        motivos += '<br><small>Todas as pendências precisam ser resolvidas ou transferidas antes.</small>';
-        motivos += '</div>';
+        console.log('ID da empresa:', id);
+        console.log('Nome da empresa:', nome);
+        console.log('Action que será setada:', '/deletar_empresa/' + id);
+
+        document.getElementById('nomeEmpresaExcluir').textContent = nome;
+        document.getElementById('formDelecaoEmpresa').action = '/deletar_empresa/' + id;
+
+        console.log('Action setada no form:', document.getElementById('formDelecaoEmpresa').action);
+
+        var modal = new bootstrap.Modal(document.getElementById('modalConfirmarDelecao'));
+        modal.show();
     }
-    if (totalUsuarios > 0) {
-        motivos += '<div class="alert alert-warning">';
-        motivos += '<i class="bi bi-people me-2"></i>';
-        motivos += '<strong>' + totalUsuarios + ' usuário(s) vinculado(s)</strong>';
-        motivos += '<br><small>Remova os vínculos dos usuários em "Gerenciar → Usuários".</small>';
-        motivos += '</div>';
+
+    function mostrarMotivoNaoPodeExcluir(button) {
+        var nome = button.getAttribute('data-nome');
+        var totalPendencias = parseInt(button.getAttribute('data-pendencias'));
+        var totalUsuarios = parseInt(button.getAttribute('data-usuarios'));
+
+        document.getElementById('nomeEmpresaImpedida').textContent = nome;
+
+        var motivos = '';
+        if (totalPendencias > 0) {
+            motivos += '<div class="alert alert-danger">';
+            motivos += '<i class="bi bi-file-text me-2"></i>';
+            motivos += '<strong>' + totalPendencias + ' pendência(s) vinculada(s)</strong>';
+            motivos += '<br><small>Todas as pendências precisam ser resolvidas ou transferidas antes.</small>';
+            motivos += '</div>';
+        }
+        if (totalUsuarios > 0) {
+            motivos += '<div class="alert alert-warning">';
+            motivos += '<i class="bi bi-people me-2"></i>';
+            motivos += '<strong>' + totalUsuarios + ' usuário(s) vinculado(s)</strong>';
+            motivos += '<br><small>Remova os vínculos dos usuários em "Gerenciar → Usuários".</small>';
+            motivos += '</div>';
+        }
+
+        document.getElementById('motivosImpedimento').innerHTML = motivos;
+
+        var modal = new bootstrap.Modal(document.getElementById('modalImpedimentoExclusao'));
+        modal.show();
     }
-    
-    document.getElementById('motivosImpedimento').innerHTML = motivos;
-    
-    var modal = new bootstrap.Modal(document.getElementById('modalImpedimentoExclusao'));
-    modal.show();
-}
 </script>
 
-{% endblock %} 
+{% endblock %}
