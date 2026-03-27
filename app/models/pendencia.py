@@ -2,8 +2,17 @@ from app.extensions import db
 from datetime import datetime
 import secrets
 from sqlalchemy import CheckConstraint
+from sqlalchemy.orm import validates
 
 class Pendencia(db.Model):
+    # Constantes de Status
+    STATUS_PENDENTE_CLIENTE = 'PENDENTE CLIENTE'
+    STATUS_PENDENTE_OPERADOR = 'PENDENTE OPERADOR UP'
+    STATUS_PENDENTE_SUPERVISOR = 'PENDENTE SUPERVISOR UP'
+    STATUS_COMPLEMENTO_CLIENTE = 'PENDENTE COMPLEMENTO CLIENTE'
+    STATUS_DEVOLVIDA_OPERADOR = 'DEVOLVIDA AO OPERADOR'
+    STATUS_RESOLVIDA = 'RESOLVIDA'
+
     id = db.Column(db.Integer, primary_key=True)
     empresa_id = db.Column(db.Integer, db.ForeignKey('empresa.id'), nullable=False, index=True)
     empresa = db.relationship('Empresa', backref='pendencias', lazy=True)
@@ -47,6 +56,20 @@ class Pendencia(db.Model):
         db.Index('idx_pendencia_empresa_status', 'empresa_id', 'status'),
         db.Index('idx_pendencia_status_tipo', 'status', 'tipo_pendencia'),
     )
+
+    @validates('status')
+    def validar_status(self, chave, valor):
+        status_permitidos = [
+            self.STATUS_PENDENTE_CLIENTE,
+            self.STATUS_PENDENTE_OPERADOR,
+            self.STATUS_PENDENTE_SUPERVISOR,
+            self.STATUS_COMPLEMENTO_CLIENTE,
+            self.STATUS_DEVOLVIDA_OPERADOR,
+            self.STATUS_RESOLVIDA
+        ]
+        if valor not in status_permitidos:
+            raise ValueError(f"Status Inválido Detectado: '{valor}' não existe no processo.")
+        return valor
 
 
 class LogAlteracao(db.Model):
