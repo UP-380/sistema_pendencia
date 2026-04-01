@@ -1,0 +1,1277 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Escala de IA — CrosaraTech</title>
+    <meta name="description" content="Transforme sua equipe com IA. Treinamento, mentoria e arquitetura de soluções inteligentes para empresas que querem sair do básico e escalar resultados reais.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* ===== RESET & BASE ===== */
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: #2D2A26;
+            background: #FDFBF9;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+        img { max-width: 100%; display: block; }
+        a { text-decoration: none; color: inherit; }
+        ul { list-style: none; }
+
+        /* ===== COLORS ===== */
+        :root {
+            --coral: #C96B3C;
+            --coral-dark: #A8532C;
+            --coral-light: #E8956A;
+            --rose: #F5E0D8;
+            --rose-light: #FBF2EE;
+            --cream: #FDFBF9;
+            --dark: #2D2A26;
+            --gray-700: #4A4540;
+            --gray-500: #7A7570;
+            --gray-300: #B8B2AC;
+            --gray-100: #E8E4E0;
+            --white: #FFFFFF;
+        }
+
+        /* ===== UTILITIES ===== */
+        .container {
+            max-width: 1120px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+        .section {
+            padding: 96px 0;
+        }
+        .section-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--coral);
+            margin-bottom: 12px;
+        }
+        .section-title {
+            font-size: 2.25rem;
+            font-weight: 700;
+            line-height: 1.2;
+            color: var(--dark);
+            margin-bottom: 16px;
+        }
+        .section-subtitle {
+            font-size: 1.125rem;
+            color: var(--gray-500);
+            max-width: 600px;
+            line-height: 1.7;
+        }
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--coral);
+            color: var(--white);
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            background: var(--coral-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(201,107,60,0.3);
+        }
+        .btn-secondary {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: transparent;
+            color: var(--coral);
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            border: 2px solid var(--coral);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-secondary:hover {
+            background: var(--rose-light);
+        }
+
+        /* ===== NAVIGATION ===== */
+        .nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            background: rgba(253,251,249,0.9);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--gray-100);
+            transition: all 0.3s ease;
+        }
+        .nav-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 72px;
+        }
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--dark);
+        }
+        .nav-logo span {
+            color: var(--coral);
+            font-weight: 300;
+        }
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+        }
+        .nav-links a {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--gray-500);
+            transition: color 0.2s;
+        }
+        .nav-links a:hover {
+            color: var(--coral);
+        }
+        .nav-cta {
+            background: var(--coral);
+            color: var(--white) !important;
+            padding: 10px 24px;
+            border-radius: 10px;
+            font-weight: 600 !important;
+            transition: all 0.3s ease;
+        }
+        .nav-cta:hover {
+            background: var(--coral-dark) !important;
+            color: var(--white) !important;
+        }
+        .nav-mobile-toggle {
+            display: none;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+        }
+        .nav-mobile-toggle span {
+            display: block;
+            width: 24px;
+            height: 2px;
+            background: var(--dark);
+            margin: 5px 0;
+            transition: all 0.3s ease;
+        }
+
+        /* ===== HERO ===== */
+        .hero {
+            padding: 160px 0 96px;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -200px;
+            right: -200px;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, var(--rose) 0%, transparent 70%);
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        .hero-inner {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 64px;
+            align-items: center;
+        }
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--rose-light);
+            border: 1px solid var(--rose);
+            padding: 8px 16px;
+            border-radius: 100px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--coral);
+            margin-bottom: 24px;
+        }
+        .hero-badge::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: var(--coral);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            line-height: 1.1;
+            color: var(--dark);
+            margin-bottom: 24px;
+        }
+        .hero h1 em {
+            font-style: normal;
+            color: var(--coral);
+        }
+        .hero-description {
+            font-size: 1.2rem;
+            color: var(--gray-500);
+            line-height: 1.7;
+            margin-bottom: 40px;
+            max-width: 520px;
+        }
+        .hero-buttons {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .hero-visual {
+            position: relative;
+        }
+        .hero-card {
+            background: var(--white);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 4px 40px rgba(0,0,0,0.06);
+            border: 1px solid var(--gray-100);
+        }
+        .hero-card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 28px;
+        }
+        .hero-card-icon {
+            width: 48px;
+            height: 48px;
+            background: var(--rose-light);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+        .hero-card-label {
+            font-size: 0.8rem;
+            color: var(--gray-500);
+        }
+        .hero-card-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+        .hero-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .hero-stat {
+            background: var(--rose-light);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+        }
+        .hero-stat-number {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--coral);
+        }
+        .hero-stat-text {
+            font-size: 0.75rem;
+            color: var(--gray-500);
+            margin-top: 4px;
+        }
+        .hero-progress {
+            background: var(--gray-100);
+            border-radius: 100px;
+            height: 8px;
+            overflow: hidden;
+        }
+        .hero-progress-bar {
+            height: 100%;
+            width: 80%;
+            background: linear-gradient(90deg, var(--coral), var(--coral-light));
+            border-radius: 100px;
+            animation: progressGrow 2s ease-out;
+        }
+        @keyframes progressGrow {
+            from { width: 0%; }
+            to { width: 80%; }
+        }
+        .hero-progress-label {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 0.75rem;
+            color: var(--gray-500);
+        }
+
+        /* ===== SOCIAL PROOF BAR ===== */
+        .social-proof {
+            padding: 48px 0;
+            border-top: 1px solid var(--gray-100);
+            border-bottom: 1px solid var(--gray-100);
+        }
+        .social-proof-inner {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 48px;
+            flex-wrap: wrap;
+        }
+        .proof-item {
+            text-align: center;
+        }
+        .proof-number {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--coral);
+        }
+        .proof-text {
+            font-size: 0.85rem;
+            color: var(--gray-500);
+            margin-top: 4px;
+        }
+        .proof-divider {
+            width: 1px;
+            height: 48px;
+            background: var(--gray-100);
+        }
+
+        /* ===== PROBLEMA ===== */
+        .problem {
+            background: var(--white);
+        }
+        .problem-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 64px;
+            align-items: center;
+            margin-top: 48px;
+        }
+        .problem-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .problem-item {
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+            padding: 20px;
+            border-radius: 16px;
+            transition: background 0.3s;
+        }
+        .problem-item:hover {
+            background: var(--rose-light);
+        }
+        .problem-icon {
+            width: 40px;
+            height: 40px;
+            min-width: 40px;
+            background: #FEE;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+        .problem-item h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 4px;
+        }
+        .problem-item p {
+            font-size: 0.9rem;
+            color: var(--gray-500);
+            line-height: 1.5;
+        }
+        .problem-visual {
+            background: linear-gradient(135deg, var(--rose-light), var(--rose));
+            border-radius: 24px;
+            padding: 48px;
+            text-align: center;
+        }
+        .problem-visual-quote {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--dark);
+            line-height: 1.4;
+            margin-bottom: 16px;
+        }
+        .problem-visual-author {
+            font-size: 0.9rem;
+            color: var(--gray-500);
+        }
+
+        /* ===== BENEFÍCIOS ===== */
+        .benefits-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            margin-top: 48px;
+        }
+        .benefit-card {
+            background: var(--white);
+            border: 1px solid var(--gray-100);
+            border-radius: 20px;
+            padding: 36px;
+            transition: all 0.3s ease;
+        }
+        .benefit-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.06);
+            border-color: var(--rose);
+        }
+        .benefit-icon {
+            width: 56px;
+            height: 56px;
+            background: var(--rose-light);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+        }
+        .benefit-card h3 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 8px;
+        }
+        .benefit-card p {
+            font-size: 0.9rem;
+            color: var(--gray-500);
+            line-height: 1.6;
+        }
+
+        /* ===== COMO FUNCIONA ===== */
+        .how-it-works {
+            background: var(--white);
+        }
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 32px;
+            margin-top: 56px;
+        }
+        .step {
+            position: relative;
+            text-align: center;
+        }
+        .step::after {
+            content: '';
+            position: absolute;
+            top: 36px;
+            right: -16px;
+            width: 32px;
+            height: 2px;
+            background: var(--gray-300);
+        }
+        .step:last-child::after {
+            display: none;
+        }
+        .step-number {
+            width: 72px;
+            height: 72px;
+            background: linear-gradient(135deg, var(--coral), var(--coral-light));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--white);
+            margin: 0 auto 20px;
+        }
+        .step h3 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 8px;
+        }
+        .step p {
+            font-size: 0.85rem;
+            color: var(--gray-500);
+            line-height: 1.6;
+        }
+
+        /* ===== CASES ===== */
+        .cases-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            margin-top: 48px;
+        }
+        .case-card {
+            background: var(--white);
+            border: 1px solid var(--gray-100);
+            border-radius: 20px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .case-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.06);
+        }
+        .case-header {
+            padding: 32px 32px 0;
+        }
+        .case-tag {
+            display: inline-block;
+            background: var(--rose-light);
+            color: var(--coral);
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 6px 12px;
+            border-radius: 100px;
+            margin-bottom: 16px;
+        }
+        .case-card h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 8px;
+        }
+        .case-card > p,
+        .case-header p {
+            font-size: 0.9rem;
+            color: var(--gray-500);
+            line-height: 1.6;
+            padding: 0 32px;
+        }
+        .case-header p {
+            padding: 0;
+        }
+        .case-result {
+            margin: 24px 32px;
+            padding: 20px;
+            background: var(--rose-light);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .case-result-number {
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: var(--coral);
+        }
+        .case-result-text {
+            font-size: 0.8rem;
+            color: var(--gray-700);
+            line-height: 1.4;
+        }
+
+        /* ===== DEPOIMENTOS ===== */
+        .testimonials {
+            background: var(--white);
+        }
+        .testimonials-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            margin-top: 48px;
+        }
+        .testimonial-card {
+            background: var(--cream);
+            border: 1px solid var(--gray-100);
+            border-radius: 20px;
+            padding: 36px;
+        }
+        .testimonial-stars {
+            color: var(--coral);
+            font-size: 1rem;
+            margin-bottom: 16px;
+        }
+        .testimonial-card blockquote {
+            font-size: 0.95rem;
+            color: var(--gray-700);
+            line-height: 1.7;
+            margin-bottom: 24px;
+            font-style: italic;
+        }
+        .testimonial-author {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .testimonial-avatar {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, var(--coral), var(--coral-light));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+        .testimonial-name {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+        .testimonial-role {
+            font-size: 0.8rem;
+            color: var(--gray-500);
+        }
+
+        /* ===== FAQ ===== */
+        .faq-list {
+            max-width: 720px;
+            margin: 48px auto 0;
+        }
+        .faq-item {
+            border-bottom: 1px solid var(--gray-100);
+        }
+        .faq-question {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            padding: 24px 0;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: var(--dark);
+            text-align: left;
+            font-family: inherit;
+            transition: color 0.2s;
+        }
+        .faq-question:hover {
+            color: var(--coral);
+        }
+        .faq-icon {
+            width: 28px;
+            height: 28px;
+            min-width: 28px;
+            border-radius: 50%;
+            background: var(--rose-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: var(--coral);
+            transition: transform 0.3s;
+        }
+        .faq-item.active .faq-icon {
+            transform: rotate(45deg);
+        }
+        .faq-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease, padding 0.4s ease;
+        }
+        .faq-item.active .faq-answer {
+            max-height: 300px;
+            padding-bottom: 24px;
+        }
+        .faq-answer p {
+            font-size: 0.95rem;
+            color: var(--gray-500);
+            line-height: 1.7;
+        }
+
+        /* ===== CTA FINAL ===== */
+        .cta-final {
+            background: linear-gradient(135deg, var(--dark) 0%, #3D3A36 100%);
+            border-radius: 32px;
+            padding: 80px 48px;
+            text-align: center;
+            margin: 0 24px;
+            position: relative;
+            overflow: hidden;
+        }
+        .cta-final::before {
+            content: '';
+            position: absolute;
+            top: -100px;
+            right: -100px;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, var(--coral) 0%, transparent 70%);
+            opacity: 0.1;
+        }
+        .cta-section {
+            padding: 96px 0;
+        }
+        .cta-final h2 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--white);
+            margin-bottom: 16px;
+            position: relative;
+        }
+        .cta-final p {
+            font-size: 1.15rem;
+            color: var(--gray-300);
+            margin-bottom: 40px;
+            max-width: 560px;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.7;
+            position: relative;
+        }
+        .cta-final .btn-primary {
+            font-size: 1.1rem;
+            padding: 20px 40px;
+            position: relative;
+        }
+
+        /* ===== FOOTER ===== */
+        .footer {
+            padding: 48px 0;
+            border-top: 1px solid var(--gray-100);
+        }
+        .footer-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        .footer-brand {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--dark);
+        }
+        .footer-brand span {
+            color: var(--coral);
+            font-weight: 300;
+        }
+        .footer-copy {
+            font-size: 0.85rem;
+            color: var(--gray-500);
+        }
+        .footer-links {
+            display: flex;
+            gap: 24px;
+        }
+        .footer-links a {
+            font-size: 0.85rem;
+            color: var(--gray-500);
+            transition: color 0.2s;
+        }
+        .footer-links a:hover {
+            color: var(--coral);
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 1024px) {
+            .hero h1 { font-size: 2.75rem; }
+            .hero-inner { gap: 40px; }
+            .steps { grid-template-columns: repeat(2, 1fr); gap: 40px; }
+            .step::after { display: none; }
+        }
+        @media (max-width: 768px) {
+            .section { padding: 64px 0; }
+            .section-title { font-size: 1.75rem; }
+            .hero { padding: 120px 0 64px; }
+            .hero h1 { font-size: 2.25rem; }
+            .hero-inner { grid-template-columns: 1fr; }
+            .hero-visual { order: -1; }
+            .nav-links { display: none; }
+            .nav-mobile-toggle { display: block; }
+            .benefits-grid,
+            .cases-grid,
+            .testimonials-grid { grid-template-columns: 1fr; }
+            .problem-grid { grid-template-columns: 1fr; }
+            .steps { grid-template-columns: 1fr; }
+            .cta-final { padding: 56px 24px; margin: 0 16px; border-radius: 24px; }
+            .cta-final h2 { font-size: 1.75rem; }
+            .hero-buttons { flex-direction: column; }
+            .hero-buttons .btn-primary,
+            .hero-buttons .btn-secondary { width: 100%; justify-content: center; }
+            .social-proof-inner { gap: 24px; }
+            .proof-divider { display: none; }
+            .footer-inner { flex-direction: column; text-align: center; }
+        }
+
+        /* ===== ANIMATIONS ===== */
+        .fade-up {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .fade-up.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- NAVIGATION -->
+    <nav class="nav">
+        <div class="container nav-inner">
+            <a href="#" class="nav-logo">
+                CrosaraTech <span>|</span> Escala de IA
+            </a>
+            <div class="nav-links">
+                <a href="#beneficios">Benefícios</a>
+                <a href="#como-funciona">Metodologia</a>
+                <a href="#cases">Cases</a>
+                <a href="#faq">FAQ</a>
+                <a href="https://wa.me/5500000000000?text=Ol%C3%A1!%20Quero%20saber%20mais%20sobre%20o%20Escala%20de%20IA" class="nav-cta" target="_blank">Agendar Diagnóstico</a>
+            </div>
+            <button class="nav-mobile-toggle" onclick="toggleMenu()" aria-label="Menu">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- HERO -->
+    <section class="hero">
+        <div class="container hero-inner">
+            <div class="fade-up">
+                <div class="hero-badge">Programa de Transformação com IA</div>
+                <h1>Sua equipe usando IA <em>de verdade</em>, não só para pesquisas no ChatGPT</h1>
+                <p class="hero-description">
+                    Treinamos, mentoramos e construímos soluções de IA sob medida para que seu time operacional, tático e estratégico ganhe superpoderes — com resultados reais e mensuráveis.
+                </p>
+                <div class="hero-buttons">
+                    <a href="https://wa.me/5500000000000?text=Ol%C3%A1!%20Quero%20agendar%20um%20diagn%C3%B3stico%20de%20IA%20para%20minha%20empresa" class="btn-primary" target="_blank">
+                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492a.75.75 0 00.917.918l4.458-1.495A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-2.325 0-4.47-.744-6.228-2.006l-.435-.326-2.847.955.955-2.847-.326-.435A9.956 9.956 0 012 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10z"/></svg>
+                        Agendar Diagnóstico Gratuito
+                    </a>
+                    <a href="#como-funciona" class="btn-secondary">Ver Metodologia</a>
+                </div>
+            </div>
+            <div class="hero-visual fade-up" style="transition-delay: 0.2s">
+                <div class="hero-card">
+                    <div class="hero-card-header">
+                        <div class="hero-card-icon">🤖</div>
+                        <div>
+                            <div class="hero-card-label">Resultado real com IA</div>
+                            <div class="hero-card-value">Conciliação Contábil Automatizada</div>
+                        </div>
+                    </div>
+                    <div class="hero-stats">
+                        <div class="hero-stat">
+                            <div class="hero-stat-number">80%</div>
+                            <div class="hero-stat-text">menos trabalho manual</div>
+                        </div>
+                        <div class="hero-stat">
+                            <div class="hero-stat-number">3x</div>
+                            <div class="hero-stat-text">mais velocidade</div>
+                        </div>
+                    </div>
+                    <div class="hero-progress">
+                        <div class="hero-progress-bar"></div>
+                    </div>
+                    <div class="hero-progress-label">
+                        <span>Processo manual</span>
+                        <span>Com IA: 80% automatizado</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SOCIAL PROOF BAR -->
+    <section class="social-proof">
+        <div class="container">
+            <div class="social-proof-inner fade-up">
+                <div class="proof-item">
+                    <div class="proof-number">100+</div>
+                    <div class="proof-text">empresas atendidas pelo grupo</div>
+                </div>
+                <div class="proof-divider"></div>
+                <div class="proof-item">
+                    <div class="proof-number">80%</div>
+                    <div class="proof-text">de redução em trabalho manual</div>
+                </div>
+                <div class="proof-divider"></div>
+                <div class="proof-item">
+                    <div class="proof-number">3</div>
+                    <div class="proof-text">setores transformados</div>
+                </div>
+                <div class="proof-divider"></div>
+                <div class="proof-item">
+                    <div class="proof-number">∞</div>
+                    <div class="proof-text">possibilidades com IA</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- PROBLEMA -->
+    <section class="section problem" id="problema">
+        <div class="container">
+            <div class="section-label fade-up">O problema</div>
+            <h2 class="section-title fade-up">A maioria das empresas ainda usa IA como se fosse um Google melhorado</h2>
+            <div class="problem-grid">
+                <div class="problem-list fade-up">
+                    <div class="problem-item">
+                        <div class="problem-icon">⏳</div>
+                        <div>
+                            <h4>Equipe presa em tarefas repetitivas</h4>
+                            <p>Horas gastas em conciliação, preenchimento de planilhas e processos manuais que a IA resolve em minutos.</p>
+                        </div>
+                    </div>
+                    <div class="problem-item">
+                        <div class="problem-icon">😵</div>
+                        <div>
+                            <h4>IA parece distante da realidade</h4>
+                            <p>A equipe ouve falar de IA todo dia mas não sabe aplicar além de perguntas simples no ChatGPT.</p>
+                        </div>
+                    </div>
+                    <div class="problem-item">
+                        <div class="problem-icon">🔒</div>
+                        <div>
+                            <h4>Medo de errar e "alucinações"</h4>
+                            <p>Sem processo e boas práticas, a IA gera resultados inconsistentes — e a equipe desiste de usar.</p>
+                        </div>
+                    </div>
+                    <div class="problem-item">
+                        <div class="problem-icon">📉</div>
+                        <div>
+                            <h4>ROI invisível</h4>
+                            <p>Investiu em ferramentas de IA mas não consegue medir nem escalar os resultados para mais pessoas.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="problem-visual fade-up" style="transition-delay: 0.2s">
+                    <div class="problem-visual-quote">
+                        "Todo mundo fala em IA,<br>mas na minha empresa ainda fazemos tudo no braço."
+                    </div>
+                    <div class="problem-visual-author">— O que ouvimos de 9 em cada 10 gestores</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- BENEFÍCIOS -->
+    <section class="section" id="beneficios">
+        <div class="container">
+            <div class="section-label fade-up">Benefícios</div>
+            <h2 class="section-title fade-up">O que sua empresa ganha com o Escala de IA</h2>
+            <p class="section-subtitle fade-up">Não é só treinamento. É uma transformação completa — do mindset à arquitetura de soluções.</p>
+            <div class="benefits-grid">
+                <div class="benefit-card fade-up">
+                    <div class="benefit-icon">🎓</div>
+                    <h3>Equipe capacitada de verdade</h3>
+                    <p>Treinamento prático com casos reais do dia a dia da sua empresa. Sua equipe sai criando automações, não só assistindo slides.</p>
+                </div>
+                <div class="benefit-card fade-up" style="transition-delay: 0.1s">
+                    <div class="benefit-icon">🚀</div>
+                    <h3>MVP rápido, evolução contínua</h3>
+                    <p>Sua equipe cria MVPs funcionais que já geram valor. Depois, nossos arquitetos escalam para soluções robustas.</p>
+                </div>
+                <div class="benefit-card fade-up" style="transition-delay: 0.2s">
+                    <div class="benefit-icon">📋</div>
+                    <h3>Manuais e processos (POPs)</h3>
+                    <p>Cada automação vem com manual de uso, reduzindo erros, alucinações e dependência de quem criou.</p>
+                </div>
+                <div class="benefit-card fade-up" style="transition-delay: 0.3s">
+                    <div class="benefit-icon">🏗️</div>
+                    <h3>Arquitetura escalável</h3>
+                    <p>Quando o MVP prova valor, estruturamos com banco de dados, frontend, multi-agentes e integrações robustas.</p>
+                </div>
+                <div class="benefit-card fade-up" style="transition-delay: 0.4s">
+                    <div class="benefit-icon">🔄</div>
+                    <h3>Replicação inteligente</h3>
+                    <p>Soluções que funcionam em uma área são adaptadas para outras, multiplicando o ROI sem refazer do zero.</p>
+                </div>
+                <div class="benefit-card fade-up" style="transition-delay: 0.5s">
+                    <div class="benefit-icon">🤝</div>
+                    <h3>Mentoria contínua</h3>
+                    <p>Acompanhamento pós-treinamento para ajustar, incrementar e otimizar as soluções criadas pela equipe.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- COMO FUNCIONA -->
+    <section class="section how-it-works" id="como-funciona">
+        <div class="container">
+            <div class="section-label fade-up">Metodologia</div>
+            <h2 class="section-title fade-up">Do treinamento à solução escalável em 4 etapas</h2>
+            <p class="section-subtitle fade-up">Uma jornada estruturada que transforma sua equipe de consumidora para criadora de soluções de IA.</p>
+            <div class="steps">
+                <div class="step fade-up">
+                    <div class="step-number">1</div>
+                    <h3>Treinamento & Nivelamento</h3>
+                    <p>Capacitamos sua equipe para usar IA de forma prática — com Claude, automações reais, boas práticas e cases aplicados ao seu setor.</p>
+                </div>
+                <div class="step fade-up" style="transition-delay: 0.1s">
+                    <div class="step-number">2</div>
+                    <h3>Mentoria & MVP</h3>
+                    <p>Com a equipe mais apta, acompanhamos na criação de MVPs reais. Ajustamos ideias, estruturamos processos e criamos os POPs de uso.</p>
+                </div>
+                <div class="step fade-up" style="transition-delay: 0.2s">
+                    <div class="step-number">3</div>
+                    <h3>Arquitetura & Escala</h3>
+                    <p>Nossos arquitetos de IA pegam os MVPs validados e constroem soluções robustas — com banco de dados, frontend, n8n e multi-agentes.</p>
+                </div>
+                <div class="step fade-up" style="transition-delay: 0.3s">
+                    <div class="step-number">4</div>
+                    <h3>Documentação & Novo Ciclo</h3>
+                    <p>Documentamos tudo, treinamos a equipe na versão final e iniciamos um novo ciclo — identificando mais oportunidades de IA.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CASES -->
+    <section class="section" id="cases">
+        <div class="container">
+            <div class="section-label fade-up">Cases reais</div>
+            <h2 class="section-title fade-up">IA aplicada no mundo real — não em slides de conference</h2>
+            <p class="section-subtitle fade-up">Veja como a IA já transforma operações em diferentes setores.</p>
+            <div class="cases-grid">
+                <div class="case-card fade-up">
+                    <div class="case-header">
+                        <div class="case-tag">Contabilidade</div>
+                        <h3>Conciliação contábil automatizada</h3>
+                        <p>IA que cruza extratos, classifica lançamentos e identifica divergências — reduzindo drasticamente o retrabalho da equipe contábil.</p>
+                    </div>
+                    <div class="case-result">
+                        <div class="case-result-number">80%</div>
+                        <div class="case-result-text">menos trabalho manual na conciliação</div>
+                    </div>
+                </div>
+                <div class="case-card fade-up" style="transition-delay: 0.1s">
+                    <div class="case-header">
+                        <div class="case-tag">Indústria</div>
+                        <h3>Planejamento de produção inteligente</h3>
+                        <p>Cruzamento automático de estoque de matéria-prima com fórmulas de produto para otimizar o uso do que já existe — sem compras desnecessárias.</p>
+                    </div>
+                    <div class="case-result">
+                        <div class="case-result-number">↓</div>
+                        <div class="case-result-text">Redução de compras desnecessárias de matéria-prima</div>
+                    </div>
+                </div>
+                <div class="case-card fade-up" style="transition-delay: 0.2s">
+                    <div class="case-header">
+                        <div class="case-tag">Financeiro</div>
+                        <h3>Dashboards e análises gerenciais</h3>
+                        <p>Processamento automático de documentos, fechamentos financeiros e conciliação bancária — com dashboards que geram visão em tempo real.</p>
+                    </div>
+                    <div class="case-result">
+                        <div class="case-result-number">3x</div>
+                        <div class="case-result-text">mais velocidade nos fechamentos financeiros</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- DEPOIMENTOS -->
+    <section class="section testimonials" id="depoimentos">
+        <div class="container">
+            <div class="section-label fade-up">Depoimentos</div>
+            <h2 class="section-title fade-up">O que dizem os que já escalaram com IA</h2>
+            <div class="testimonials-grid">
+                <div class="testimonial-card fade-up">
+                    <div class="testimonial-stars">★★★★★</div>
+                    <blockquote>"Achava que IA era só para grandes empresas de tecnologia. Em duas semanas, minha equipe administrativa já estava automatizando processos que tomavam dias."</blockquote>
+                    <div class="testimonial-author">
+                        <div class="testimonial-avatar">RC</div>
+                        <div>
+                            <div class="testimonial-name">Renata C.</div>
+                            <div class="testimonial-role">Diretora Administrativa</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card fade-up" style="transition-delay: 0.1s">
+                    <div class="testimonial-stars">★★★★★</div>
+                    <blockquote>"O diferencial foi a mentoria pós-treinamento. Não ficamos sozinhos tentando fazer funcionar. A equipe da CrosaraTech esteve junto até a solução ficar redonda."</blockquote>
+                    <div class="testimonial-author">
+                        <div class="testimonial-avatar">ML</div>
+                        <div>
+                            <div class="testimonial-name">Marcos L.</div>
+                            <div class="testimonial-role">CEO — Indústria</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card fade-up" style="transition-delay: 0.2s">
+                    <div class="testimonial-stars">★★★★★</div>
+                    <blockquote>"A conciliação que levava 3 dias agora leva meio dia. E o melhor: quem faz é a mesma equipe de antes, só que agora com IA como copiloto."</blockquote>
+                    <div class="testimonial-author">
+                        <div class="testimonial-avatar">FS</div>
+                        <div>
+                            <div class="testimonial-name">Fernanda S.</div>
+                            <div class="testimonial-role">Gerente Contábil</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="section" id="faq">
+        <div class="container">
+            <div class="section-label fade-up" style="text-align: center;">Perguntas frequentes</div>
+            <h2 class="section-title fade-up" style="text-align: center;">Tire suas dúvidas</h2>
+            <div class="faq-list">
+                <div class="faq-item fade-up">
+                    <button class="faq-question" onclick="toggleFaq(this)">
+                        <span>Minha equipe não entende nada de tecnologia. Funciona mesmo assim?</span>
+                        <div class="faq-icon">+</div>
+                    </button>
+                    <div class="faq-answer">
+                        <p>Sim! Nosso treinamento começa do zero, com nivelamento. Trabalhamos com equipes administrativas, backoffice e operacionais — pessoas que nunca programaram. O foco é usar IA como ferramenta de trabalho, não como disciplina técnica.</p>
+                    </div>
+                </div>
+                <div class="faq-item fade-up">
+                    <button class="faq-question" onclick="toggleFaq(this)">
+                        <span>Qual ferramenta de IA vocês usam?</span>
+                        <div class="faq-icon">+</div>
+                    </button>
+                    <div class="faq-answer">
+                        <p>Trabalhamos prioritariamente com o Claude (chat e Cowork mode), da Anthropic. Levamos cases, possibilidades, instruções de uso e boas práticas. Para soluções mais robustas, usamos também n8n, multi-agentes e arquiteturas com banco de dados e frontend.</p>
+                    </div>
+                </div>
+                <div class="faq-item fade-up">
+                    <button class="faq-question" onclick="toggleFaq(this)">
+                        <span>Quanto tempo leva para ver resultados?</span>
+                        <div class="faq-icon">+</div>
+                    </button>
+                    <div class="faq-answer">
+                        <p>Já na fase de treinamento, a equipe começa a criar MVPs funcionais que geram valor imediato. A mentoria e otimização acontecem nas semanas seguintes, e a arquitetura robusta entra quando o MVP prova seu valor. Muitos clientes veem impacto já nas primeiras 2 semanas.</p>
+                    </div>
+                </div>
+                <div class="faq-item fade-up">
+                    <button class="faq-question" onclick="toggleFaq(this)">
+                        <span>E se a IA "alucinar" e gerar resultados errados?</span>
+                        <div class="faq-icon">+</div>
+                    </button>
+                    <div class="faq-answer">
+                        <p>Por isso criamos POPs (Procedimentos Operacionais Padrão) para cada automação. Eles garantem que a equipe saiba usar a IA corretamente, com prompts estruturados, validações e boas práticas que minimizam drasticamente erros e alucinações.</p>
+                    </div>
+                </div>
+                <div class="faq-item fade-up">
+                    <button class="faq-question" onclick="toggleFaq(this)">
+                        <span>Funciona para qualquer setor?</span>
+                        <div class="faq-icon">+</div>
+                    </button>
+                    <div class="faq-answer">
+                        <p>Sim. Já aplicamos em contabilidade, indústria e financeiro. A metodologia é adaptável — começamos entendendo os processos da sua empresa e identificamos onde a IA gera mais impacto. Se tem processo manual e repetitivo, tem oportunidade para IA.</p>
+                    </div>
+                </div>
+                <div class="faq-item fade-up">
+                    <button class="faq-question" onclick="toggleFaq(this)">
+                        <span>Vocês ficam junto depois do treinamento?</span>
+                        <div class="faq-icon">+</div>
+                    </button>
+                    <div class="faq-answer">
+                        <p>Sim. A mentoria pós-treinamento é parte essencial do programa. Acompanhamos sua equipe nos ajustes, incrementos e novas ideias. Quando uma solução tem potencial para escalar, nossos arquitetos de IA entram para estruturar a versão ideal.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA FINAL -->
+    <section class="cta-section">
+        <div class="container">
+            <div class="cta-final fade-up">
+                <h2>Sua empresa está pronta para<br>usar IA de verdade?</h2>
+                <p>Agende um diagnóstico gratuito e descubra onde a IA pode gerar mais impacto na sua operação — sem compromisso.</p>
+                <a href="https://wa.me/5500000000000?text=Ol%C3%A1!%20Quero%20agendar%20um%20diagn%C3%B3stico%20de%20IA%20para%20minha%20empresa" class="btn-primary" target="_blank">
+                    <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492a.75.75 0 00.917.918l4.458-1.495A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-2.325 0-4.47-.744-6.228-2.006l-.435-.326-2.847.955.955-2.847-.326-.435A9.956 9.956 0 012 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10z"/></svg>
+                    Agendar Diagnóstico Gratuito
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <div class="container footer-inner">
+            <div class="footer-brand">CrosaraTech <span>|</span> Escala de IA</div>
+            <div class="footer-copy">© 2026 CrosaraTech. Todos os direitos reservados.</div>
+            <div class="footer-links">
+                <a href="#">Privacidade</a>
+                <a href="#">Termos</a>
+                <a href="https://wa.me/5500000000000" target="_blank">Contato</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- SCRIPTS -->
+    <script>
+        // Scroll animations
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+        // FAQ toggle
+        function toggleFaq(button) {
+            const item = button.parentElement;
+            const isActive = item.classList.contains('active');
+            document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('active'));
+            if (!isActive) item.classList.add('active');
+        }
+
+        // Mobile menu
+        function toggleMenu() {
+            const links = document.querySelector('.nav-links');
+            if (links.style.display === 'flex') {
+                links.style.display = 'none';
+            } else {
+                links.style.display = 'flex';
+                links.style.flexDirection = 'column';
+                links.style.position = 'absolute';
+                links.style.top = '72px';
+                links.style.left = '0';
+                links.style.right = '0';
+                links.style.background = 'rgba(253,251,249,0.98)';
+                links.style.padding = '24px';
+                links.style.gap = '16px';
+                links.style.borderBottom = '1px solid var(--gray-100)';
+            }
+        }
+
+        // Nav shadow on scroll
+        window.addEventListener('scroll', () => {
+            const nav = document.querySelector('.nav');
+            if (window.scrollY > 10) {
+                nav.style.boxShadow = '0 2px 20px rgba(0,0,0,0.04)';
+            } else {
+                nav.style.boxShadow = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
